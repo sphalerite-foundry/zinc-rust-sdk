@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+branch="$(git symbolic-ref --quiet --short HEAD || true)"
+if [ "${branch}" = "master" ]; then
+  echo "Error: direct commits and pushes on master are blocked." >&2
+  echo "Create a feature branch and merge through a pull request." >&2
+  exit 1
+fi
+
 cargo fmt --all -- --check
