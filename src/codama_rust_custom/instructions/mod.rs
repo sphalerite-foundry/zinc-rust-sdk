@@ -5,6 +5,7 @@ pub mod close_miner_instruction;
 pub mod close_pda_instruction;
 pub mod close_round_accounts_instruction;
 pub mod close_round_instruction;
+pub mod close_stockpile_accounts_instruction;
 pub mod close_stockpile_instruction;
 pub mod close_treasury_token_account_instruction;
 pub mod deploy_round_instruction;
