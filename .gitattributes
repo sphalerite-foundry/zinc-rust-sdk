@@ -1,0 +1,5 @@
+# Hide generated Codama outputs by default in GitHub diffs.
+/src/codama_rust/** linguist-generated
+
+# Keep handwritten Codama extensions review-visible.
+/src/codama_rust_custom/** -linguist-generated
