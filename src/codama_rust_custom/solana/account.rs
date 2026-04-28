@@ -46,12 +46,16 @@ impl SolanaHelper {
     }
 
     /// Fetches one account and errors when the account does not exist.
-    pub async fn fetch_account<T>(rpc: &RpcClient, address: &Pubkey) -> Result<DecodedAccount<T>>
+    pub async fn fetch_account<T>(
+        rpc: &RpcClient,
+        address: &solana_address::Address,
+    ) -> Result<DecodedAccount<T>>
     where
         T: BorshDeserialize,
     {
+        let sdk_address = to_sdk_pubkey(*address);
         let account = rpc
-            .get_account_with_commitment(address, CommitmentConfig::confirmed())
+            .get_account_with_commitment(&sdk_address, CommitmentConfig::confirmed())
             .await
             .map_err(|err| {
                 anyhow!(
@@ -60,19 +64,20 @@ impl SolanaHelper {
             })?
             .value
             .ok_or_else(|| anyhow!("account {address} not found at confirmed commitment"))?;
-        Self::decode_account(address, account)
+        Self::decode_account(&sdk_address, account)
     }
 
     /// Fetches one account and returns `None` when the account does not exist.
     pub async fn fetch_optional_account<T>(
         rpc: &RpcClient,
-        address: &Pubkey,
+        address: &solana_address::Address,
     ) -> Result<Option<DecodedAccount<T>>>
     where
         T: BorshDeserialize,
     {
+        let sdk_address = to_sdk_pubkey(*address);
         let maybe_account = rpc
-            .get_account_with_commitment(address, CommitmentConfig::confirmed())
+            .get_account_with_commitment(&sdk_address, CommitmentConfig::confirmed())
             .await
             .map_err(|err| {
                 anyhow!(
@@ -81,7 +86,7 @@ impl SolanaHelper {
             })?
             .value;
         maybe_account
-            .map(|account| Self::decode_account(address, account))
+            .map(|account| Self::decode_account(&sdk_address, account))
             .transpose()
     }
 
@@ -142,7 +147,7 @@ impl SolanaHelper {
     }
 
     pub async fn fetch_board(rpc: &RpcClient) -> Result<Board> {
-        let board_address = to_sdk_pubkey(PdaHelper::get_board_address());
+        let board_address = PdaHelper::get_board_address();
         Ok(Self::fetch_account::<Board>(rpc, &board_address)
             .await?
             .data)

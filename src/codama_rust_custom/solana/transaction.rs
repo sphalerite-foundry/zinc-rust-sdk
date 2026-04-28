@@ -1,11 +1,10 @@
-use crate::codama_rust_custom::solana::SolanaHelper;
+use crate::codama_rust_custom::solana::{to_sdk_instruction, SolanaHelper};
 use anyhow::anyhow;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_commitment_config::CommitmentConfig;
 use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_message::{v0, AddressLookupTableAccount, VersionedMessage};
-use solana_sdk::instruction::Instruction;
 use solana_sdk::signature::{Keypair, Signature, Signer};
 use solana_sdk::transaction::VersionedTransaction;
 use std::str::FromStr;
@@ -19,7 +18,7 @@ impl SolanaHelper {
     pub async fn send_transaction(
         rpc: &RpcClient,
         signer: &Keypair,
-        instructions: Vec<Instruction>,
+        instructions: Vec<solana_instruction::Instruction>,
         lookup_tables: &[AddressLookupTableAccount],
     ) -> anyhow::Result<String> {
         Self::send_transaction_with_signers(rpc, signer, &[], instructions, lookup_tables).await
@@ -30,14 +29,14 @@ impl SolanaHelper {
         rpc: &RpcClient,
         signer: &Keypair,
         additional_signers: &[&Keypair],
-        instructions: Vec<Instruction>,
+        instructions: Vec<solana_instruction::Instruction>,
         lookup_tables: &[AddressLookupTableAccount],
     ) -> anyhow::Result<String> {
         let confirmed_commitment = CommitmentConfig::confirmed();
         let compute_budget = ComputeBudgetInstruction::set_compute_unit_limit(3_000_000);
         let recent_blockhash = rpc.get_latest_blockhash().await?;
         let mut tx_instructions = vec![compute_budget];
-        tx_instructions.extend(instructions);
+        tx_instructions.extend(instructions.into_iter().map(to_sdk_instruction));
         let message = v0::Message::try_compile(
             &signer.pubkey(),
             &tx_instructions,
