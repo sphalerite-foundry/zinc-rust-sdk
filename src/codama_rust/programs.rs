@@ -8,4 +8,4 @@
 use solana_address::{address, Address};
 
 /// `zinc` program ID.
-pub const ZINC_ID: Address = address!("4eWZ5taja9UmM7qdyreDAAhLzRsNoKy87nDbGNiPda2Y");
+pub const ZINC_ID: Address = address!("2uFqkFyohWCGiRUytZrmRknaVeaqo3hYtnL3sZ912zSP");
