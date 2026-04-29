@@ -1,10 +1,14 @@
 name: Install sccache
-description: Download the sccache binary, add it to PATH, and enable the GitHub Actions cache backend.
+description: Download the sccache binary, add it to PATH, and enable a restored local cache store.
 inputs:
   version:
     description: sccache release tag.
     required: false
     default: v0.14.0
+  cache-size:
+    description: Maximum local sccache store size.
+    required: false
+    default: 2G
 runs:
   using: composite
   steps:
@@ -32,29 +36,33 @@ runs:
     - name: Add sccache to PATH
       shell: bash
       run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-    - name: Configure sccache GitHub Actions backend
-      uses: actions/github-script@v8
+    - name: Cache local sccache store
+      uses: actions/cache@v5
       with:
-        script: |
-          core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-          core.exportVariable('ACTIONS_RESULTS_URL', process.env.ACTIONS_RESULTS_URL || '');
-          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-          core.exportVariable('SCCACHE_GHA_CACHE_URL', process.env.ACTIONS_CACHE_URL || process.env.ACTIONS_RESULTS_URL || '');
-          core.exportVariable('SCCACHE_GHA_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-          core.exportVariable('SCCACHE_GHA_ENABLED', 'true');
-    - name: Enable sccache when cache backend is healthy
+        path: ~/.cache/sccache
+        key: sccache-store-${{ runner.os }}-${{ inputs.version }}-${{ github.job }}-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml', '**/*.rs', '**/rust-toolchain.toml') }}
+        restore-keys: |
+          sccache-store-${{ runner.os }}-${{ inputs.version }}-${{ github.job }}-
+          sccache-store-${{ runner.os }}-${{ inputs.version }}-
+    - name: Enable local sccache
       shell: bash
       run: |
         set -euo pipefail
 
-        if sccache --start-server; then
-          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
-          echo "sccache enabled."
-        else
-          {
-            echo "SCCACHE_GHA_ENABLED=false"
-            echo "SCCACHE_GHA_CACHE_URL="
-            echo "SCCACHE_GHA_RUNTIME_TOKEN="
-          } >> "$GITHUB_ENV"
-          echo "sccache disabled because the GitHub Actions cache backend is unavailable."
-        fi
+        {
+          echo "SCCACHE_GHA_ENABLED=false"
+          echo "SCCACHE_GHA_CACHE_URL="
+          echo "SCCACHE_GHA_RUNTIME_TOKEN="
+          echo "SCCACHE_DIR=${HOME}/.cache/sccache"
+          echo "SCCACHE_CACHE_SIZE=${{ inputs.cache-size }}"
+          echo "RUSTC_WRAPPER=sccache"
+        } >> "$GITHUB_ENV"
+
+        SCCACHE_GHA_ENABLED=false \
+          SCCACHE_GHA_CACHE_URL= \
+          SCCACHE_GHA_RUNTIME_TOKEN= \
+          SCCACHE_DIR="${HOME}/.cache/sccache" \
+          SCCACHE_CACHE_SIZE="${{ inputs.cache-size }}" \
+          sccache --start-server
+
+        echo "sccache enabled with restored local storage."
