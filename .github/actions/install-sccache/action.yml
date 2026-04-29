@@ -42,4 +42,19 @@ runs:
           core.exportVariable('SCCACHE_GHA_CACHE_URL', process.env.ACTIONS_CACHE_URL || process.env.ACTIONS_RESULTS_URL || '');
           core.exportVariable('SCCACHE_GHA_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
           core.exportVariable('SCCACHE_GHA_ENABLED', 'true');
-          core.exportVariable('RUSTC_WRAPPER', 'sccache');
+    - name: Enable sccache when cache backend is healthy
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        if sccache --start-server; then
+          echo "RUSTC_WRAPPER=sccache" >> "$GITHUB_ENV"
+          echo "sccache enabled."
+        else
+          {
+            echo "SCCACHE_GHA_ENABLED=false"
+            echo "SCCACHE_GHA_CACHE_URL="
+            echo "SCCACHE_GHA_RUNTIME_TOKEN="
+          } >> "$GITHUB_ENV"
+          echo "sccache disabled because the GitHub Actions cache backend is unavailable."
+        fi
