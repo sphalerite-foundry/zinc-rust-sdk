@@ -1,0 +1,45 @@
+name: Install sccache
+description: Download the sccache binary, add it to PATH, and enable the GitHub Actions cache backend.
+inputs:
+  version:
+    description: sccache release tag.
+    required: false
+    default: v0.14.0
+runs:
+  using: composite
+  steps:
+    - name: Cache sccache
+      id: cache-sccache
+      uses: actions/cache@v5
+      with:
+        path: ~/.local/bin/sccache
+        key: sccache-${{ runner.os }}-${{ inputs.version }}
+    - name: Install sccache
+      if: steps.cache-sccache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        archive="sccache-${{ inputs.version }}-x86_64-unknown-linux-musl.tar.gz"
+        extracted_dir="$RUNNER_TEMP/sccache-${{ inputs.version }}-x86_64-unknown-linux-musl"
+
+        curl -fsSL "https://github.com/mozilla/sccache/releases/download/${{ inputs.version }}/${archive}" -o "$RUNNER_TEMP/${archive}"
+        rm -rf "$extracted_dir"
+        tar -xzf "$RUNNER_TEMP/${archive}" -C "$RUNNER_TEMP"
+
+        mkdir -p "$HOME/.local/bin"
+        install "$extracted_dir/sccache" "$HOME/.local/bin/sccache"
+    - name: Add sccache to PATH
+      shell: bash
+      run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+    - name: Configure sccache GitHub Actions backend
+      uses: actions/github-script@v8
+      with:
+        script: |
+          core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+          core.exportVariable('ACTIONS_RESULTS_URL', process.env.ACTIONS_RESULTS_URL || '');
+          core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+          core.exportVariable('SCCACHE_GHA_CACHE_URL', process.env.ACTIONS_CACHE_URL || process.env.ACTIONS_RESULTS_URL || '');
+          core.exportVariable('SCCACHE_GHA_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+          core.exportVariable('SCCACHE_GHA_ENABLED', 'true');
+          core.exportVariable('RUSTC_WRAPPER', 'sccache');
