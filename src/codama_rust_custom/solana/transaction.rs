@@ -7,12 +7,14 @@ use solana_compute_budget_interface::ComputeBudgetInstruction;
 use solana_message::{v0, AddressLookupTableAccount, VersionedMessage};
 use solana_sdk::signature::{Keypair, Signature, Signer};
 use solana_sdk::transaction::VersionedTransaction;
-use std::str::FromStr;
+use std::{env, str::FromStr};
 use tokio::time::{sleep, Duration};
 
 impl SolanaHelper {
-    const CONFIRMATION_POLL_INTERVAL_MS: u64 = 500;
+    const CONFIRMATION_POLL_INTERVAL_MS: u64 = 1_000;
     const CONFIRMATION_RETRIES: u8 = 10;
+    const COMPUTE_UNIT_PRICE_ENV: &str = "ZINC_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS";
+    const DEFAULT_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS: u64 = 10_000;
 
     /// Sends a v0 transaction signed only by the payer keypair.
     pub async fn send_transaction(
@@ -34,8 +36,14 @@ impl SolanaHelper {
     ) -> anyhow::Result<String> {
         let confirmed_commitment = CommitmentConfig::confirmed();
         let compute_budget = ComputeBudgetInstruction::set_compute_unit_limit(3_000_000);
+        let compute_unit_price = Self::compute_unit_price_micro_lamports()?;
         let recent_blockhash = rpc.get_latest_blockhash().await?;
         let mut tx_instructions = vec![compute_budget];
+        if let Some(compute_unit_price) = compute_unit_price {
+            tx_instructions.push(ComputeBudgetInstruction::set_compute_unit_price(
+                compute_unit_price,
+            ));
+        }
         tx_instructions.extend(instructions.into_iter().map(to_sdk_instruction));
         let message = v0::Message::try_compile(
             &signer.pubkey(),
@@ -75,7 +83,7 @@ impl SolanaHelper {
         let sig = Signature::from_str(signature)?;
         loop {
             let maybe_status = rpc
-                .get_signature_statuses(&[sig])
+                .get_signature_statuses_with_history(&[sig])
                 .await?
                 .value
                 .get(0)
@@ -92,11 +100,29 @@ impl SolanaHelper {
             count += 1;
             if count >= Self::CONFIRMATION_RETRIES {
                 return Err(anyhow!(
-                    "signature {signature} did not reach confirmed commitment after {} attempts",
-                    Self::CONFIRMATION_RETRIES
+                    "signature {signature} did not reach confirmed commitment after {} attempts over roughly {} seconds",
+                    Self::CONFIRMATION_RETRIES,
+                    u64::from(Self::CONFIRMATION_RETRIES)
+                        * Self::CONFIRMATION_POLL_INTERVAL_MS
+                        / 1_000
                 ));
             }
             sleep(Duration::from_millis(Self::CONFIRMATION_POLL_INTERVAL_MS)).await;
         }
+    }
+
+    /// Loads the configured compute-unit price for priority fees.
+    fn compute_unit_price_micro_lamports() -> anyhow::Result<Option<u64>> {
+        let raw_value = env::var(Self::COMPUTE_UNIT_PRICE_ENV)
+            .unwrap_or_else(|_| Self::DEFAULT_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS.to_string());
+        let trimmed_value = raw_value.trim();
+        let price = trimmed_value.parse::<u64>().map_err(|error| {
+            anyhow!(
+                "invalid {} value {trimmed_value:?}: {error}",
+                Self::COMPUTE_UNIT_PRICE_ENV
+            )
+        })?;
+
+        Ok((price > 0).then_some(price))
     }
 }
