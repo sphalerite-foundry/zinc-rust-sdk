@@ -955,12 +955,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cargo-husky"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b02b629252fe8ef6460461409564e2c21d0c8e77e0944f3d189ff06c4e932ad"
-
-[[package]]
 name = "cargo_toml"
 version = "0.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8393,7 +8387,6 @@ dependencies = [
  "anyhow",
  "arcium-client",
  "borsh 1.6.1",
- "cargo-husky",
  "num-derive",
  "num-traits",
  "solana-account 3.4.0",

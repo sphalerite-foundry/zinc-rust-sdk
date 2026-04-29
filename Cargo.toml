@@ -20,7 +20,7 @@ fetch = ["dep:solana-account", "dep:solana-rpc-client"]
 [dependencies]
 anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
 anyhow = { version = "1.0.102" }
-arcium-client = { version = "0.9.2", default-features = false }
+arcium-client = { version = "0.9.7", default-features = false }
 borsh = { version = "1.6.0", features = ["derive"] }
 num-derive = { version = "0.4.2" }
 num-traits = { version = "0.2.19" }
@@ -43,8 +43,3 @@ solana-system-interface = { version = "3.1.0" }
 spl-token = { version = "8.0.0" }
 thiserror = { version = "2.0.18" }
 tokio = { version = "1.50.0", features = ["time"] }
-
-[dev-dependencies.cargo-husky]
-version = "1.5.0"
-default-features = false
-features = ["user-hooks"]
