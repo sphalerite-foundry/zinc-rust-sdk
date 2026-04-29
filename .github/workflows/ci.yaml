@@ -18,6 +18,7 @@ permissions:
 
 env:
   CARGO_INCREMENTAL: 0
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
   RUST_VERSION: "1.89.0"
 
 jobs:
@@ -32,6 +33,9 @@ jobs:
           toolchain: ${{ env.RUST_VERSION }}
           components: rustfmt,clippy
 
+      - name: Install sccache
+        uses: ./.github/actions/install-sccache
+
       - uses: Swatinem/rust-cache@v2
 
       - run: cargo fmt --all -- --check
@@ -40,3 +44,7 @@ jobs:
       - run: cargo check --all-targets --features fetch
       - run: cargo clippy --all-targets --all-features -- -D warnings
       - run: cargo test --all-targets --all-features
+
+      - name: Show sccache stats
+        if: always()
+        run: sccache --show-stats || true
