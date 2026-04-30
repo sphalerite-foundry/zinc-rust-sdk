@@ -16,6 +16,8 @@ pub struct RoundWildcatEntryRange {
     pub miner: Address,
     /// Player wallet that owns the miner.
     pub player: Address,
+    /// Net deploy amount used to keep the bounded Wildcat candidate set deterministic.
+    pub deploy_amount: u64,
     /// First weighted ticket index owned by the winner, inclusive.
     pub start: u64,
     /// First weighted ticket index after the winner's range, exclusive.

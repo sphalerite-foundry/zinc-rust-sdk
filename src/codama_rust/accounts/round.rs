@@ -42,6 +42,8 @@ pub struct Round {
     pub number_of_players: u64,
     /// Number of players already processed by batch settlement.
     pub settled_miner_count: u64,
+    /// Number of queued settlement batch callbacks that have not landed yet.
+    pub pending_settlement_batch_callbacks: u64,
     /// Public random value revealed during settlement, absent beforehand.
     pub rand: Option<u64>,
     /// ZINC Bonanza payout reserved for this round's winners, if the stockpile resolved here.
