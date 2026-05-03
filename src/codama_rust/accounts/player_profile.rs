@@ -36,6 +36,8 @@ pub struct PlayerProfile {
     pub total_affiliate_pay_lamports: u64,
     /// Lifetime stockpile bricks earned from streak and hidden-bonus accrual, in `x10k` units.
     pub lifetime_stockpile_bricks_earned_x10k: u64,
+    /// Lifetime stockpile bricks earned from staking-yield claims, in `x10k` units.
+    pub lifetime_staking_stockpile_bricks_earned_x10k: u64,
     /// Lifetime stockpile bricks earned from deploy streaks, in `x10k` units.
     pub lifetime_streak_stockpile_bricks_earned_x10k: u64,
     /// Lifetime stockpile bricks earned from hidden settlement bonuses, in `x10k` units.

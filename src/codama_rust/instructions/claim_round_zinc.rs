@@ -8,16 +8,18 @@
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
-pub const CLAIM_ROUND_DISCRIMINATOR: [u8; 8] = [180, 73, 23, 99, 186, 205, 14, 200];
+pub const CLAIM_ROUND_ZINC_DISCRIMINATOR: [u8; 8] = [239, 212, 229, 179, 158, 191, 185, 253];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct ClaimRound {
+pub struct ClaimRoundZinc {
     /// Signer that submits the claim transaction and pays ATA rent if needed.
     pub signer: solana_address::Address,
-    /// Settled round whose payouts are being claimed.
+    /// Settled round whose ZINC payouts are being claimed.
     pub round: solana_address::Address,
-    /// Per-player round position that tracks winning stake and claim status.
+    /// Global config containing the live ZINC claim fee.
+    pub config: solana_address::Address,
+    /// Per-player round position that tracks winning stake and split claim status.
     pub miner: solana_address::Address,
 
     pub player: solana_address::Address,
@@ -39,7 +41,7 @@ pub struct ClaimRound {
     pub system_program: solana_address::Address,
 }
 
-impl ClaimRound {
+impl ClaimRoundZinc {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(&[])
     }
@@ -49,9 +51,13 @@ impl ClaimRound {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new(self.round, false));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.config,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new(self.miner, false));
         accounts.push(solana_instruction::AccountMeta::new(self.player, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -87,7 +93,7 @@ impl ClaimRound {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = ClaimRoundInstructionData::new().try_to_vec().unwrap();
+        let data = ClaimRoundZincInstructionData::new().try_to_vec().unwrap();
 
         solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
@@ -98,14 +104,14 @@ impl ClaimRound {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct ClaimRoundInstructionData {
+pub struct ClaimRoundZincInstructionData {
     discriminator: [u8; 8],
 }
 
-impl ClaimRoundInstructionData {
+impl ClaimRoundZincInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [180, 73, 23, 99, 186, 205, 14, 200],
+            discriminator: [239, 212, 229, 179, 158, 191, 185, 253],
         }
     }
 
@@ -114,32 +120,34 @@ impl ClaimRoundInstructionData {
     }
 }
 
-impl Default for ClaimRoundInstructionData {
+impl Default for ClaimRoundZincInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Instruction builder for `ClaimRound`.
+/// Instruction builder for `ClaimRoundZinc`.
 ///
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` signer
 ///   1. `[writable]` round
-///   2. `[writable]` miner
-///   3. `[writable]` player
-///   4. `[]` treasury
-///   5. `[]` zinc_mint
-///   6. `[writable]` round_zinc_payout_token_account
-///   7. `[writable]` bonanza_token_account
-///   8. `[writable]` player_zinc_token_account
-///   9. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
-///   10. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   11. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   2. `[]` config
+///   3. `[writable]` miner
+///   4. `[writable]` player
+///   5. `[]` treasury
+///   6. `[]` zinc_mint
+///   7. `[writable]` round_zinc_payout_token_account
+///   8. `[writable]` bonanza_token_account
+///   9. `[writable]` player_zinc_token_account
+///   10. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   11. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   12. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
-pub struct ClaimRoundBuilder {
+pub struct ClaimRoundZincBuilder {
     signer: Option<solana_address::Address>,
     round: Option<solana_address::Address>,
+    config: Option<solana_address::Address>,
     miner: Option<solana_address::Address>,
     player: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
@@ -153,7 +161,7 @@ pub struct ClaimRoundBuilder {
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl ClaimRoundBuilder {
+impl ClaimRoundZincBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -163,13 +171,19 @@ impl ClaimRoundBuilder {
         self.signer = Some(signer);
         self
     }
-    /// Settled round whose payouts are being claimed.
+    /// Settled round whose ZINC payouts are being claimed.
     #[inline(always)]
     pub fn round(&mut self, round: solana_address::Address) -> &mut Self {
         self.round = Some(round);
         self
     }
-    /// Per-player round position that tracks winning stake and claim status.
+    /// Global config containing the live ZINC claim fee.
+    #[inline(always)]
+    pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
+        self.config = Some(config);
+        self
+    }
+    /// Per-player round position that tracks winning stake and split claim status.
     #[inline(always)]
     pub fn miner(&mut self, miner: solana_address::Address) -> &mut Self {
         self.miner = Some(miner);
@@ -259,9 +273,10 @@ impl ClaimRoundBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = ClaimRound {
+        let accounts = ClaimRoundZinc {
             signer: self.signer.expect("signer is not set"),
             round: self.round.expect("round is not set"),
+            config: self.config.expect("config is not set"),
             miner: self.miner.expect("miner is not set"),
             player: self.player.expect("player is not set"),
             treasury: self.treasury.expect("treasury is not set"),
@@ -290,13 +305,15 @@ impl ClaimRoundBuilder {
     }
 }
 
-/// `claim_round` CPI accounts.
-pub struct ClaimRoundCpiAccounts<'a, 'b> {
+/// `claim_round_zinc` CPI accounts.
+pub struct ClaimRoundZincCpiAccounts<'a, 'b> {
     /// Signer that submits the claim transaction and pays ATA rent if needed.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
-    /// Settled round whose payouts are being claimed.
+    /// Settled round whose ZINC payouts are being claimed.
     pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Per-player round position that tracks winning stake and claim status.
+    /// Global config containing the live ZINC claim fee.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
+    /// Per-player round position that tracks winning stake and split claim status.
     pub miner: &'b solana_account_info::AccountInfo<'a>,
 
     pub player: &'b solana_account_info::AccountInfo<'a>,
@@ -318,15 +335,17 @@ pub struct ClaimRoundCpiAccounts<'a, 'b> {
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `claim_round` CPI instruction.
-pub struct ClaimRoundCpi<'a, 'b> {
+/// `claim_round_zinc` CPI instruction.
+pub struct ClaimRoundZincCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// Signer that submits the claim transaction and pays ATA rent if needed.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
-    /// Settled round whose payouts are being claimed.
+    /// Settled round whose ZINC payouts are being claimed.
     pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Per-player round position that tracks winning stake and claim status.
+    /// Global config containing the live ZINC claim fee.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
+    /// Per-player round position that tracks winning stake and split claim status.
     pub miner: &'b solana_account_info::AccountInfo<'a>,
 
     pub player: &'b solana_account_info::AccountInfo<'a>,
@@ -348,15 +367,16 @@ pub struct ClaimRoundCpi<'a, 'b> {
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-impl<'a, 'b> ClaimRoundCpi<'a, 'b> {
+impl<'a, 'b> ClaimRoundZincCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: ClaimRoundCpiAccounts<'a, 'b>,
+        accounts: ClaimRoundZincCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
             signer: accounts.signer,
             round: accounts.round,
+            config: accounts.config,
             miner: accounts.miner,
             player: accounts.player,
             treasury: accounts.treasury,
@@ -392,9 +412,13 @@ impl<'a, 'b> ClaimRoundCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.config.key,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new(*self.miner.key, false));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.player.key,
@@ -439,17 +463,18 @@ impl<'a, 'b> ClaimRoundCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = ClaimRoundInstructionData::new().try_to_vec().unwrap();
+        let data = ClaimRoundZincInstructionData::new().try_to_vec().unwrap();
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(13 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(14 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.round.clone());
+        account_infos.push(self.config.clone());
         account_infos.push(self.miner.clone());
         account_infos.push(self.player.clone());
         account_infos.push(self.treasury.clone());
@@ -472,33 +497,35 @@ impl<'a, 'b> ClaimRoundCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `ClaimRound` via CPI.
+/// Instruction builder for `ClaimRoundZinc` via CPI.
 ///
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` signer
 ///   1. `[writable]` round
-///   2. `[writable]` miner
-///   3. `[writable]` player
-///   4. `[]` treasury
-///   5. `[]` zinc_mint
-///   6. `[writable]` round_zinc_payout_token_account
-///   7. `[writable]` bonanza_token_account
-///   8. `[writable]` player_zinc_token_account
-///   9. `[]` associated_token_program
-///   10. `[]` token_program
-///   11. `[]` system_program
+///   2. `[]` config
+///   3. `[writable]` miner
+///   4. `[writable]` player
+///   5. `[]` treasury
+///   6. `[]` zinc_mint
+///   7. `[writable]` round_zinc_payout_token_account
+///   8. `[writable]` bonanza_token_account
+///   9. `[writable]` player_zinc_token_account
+///   10. `[]` associated_token_program
+///   11. `[]` token_program
+///   12. `[]` system_program
 #[derive(Clone, Debug)]
-pub struct ClaimRoundCpiBuilder<'a, 'b> {
-    instruction: Box<ClaimRoundCpiBuilderInstruction<'a, 'b>>,
+pub struct ClaimRoundZincCpiBuilder<'a, 'b> {
+    instruction: Box<ClaimRoundZincCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> ClaimRoundCpiBuilder<'a, 'b> {
+impl<'a, 'b> ClaimRoundZincCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(ClaimRoundCpiBuilderInstruction {
+        let instruction = Box::new(ClaimRoundZincCpiBuilderInstruction {
             __program: program,
             signer: None,
             round: None,
+            config: None,
             miner: None,
             player: None,
             treasury: None,
@@ -519,13 +546,19 @@ impl<'a, 'b> ClaimRoundCpiBuilder<'a, 'b> {
         self.instruction.signer = Some(signer);
         self
     }
-    /// Settled round whose payouts are being claimed.
+    /// Settled round whose ZINC payouts are being claimed.
     #[inline(always)]
     pub fn round(&mut self, round: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.round = Some(round);
         self
     }
-    /// Per-player round position that tracks winning stake and claim status.
+    /// Global config containing the live ZINC claim fee.
+    #[inline(always)]
+    pub fn config(&mut self, config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.config = Some(config);
+        self
+    }
+    /// Per-player round position that tracks winning stake and split claim status.
     #[inline(always)]
     pub fn miner(&mut self, miner: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.miner = Some(miner);
@@ -635,12 +668,14 @@ impl<'a, 'b> ClaimRoundCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let instruction = ClaimRoundCpi {
+        let instruction = ClaimRoundZincCpi {
             __program: self.instruction.__program,
 
             signer: self.instruction.signer.expect("signer is not set"),
 
             round: self.instruction.round.expect("round is not set"),
+
+            config: self.instruction.config.expect("config is not set"),
 
             miner: self.instruction.miner.expect("miner is not set"),
 
@@ -688,10 +723,11 @@ impl<'a, 'b> ClaimRoundCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct ClaimRoundCpiBuilderInstruction<'a, 'b> {
+struct ClaimRoundZincCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     signer: Option<&'b solana_account_info::AccountInfo<'a>>,
     round: Option<&'b solana_account_info::AccountInfo<'a>>,
+    config: Option<&'b solana_account_info::AccountInfo<'a>>,
     miner: Option<&'b solana_account_info::AccountInfo<'a>>,
     player: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,

@@ -23,6 +23,18 @@ pub struct JoinStockpile {
     pub stockpile: solana_address::Address,
     /// Lifetime profile storing historical and spendable stockpile bricks.
     pub player_profile: solana_address::Address,
+    /// Treasury account that owns global ZINC and staking accounting.
+    pub treasury: solana_address::Address,
+    /// Protocol ZINC mint burned by the stockpile entry sink.
+    pub zinc_mint: solana_address::Address,
+    /// Live stockpile ZINC vault used to price the entry fee.
+    pub stockpile_token_account: solana_address::Address,
+    /// Signer-owned ZINC token account that funds the entry fee.
+    pub signer_zinc_token_account: solana_address::Address,
+    /// Treasury-owned reward vault that receives the staker share of the entry fee.
+    pub staking_reward_token_account: solana_address::Address,
+    /// SPL Token Program that owns the ZINC mint and vaults.
+    pub token_program: solana_address::Address,
 
     pub system_program: solana_address::Address,
 }
@@ -41,7 +53,7 @@ impl JoinStockpile {
         args: JoinStockpileInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -53,6 +65,24 @@ impl JoinStockpile {
         accounts.push(solana_instruction::AccountMeta::new(self.stockpile, false));
         accounts.push(solana_instruction::AccountMeta::new(
             self.player_profile,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(self.treasury, false));
+        accounts.push(solana_instruction::AccountMeta::new(self.zinc_mint, false));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.stockpile_token_account,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.signer_zinc_token_account,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.staking_reward_token_account,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.token_program,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -115,7 +145,13 @@ impl JoinStockpileInstructionArgs {
 ///   2. `[]` board
 ///   3. `[writable]` stockpile
 ///   4. `[writable]` player_profile
-///   5. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   5. `[writable]` treasury
+///   6. `[writable]` zinc_mint
+///   7. `[writable]` stockpile_token_account
+///   8. `[writable]` signer_zinc_token_account
+///   9. `[writable]` staking_reward_token_account
+///   10. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   11. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct JoinStockpileBuilder {
     signer: Option<solana_address::Address>,
@@ -123,6 +159,12 @@ pub struct JoinStockpileBuilder {
     board: Option<solana_address::Address>,
     stockpile: Option<solana_address::Address>,
     player_profile: Option<solana_address::Address>,
+    treasury: Option<solana_address::Address>,
+    zinc_mint: Option<solana_address::Address>,
+    stockpile_token_account: Option<solana_address::Address>,
+    signer_zinc_token_account: Option<solana_address::Address>,
+    staking_reward_token_account: Option<solana_address::Address>,
+    token_program: Option<solana_address::Address>,
     system_program: Option<solana_address::Address>,
     bricks_x10k: Option<u64>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
@@ -162,6 +204,52 @@ impl JoinStockpileBuilder {
         self.player_profile = Some(player_profile);
         self
     }
+    /// Treasury account that owns global ZINC and staking accounting.
+    #[inline(always)]
+    pub fn treasury(&mut self, treasury: solana_address::Address) -> &mut Self {
+        self.treasury = Some(treasury);
+        self
+    }
+    /// Protocol ZINC mint burned by the stockpile entry sink.
+    #[inline(always)]
+    pub fn zinc_mint(&mut self, zinc_mint: solana_address::Address) -> &mut Self {
+        self.zinc_mint = Some(zinc_mint);
+        self
+    }
+    /// Live stockpile ZINC vault used to price the entry fee.
+    #[inline(always)]
+    pub fn stockpile_token_account(
+        &mut self,
+        stockpile_token_account: solana_address::Address,
+    ) -> &mut Self {
+        self.stockpile_token_account = Some(stockpile_token_account);
+        self
+    }
+    /// Signer-owned ZINC token account that funds the entry fee.
+    #[inline(always)]
+    pub fn signer_zinc_token_account(
+        &mut self,
+        signer_zinc_token_account: solana_address::Address,
+    ) -> &mut Self {
+        self.signer_zinc_token_account = Some(signer_zinc_token_account);
+        self
+    }
+    /// Treasury-owned reward vault that receives the staker share of the entry fee.
+    #[inline(always)]
+    pub fn staking_reward_token_account(
+        &mut self,
+        staking_reward_token_account: solana_address::Address,
+    ) -> &mut Self {
+        self.staking_reward_token_account = Some(staking_reward_token_account);
+        self
+    }
+    /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
+    /// SPL Token Program that owns the ZINC mint and vaults.
+    #[inline(always)]
+    pub fn token_program(&mut self, token_program: solana_address::Address) -> &mut Self {
+        self.token_program = Some(token_program);
+        self
+    }
     /// `[optional account, default to '11111111111111111111111111111111']`
     #[inline(always)]
     pub fn system_program(&mut self, system_program: solana_address::Address) -> &mut Self {
@@ -196,6 +284,20 @@ impl JoinStockpileBuilder {
             board: self.board.expect("board is not set"),
             stockpile: self.stockpile.expect("stockpile is not set"),
             player_profile: self.player_profile.expect("player_profile is not set"),
+            treasury: self.treasury.expect("treasury is not set"),
+            zinc_mint: self.zinc_mint.expect("zinc_mint is not set"),
+            stockpile_token_account: self
+                .stockpile_token_account
+                .expect("stockpile_token_account is not set"),
+            signer_zinc_token_account: self
+                .signer_zinc_token_account
+                .expect("signer_zinc_token_account is not set"),
+            staking_reward_token_account: self
+                .staking_reward_token_account
+                .expect("staking_reward_token_account is not set"),
+            token_program: self.token_program.unwrap_or(solana_address::address!(
+                "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+            )),
             system_program: self
                 .system_program
                 .unwrap_or(solana_address::address!("11111111111111111111111111111111")),
@@ -220,6 +322,18 @@ pub struct JoinStockpileCpiAccounts<'a, 'b> {
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
     /// Lifetime profile storing historical and spendable stockpile bricks.
     pub player_profile: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury account that owns global ZINC and staking accounting.
+    pub treasury: &'b solana_account_info::AccountInfo<'a>,
+    /// Protocol ZINC mint burned by the stockpile entry sink.
+    pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
+    /// Live stockpile ZINC vault used to price the entry fee.
+    pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Signer-owned ZINC token account that funds the entry fee.
+    pub signer_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned reward vault that receives the staker share of the entry fee.
+    pub staking_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// SPL Token Program that owns the ZINC mint and vaults.
+    pub token_program: &'b solana_account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
@@ -238,6 +352,18 @@ pub struct JoinStockpileCpi<'a, 'b> {
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
     /// Lifetime profile storing historical and spendable stockpile bricks.
     pub player_profile: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury account that owns global ZINC and staking accounting.
+    pub treasury: &'b solana_account_info::AccountInfo<'a>,
+    /// Protocol ZINC mint burned by the stockpile entry sink.
+    pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
+    /// Live stockpile ZINC vault used to price the entry fee.
+    pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Signer-owned ZINC token account that funds the entry fee.
+    pub signer_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned reward vault that receives the staker share of the entry fee.
+    pub staking_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// SPL Token Program that owns the ZINC mint and vaults.
+    pub token_program: &'b solana_account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
@@ -257,6 +383,12 @@ impl<'a, 'b> JoinStockpileCpi<'a, 'b> {
             board: accounts.board,
             stockpile: accounts.stockpile,
             player_profile: accounts.player_profile,
+            treasury: accounts.treasury,
+            zinc_mint: accounts.zinc_mint,
+            stockpile_token_account: accounts.stockpile_token_account,
+            signer_zinc_token_account: accounts.signer_zinc_token_account,
+            staking_reward_token_account: accounts.staking_reward_token_account,
+            token_program: accounts.token_program,
             system_program: accounts.system_program,
             __args: args,
         }
@@ -284,7 +416,7 @@ impl<'a, 'b> JoinStockpileCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -300,6 +432,30 @@ impl<'a, 'b> JoinStockpileCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.player_profile.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.treasury.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.zinc_mint.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.stockpile_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.signer_zinc_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.staking_reward_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.token_program.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -322,13 +478,19 @@ impl<'a, 'b> JoinStockpileCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(7 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(13 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.board.clone());
         account_infos.push(self.stockpile.clone());
         account_infos.push(self.player_profile.clone());
+        account_infos.push(self.treasury.clone());
+        account_infos.push(self.zinc_mint.clone());
+        account_infos.push(self.stockpile_token_account.clone());
+        account_infos.push(self.signer_zinc_token_account.clone());
+        account_infos.push(self.staking_reward_token_account.clone());
+        account_infos.push(self.token_program.clone());
         account_infos.push(self.system_program.clone());
         remaining_accounts
             .iter()
@@ -351,7 +513,13 @@ impl<'a, 'b> JoinStockpileCpi<'a, 'b> {
 ///   2. `[]` board
 ///   3. `[writable]` stockpile
 ///   4. `[writable]` player_profile
-///   5. `[]` system_program
+///   5. `[writable]` treasury
+///   6. `[writable]` zinc_mint
+///   7. `[writable]` stockpile_token_account
+///   8. `[writable]` signer_zinc_token_account
+///   9. `[writable]` staking_reward_token_account
+///   10. `[]` token_program
+///   11. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct JoinStockpileCpiBuilder<'a, 'b> {
     instruction: Box<JoinStockpileCpiBuilderInstruction<'a, 'b>>,
@@ -366,6 +534,12 @@ impl<'a, 'b> JoinStockpileCpiBuilder<'a, 'b> {
             board: None,
             stockpile: None,
             player_profile: None,
+            treasury: None,
+            zinc_mint: None,
+            stockpile_token_account: None,
+            signer_zinc_token_account: None,
+            staking_reward_token_account: None,
+            token_program: None,
             system_program: None,
             bricks_x10k: None,
             __remaining_accounts: Vec::new(),
@@ -403,6 +577,54 @@ impl<'a, 'b> JoinStockpileCpiBuilder<'a, 'b> {
         player_profile: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.player_profile = Some(player_profile);
+        self
+    }
+    /// Treasury account that owns global ZINC and staking accounting.
+    #[inline(always)]
+    pub fn treasury(&mut self, treasury: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.treasury = Some(treasury);
+        self
+    }
+    /// Protocol ZINC mint burned by the stockpile entry sink.
+    #[inline(always)]
+    pub fn zinc_mint(&mut self, zinc_mint: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.zinc_mint = Some(zinc_mint);
+        self
+    }
+    /// Live stockpile ZINC vault used to price the entry fee.
+    #[inline(always)]
+    pub fn stockpile_token_account(
+        &mut self,
+        stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.stockpile_token_account = Some(stockpile_token_account);
+        self
+    }
+    /// Signer-owned ZINC token account that funds the entry fee.
+    #[inline(always)]
+    pub fn signer_zinc_token_account(
+        &mut self,
+        signer_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.signer_zinc_token_account = Some(signer_zinc_token_account);
+        self
+    }
+    /// Treasury-owned reward vault that receives the staker share of the entry fee.
+    #[inline(always)]
+    pub fn staking_reward_token_account(
+        &mut self,
+        staking_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.staking_reward_token_account = Some(staking_reward_token_account);
+        self
+    }
+    /// SPL Token Program that owns the ZINC mint and vaults.
+    #[inline(always)]
+    pub fn token_program(
+        &mut self,
+        token_program: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.token_program = Some(token_program);
         self
     }
     #[inline(always)]
@@ -475,6 +697,30 @@ impl<'a, 'b> JoinStockpileCpiBuilder<'a, 'b> {
                 .player_profile
                 .expect("player_profile is not set"),
 
+            treasury: self.instruction.treasury.expect("treasury is not set"),
+
+            zinc_mint: self.instruction.zinc_mint.expect("zinc_mint is not set"),
+
+            stockpile_token_account: self
+                .instruction
+                .stockpile_token_account
+                .expect("stockpile_token_account is not set"),
+
+            signer_zinc_token_account: self
+                .instruction
+                .signer_zinc_token_account
+                .expect("signer_zinc_token_account is not set"),
+
+            staking_reward_token_account: self
+                .instruction
+                .staking_reward_token_account
+                .expect("staking_reward_token_account is not set"),
+
+            token_program: self
+                .instruction
+                .token_program
+                .expect("token_program is not set"),
+
             system_program: self
                 .instruction
                 .system_program
@@ -496,6 +742,12 @@ struct JoinStockpileCpiBuilderInstruction<'a, 'b> {
     board: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
     player_profile: Option<&'b solana_account_info::AccountInfo<'a>>,
+    treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
+    zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
+    stockpile_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    signer_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    staking_reward_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     bricks_x10k: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.

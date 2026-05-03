@@ -70,6 +70,14 @@ pub struct Round {
     pub wildcat_selection_complete: bool,
     /// True once the selected Wildcat payout has been paid or the draw needed no transfer.
     pub wildcat_claimed: bool,
+    /// Unclaimed direct-winner principal still participating in direct claim-fee redistribution.
+    pub direct_zinc_unclaimed_principal: u64,
+    /// Unclaimed Bonanza principal still participating in Bonanza claim-fee redistribution.
+    pub bonanza_zinc_unclaimed_principal: u64,
+    /// Cumulative direct-winner claim-fee factor applied to later direct principal claims.
+    pub direct_zinc_claim_fee_factor: u128,
+    /// Cumulative Bonanza claim-fee factor applied to later Bonanza principal claims.
+    pub bonanza_zinc_claim_fee_factor: u128,
     /// Weighted ticket ranges for settled winners eligible for Wildcat.
     pub wildcat_entries: Vec<RoundWildcatEntryRange>,
 }

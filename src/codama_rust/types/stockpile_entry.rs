@@ -9,13 +9,11 @@ use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 use solana_address::Address;
 
-/// One inclusive-exclusive ticket range owned by a joined stockpile player.
+/// One stockpile player entry and its committed brick weight.
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct StockpileEntryRange {
-    /// Joined player that owns this ticket span.
+pub struct StockpileEntry {
+    /// Joined player that owns this entry.
     pub player: Address,
-    /// First ticket index owned by the player, inclusive.
-    pub start: u64,
-    /// First ticket index after the player's span, exclusive.
-    pub end: u64,
+    /// Stockpile bricks committed by the player in `x10k` units.
+    pub bricks_x10k: u64,
 }

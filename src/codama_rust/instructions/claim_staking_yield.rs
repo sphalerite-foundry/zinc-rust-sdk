@@ -15,12 +15,16 @@ pub const CLAIM_STAKING_YIELD_DISCRIMINATOR: [u8; 8] = [105, 22, 90, 204, 157, 1
 pub struct ClaimStakingYield {
     /// Wallet that owns the stake position and receives the claimed yield.
     pub signer: solana_address::Address,
+    /// Protocol config containing the staking-yield brick conversion rate.
+    pub config: solana_address::Address,
     /// Treasury PDA that owns the reward vault and cumulative reward factor.
     pub treasury: solana_address::Address,
     /// Protocol ZINC mint.
     pub zinc_mint: solana_address::Address,
     /// Per-user stake position that settles and claims cumulative rewards.
     pub stake_position: solana_address::Address,
+
+    pub player_profile: solana_address::Address,
     /// Treasury-owned reward vault that funds staker-yield claims.
     pub staking_reward_token_account: solana_address::Address,
     /// Signer-owned destination account for the claimed ZINC yield.
@@ -43,8 +47,12 @@ impl ClaimStakingYield {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.config,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new(self.treasury, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.zinc_mint,
@@ -52,6 +60,10 @@ impl ClaimStakingYield {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             self.stake_position,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.player_profile,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -115,20 +127,24 @@ impl Default for ClaimStakingYieldInstructionData {
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` signer
-///   1. `[writable]` treasury
-///   2. `[]` zinc_mint
-///   3. `[writable]` stake_position
-///   4. `[writable]` staking_reward_token_account
-///   5. `[writable]` signer_zinc_token_account
-///   6. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
-///   7. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   8. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   1. `[]` config
+///   2. `[writable]` treasury
+///   3. `[]` zinc_mint
+///   4. `[writable]` stake_position
+///   5. `[writable]` player_profile
+///   6. `[writable]` staking_reward_token_account
+///   7. `[writable]` signer_zinc_token_account
+///   8. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   9. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   10. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct ClaimStakingYieldBuilder {
     signer: Option<solana_address::Address>,
+    config: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
     zinc_mint: Option<solana_address::Address>,
     stake_position: Option<solana_address::Address>,
+    player_profile: Option<solana_address::Address>,
     staking_reward_token_account: Option<solana_address::Address>,
     signer_zinc_token_account: Option<solana_address::Address>,
     associated_token_program: Option<solana_address::Address>,
@@ -147,6 +163,12 @@ impl ClaimStakingYieldBuilder {
         self.signer = Some(signer);
         self
     }
+    /// Protocol config containing the staking-yield brick conversion rate.
+    #[inline(always)]
+    pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
+        self.config = Some(config);
+        self
+    }
     /// Treasury PDA that owns the reward vault and cumulative reward factor.
     #[inline(always)]
     pub fn treasury(&mut self, treasury: solana_address::Address) -> &mut Self {
@@ -163,6 +185,11 @@ impl ClaimStakingYieldBuilder {
     #[inline(always)]
     pub fn stake_position(&mut self, stake_position: solana_address::Address) -> &mut Self {
         self.stake_position = Some(stake_position);
+        self
+    }
+    #[inline(always)]
+    pub fn player_profile(&mut self, player_profile: solana_address::Address) -> &mut Self {
+        self.player_profile = Some(player_profile);
         self
     }
     /// Treasury-owned reward vault that funds staker-yield claims.
@@ -224,9 +251,11 @@ impl ClaimStakingYieldBuilder {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         let accounts = ClaimStakingYield {
             signer: self.signer.expect("signer is not set"),
+            config: self.config.expect("config is not set"),
             treasury: self.treasury.expect("treasury is not set"),
             zinc_mint: self.zinc_mint.expect("zinc_mint is not set"),
             stake_position: self.stake_position.expect("stake_position is not set"),
+            player_profile: self.player_profile.expect("player_profile is not set"),
             staking_reward_token_account: self
                 .staking_reward_token_account
                 .expect("staking_reward_token_account is not set"),
@@ -252,12 +281,16 @@ impl ClaimStakingYieldBuilder {
 pub struct ClaimStakingYieldCpiAccounts<'a, 'b> {
     /// Wallet that owns the stake position and receives the claimed yield.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
+    /// Protocol config containing the staking-yield brick conversion rate.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that owns the reward vault and cumulative reward factor.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Protocol ZINC mint.
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
     /// Per-user stake position that settles and claims cumulative rewards.
     pub stake_position: &'b solana_account_info::AccountInfo<'a>,
+
+    pub player_profile: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury-owned reward vault that funds staker-yield claims.
     pub staking_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Signer-owned destination account for the claimed ZINC yield.
@@ -276,12 +309,16 @@ pub struct ClaimStakingYieldCpi<'a, 'b> {
     pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// Wallet that owns the stake position and receives the claimed yield.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
+    /// Protocol config containing the staking-yield brick conversion rate.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that owns the reward vault and cumulative reward factor.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Protocol ZINC mint.
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
     /// Per-user stake position that settles and claims cumulative rewards.
     pub stake_position: &'b solana_account_info::AccountInfo<'a>,
+
+    pub player_profile: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury-owned reward vault that funds staker-yield claims.
     pub staking_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Signer-owned destination account for the claimed ZINC yield.
@@ -302,9 +339,11 @@ impl<'a, 'b> ClaimStakingYieldCpi<'a, 'b> {
         Self {
             __program: program,
             signer: accounts.signer,
+            config: accounts.config,
             treasury: accounts.treasury,
             zinc_mint: accounts.zinc_mint,
             stake_position: accounts.stake_position,
+            player_profile: accounts.player_profile,
             staking_reward_token_account: accounts.staking_reward_token_account,
             signer_zinc_token_account: accounts.signer_zinc_token_account,
             associated_token_program: accounts.associated_token_program,
@@ -335,8 +374,12 @@ impl<'a, 'b> ClaimStakingYieldCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.config.key,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.treasury.key,
             false,
@@ -347,6 +390,10 @@ impl<'a, 'b> ClaimStakingYieldCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.stake_position.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.player_profile.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -385,12 +432,14 @@ impl<'a, 'b> ClaimStakingYieldCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(12 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
+        account_infos.push(self.config.clone());
         account_infos.push(self.treasury.clone());
         account_infos.push(self.zinc_mint.clone());
         account_infos.push(self.stake_position.clone());
+        account_infos.push(self.player_profile.clone());
         account_infos.push(self.staking_reward_token_account.clone());
         account_infos.push(self.signer_zinc_token_account.clone());
         account_infos.push(self.associated_token_program.clone());
@@ -413,14 +462,16 @@ impl<'a, 'b> ClaimStakingYieldCpi<'a, 'b> {
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` signer
-///   1. `[writable]` treasury
-///   2. `[]` zinc_mint
-///   3. `[writable]` stake_position
-///   4. `[writable]` staking_reward_token_account
-///   5. `[writable]` signer_zinc_token_account
-///   6. `[]` associated_token_program
-///   7. `[]` token_program
-///   8. `[]` system_program
+///   1. `[]` config
+///   2. `[writable]` treasury
+///   3. `[]` zinc_mint
+///   4. `[writable]` stake_position
+///   5. `[writable]` player_profile
+///   6. `[writable]` staking_reward_token_account
+///   7. `[writable]` signer_zinc_token_account
+///   8. `[]` associated_token_program
+///   9. `[]` token_program
+///   10. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct ClaimStakingYieldCpiBuilder<'a, 'b> {
     instruction: Box<ClaimStakingYieldCpiBuilderInstruction<'a, 'b>>,
@@ -431,9 +482,11 @@ impl<'a, 'b> ClaimStakingYieldCpiBuilder<'a, 'b> {
         let instruction = Box::new(ClaimStakingYieldCpiBuilderInstruction {
             __program: program,
             signer: None,
+            config: None,
             treasury: None,
             zinc_mint: None,
             stake_position: None,
+            player_profile: None,
             staking_reward_token_account: None,
             signer_zinc_token_account: None,
             associated_token_program: None,
@@ -447,6 +500,12 @@ impl<'a, 'b> ClaimStakingYieldCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn signer(&mut self, signer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.signer = Some(signer);
+        self
+    }
+    /// Protocol config containing the staking-yield brick conversion rate.
+    #[inline(always)]
+    pub fn config(&mut self, config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.config = Some(config);
         self
     }
     /// Treasury PDA that owns the reward vault and cumulative reward factor.
@@ -468,6 +527,14 @@ impl<'a, 'b> ClaimStakingYieldCpiBuilder<'a, 'b> {
         stake_position: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.stake_position = Some(stake_position);
+        self
+    }
+    #[inline(always)]
+    pub fn player_profile(
+        &mut self,
+        player_profile: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.player_profile = Some(player_profile);
         self
     }
     /// Treasury-owned reward vault that funds staker-yield claims.
@@ -552,6 +619,8 @@ impl<'a, 'b> ClaimStakingYieldCpiBuilder<'a, 'b> {
 
             signer: self.instruction.signer.expect("signer is not set"),
 
+            config: self.instruction.config.expect("config is not set"),
+
             treasury: self.instruction.treasury.expect("treasury is not set"),
 
             zinc_mint: self.instruction.zinc_mint.expect("zinc_mint is not set"),
@@ -560,6 +629,11 @@ impl<'a, 'b> ClaimStakingYieldCpiBuilder<'a, 'b> {
                 .instruction
                 .stake_position
                 .expect("stake_position is not set"),
+
+            player_profile: self
+                .instruction
+                .player_profile
+                .expect("player_profile is not set"),
 
             staking_reward_token_account: self
                 .instruction
@@ -597,9 +671,11 @@ impl<'a, 'b> ClaimStakingYieldCpiBuilder<'a, 'b> {
 struct ClaimStakingYieldCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     signer: Option<&'b solana_account_info::AccountInfo<'a>>,
+    config: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
     stake_position: Option<&'b solana_account_info::AccountInfo<'a>>,
+    player_profile: Option<&'b solana_account_info::AccountInfo<'a>>,
     staking_reward_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     signer_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,

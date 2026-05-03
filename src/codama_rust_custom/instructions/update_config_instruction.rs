@@ -23,6 +23,16 @@ pub struct UpdateConfigInstructionInputs {
     pub wildcat_winner_zinc_share_ppm: Option<u64>,
     /// Optional Bonanza roll modulo divisor; `1` makes every winner-positive round eligible.
     pub bonanza_hit_divisor: Option<u64>,
+    /// Optional ZINC fee skim for round winner claims, in basis points.
+    pub round_claim_zinc_fee_bps: Option<u64>,
+    /// Optional minimum ZINC fee required to enter one stockpile cycle, in mint base units.
+    pub stockpile_entry_min_zinc_fee: Option<u64>,
+    /// Optional stockpile entry fee as a share of the live stockpile ZINC pot, in basis points.
+    pub stockpile_entry_pot_fee_bps: Option<u64>,
+    /// Optional accepted-entry step multiplier for stockpile entry costs, in basis points.
+    pub stockpile_entry_step_bps: Option<u64>,
+    /// Optional staking brick issuance rate per claimed ZINC, in `x10k` units.
+    pub staking_bricks_per_zinc_x10k: Option<u64>,
     /// Optional toggle for affiliate withdrawals.
     pub affiliate_withdrawals_enabled: Option<bool>,
     /// Optional round duration in slots.
@@ -65,6 +75,11 @@ impl InstructionsHelper {
             wildcat_round_frequency,
             wildcat_winner_zinc_share_ppm,
             bonanza_hit_divisor,
+            round_claim_zinc_fee_bps,
+            stockpile_entry_min_zinc_fee,
+            stockpile_entry_pot_fee_bps,
+            stockpile_entry_step_bps,
+            staking_bricks_per_zinc_x10k,
             affiliate_withdrawals_enabled,
             round_duration_slots,
             stockpile_duration_slots,
@@ -108,6 +123,11 @@ impl InstructionsHelper {
             wildcat_round_frequency,
             wildcat_winner_zinc_share_ppm,
             bonanza_hit_divisor,
+            round_claim_zinc_fee_bps,
+            stockpile_entry_min_zinc_fee,
+            stockpile_entry_pot_fee_bps,
+            stockpile_entry_step_bps,
+            staking_bricks_per_zinc_x10k,
         })
     }
 }
