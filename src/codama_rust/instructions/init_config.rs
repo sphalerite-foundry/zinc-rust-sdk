@@ -35,6 +35,8 @@ pub struct InitConfig {
     pub staking_token_account: solana_address::Address,
     /// Dedicated reward vault that funds staker-yield claims.
     pub staking_reward_token_account: solana_address::Address,
+    /// Dedicated reward vault that funds aggregate round ZINC reward claims.
+    pub round_zinc_reward_token_account: solana_address::Address,
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
     pub stockpile_sol_vault: solana_address::Address,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
@@ -64,7 +66,7 @@ impl InitConfig {
         args: InitConfigInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(19 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(20 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.admin, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.crank, false,
@@ -94,6 +96,10 @@ impl InitConfig {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             self.staking_reward_token_account,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.round_zinc_reward_token_account,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -189,14 +195,15 @@ impl InitConfigInstructionArgs {
 ///   8. `[writable]` stockpile_token_account
 ///   9. `[writable]` staking_token_account
 ///   10. `[writable]` staking_reward_token_account
-///   11. `[writable]` stockpile_sol_vault
-///   12. `[writable]` buyback_sol_vault
-///   13. `[writable]` stockpile_extras
-///   14. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
-///   15. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   16. `[optional]` metadata_program (default to `metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`)
-///   17. `[optional]` rent (default to `SysvarRent111111111111111111111111111111111`)
-///   18. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   11. `[writable]` round_zinc_reward_token_account
+///   12. `[writable]` stockpile_sol_vault
+///   13. `[writable]` buyback_sol_vault
+///   14. `[writable]` stockpile_extras
+///   15. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   16. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   17. `[optional]` metadata_program (default to `metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`)
+///   18. `[optional]` rent (default to `SysvarRent111111111111111111111111111111111`)
+///   19. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct InitConfigBuilder {
     admin: Option<solana_address::Address>,
@@ -210,6 +217,7 @@ pub struct InitConfigBuilder {
     stockpile_token_account: Option<solana_address::Address>,
     staking_token_account: Option<solana_address::Address>,
     staking_reward_token_account: Option<solana_address::Address>,
+    round_zinc_reward_token_account: Option<solana_address::Address>,
     stockpile_sol_vault: Option<solana_address::Address>,
     buyback_sol_vault: Option<solana_address::Address>,
     stockpile_extras: Option<solana_address::Address>,
@@ -300,6 +308,15 @@ impl InitConfigBuilder {
         staking_reward_token_account: solana_address::Address,
     ) -> &mut Self {
         self.staking_reward_token_account = Some(staking_reward_token_account);
+        self
+    }
+    /// Dedicated reward vault that funds aggregate round ZINC reward claims.
+    #[inline(always)]
+    pub fn round_zinc_reward_token_account(
+        &mut self,
+        round_zinc_reward_token_account: solana_address::Address,
+    ) -> &mut Self {
+        self.round_zinc_reward_token_account = Some(round_zinc_reward_token_account);
         self
     }
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
@@ -405,6 +422,9 @@ impl InitConfigBuilder {
             staking_reward_token_account: self
                 .staking_reward_token_account
                 .expect("staking_reward_token_account is not set"),
+            round_zinc_reward_token_account: self
+                .round_zinc_reward_token_account
+                .expect("round_zinc_reward_token_account is not set"),
             stockpile_sol_vault: self
                 .stockpile_sol_vault
                 .expect("stockpile_sol_vault is not set"),
@@ -459,6 +479,8 @@ pub struct InitConfigCpiAccounts<'a, 'b> {
     pub staking_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated reward vault that funds staker-yield claims.
     pub staking_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Dedicated reward vault that funds aggregate round ZINC reward claims.
+    pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
@@ -503,6 +525,8 @@ pub struct InitConfigCpi<'a, 'b> {
     pub staking_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated reward vault that funds staker-yield claims.
     pub staking_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Dedicated reward vault that funds aggregate round ZINC reward claims.
+    pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
@@ -542,6 +566,7 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
             stockpile_token_account: accounts.stockpile_token_account,
             staking_token_account: accounts.staking_token_account,
             staking_reward_token_account: accounts.staking_reward_token_account,
+            round_zinc_reward_token_account: accounts.round_zinc_reward_token_account,
             stockpile_sol_vault: accounts.stockpile_sol_vault,
             buyback_sol_vault: accounts.buyback_sol_vault,
             stockpile_extras: accounts.stockpile_extras,
@@ -576,7 +601,7 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(19 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(20 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.admin.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.crank.key,
@@ -616,6 +641,10 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.staking_reward_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.round_zinc_reward_token_account.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -666,7 +695,7 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(20 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(21 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.admin.clone());
         account_infos.push(self.crank.clone());
@@ -679,6 +708,7 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
         account_infos.push(self.stockpile_token_account.clone());
         account_infos.push(self.staking_token_account.clone());
         account_infos.push(self.staking_reward_token_account.clone());
+        account_infos.push(self.round_zinc_reward_token_account.clone());
         account_infos.push(self.stockpile_sol_vault.clone());
         account_infos.push(self.buyback_sol_vault.clone());
         account_infos.push(self.stockpile_extras.clone());
@@ -714,14 +744,15 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
 ///   8. `[writable]` stockpile_token_account
 ///   9. `[writable]` staking_token_account
 ///   10. `[writable]` staking_reward_token_account
-///   11. `[writable]` stockpile_sol_vault
-///   12. `[writable]` buyback_sol_vault
-///   13. `[writable]` stockpile_extras
-///   14. `[]` associated_token_program
-///   15. `[]` token_program
-///   16. `[]` metadata_program
-///   17. `[]` rent
-///   18. `[]` system_program
+///   11. `[writable]` round_zinc_reward_token_account
+///   12. `[writable]` stockpile_sol_vault
+///   13. `[writable]` buyback_sol_vault
+///   14. `[writable]` stockpile_extras
+///   15. `[]` associated_token_program
+///   16. `[]` token_program
+///   17. `[]` metadata_program
+///   18. `[]` rent
+///   19. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct InitConfigCpiBuilder<'a, 'b> {
     instruction: Box<InitConfigCpiBuilderInstruction<'a, 'b>>,
@@ -742,6 +773,7 @@ impl<'a, 'b> InitConfigCpiBuilder<'a, 'b> {
             stockpile_token_account: None,
             staking_token_account: None,
             staking_reward_token_account: None,
+            round_zinc_reward_token_account: None,
             stockpile_sol_vault: None,
             buyback_sol_vault: None,
             stockpile_extras: None,
@@ -832,6 +864,15 @@ impl<'a, 'b> InitConfigCpiBuilder<'a, 'b> {
         staking_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.staking_reward_token_account = Some(staking_reward_token_account);
+        self
+    }
+    /// Dedicated reward vault that funds aggregate round ZINC reward claims.
+    #[inline(always)]
+    pub fn round_zinc_reward_token_account(
+        &mut self,
+        round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.round_zinc_reward_token_account = Some(round_zinc_reward_token_account);
         self
     }
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
@@ -988,6 +1029,11 @@ impl<'a, 'b> InitConfigCpiBuilder<'a, 'b> {
                 .staking_reward_token_account
                 .expect("staking_reward_token_account is not set"),
 
+            round_zinc_reward_token_account: self
+                .instruction
+                .round_zinc_reward_token_account
+                .expect("round_zinc_reward_token_account is not set"),
+
             stockpile_sol_vault: self
                 .instruction
                 .stockpile_sol_vault
@@ -1047,6 +1093,7 @@ struct InitConfigCpiBuilderInstruction<'a, 'b> {
     stockpile_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     staking_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     staking_reward_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    round_zinc_reward_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_sol_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
     buyback_sol_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_extras: Option<&'b solana_account_info::AccountInfo<'a>>,

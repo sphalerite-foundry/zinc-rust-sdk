@@ -44,6 +44,14 @@ pub struct PlayerProfile {
     pub lifetime_hidden_bonus_stockpile_bricks_earned_x10k: u64,
     /// Spendable stockpile bricks in `x10k` units.
     pub available_stockpile_bricks_x10k: u64,
+    /// Base round ZINC rewards credited but not claimed.
+    pub claimable_round_zinc_rewards: u64,
+    /// Refined ZINC earned from other players' round reward claim fees.
+    pub refined_round_zinc_rewards: u64,
+    /// Treasury round reward factor last checkpointed onto this profile.
+    pub round_zinc_rewards_factor_checkpoint: u128,
+    /// Lifetime round ZINC rewards credited or refined onto this profile.
+    pub lifetime_round_zinc_rewards: u64,
     /// Most recent stockpile cycle this player joined, if any.
     pub last_joined_stockpile_id: Option<u64>,
     /// PDA bump seed.

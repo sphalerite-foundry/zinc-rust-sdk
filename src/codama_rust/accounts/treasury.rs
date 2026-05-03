@@ -22,6 +22,8 @@ pub struct Treasury {
     pub bonanza_token_account: Address,
     /// Stockpile token account created during `init_config`.
     pub stockpile_token_account: Address,
+    /// Round ZINC reward token account created during `init_config`.
+    pub round_zinc_reward_token_account: Address,
     /// Stockpile SOL vault created during `init_config`.
     pub stockpile_sol_vault: Address,
     /// Buyback SOL vault created during `init_config`.
@@ -38,12 +40,20 @@ pub struct Treasury {
     pub staking_rewards_factor: u128,
     /// Pool-level carry remainder used when converting one reward amount into the cumulative factor.
     pub staking_rewards_remainder: u64,
+    /// Current base round ZINC rewards credited to player profiles but not claimed.
+    pub total_round_zinc_unclaimed: u64,
+    /// Current refined round ZINC fees owed through profile reward-factor accounting.
+    pub total_round_zinc_refined: u64,
+    /// Cumulative round ZINC claim-fee factor shared by player profiles with unclaimed rewards.
+    pub round_zinc_rewards_factor: u128,
+    /// Pool-level carry remainder used when converting one claim fee into the cumulative factor.
+    pub round_zinc_rewards_remainder: u64,
 }
 
 pub const TREASURY_DISCRIMINATOR: [u8; 8] = [238, 239, 123, 238, 89, 1, 168, 253];
 
 impl Treasury {
-    pub const LEN: usize = 257;
+    pub const LEN: usize = 329;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {

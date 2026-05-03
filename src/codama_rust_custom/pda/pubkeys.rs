@@ -137,6 +137,11 @@ impl PdaHelper {
         Pubkey::find_program_address(&[b"treasury", b"bonanza-token-account"], &ZINC_ID).0
     }
 
+    /// Derives the treasury-owned singleton vault for credited round ZINC rewards.
+    pub fn get_round_zinc_reward_token_account_address() -> Pubkey {
+        Pubkey::find_program_address(&[b"treasury", b"round-zinc-reward-token-account"], &ZINC_ID).0
+    }
+
     /// Derives the round-owned ZINC payout vault PDA for one round.
     pub fn get_round_zinc_payout_token_account_address(
         round_id: u64,
