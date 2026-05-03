@@ -14,12 +14,12 @@ pub struct StockpileExtras {
     pub discriminator: [u8; 8],
     /// Whether the singleton has been initialized after account creation.
     pub initialized: bool,
+    /// PDA bump seed.
+    pub bump: u8,
     /// Stockpile cycle that currently owns these pending extras, if any.
     pub stockpile_id: Option<u64>,
     /// Pending extra prizes reserved for the assigned stockpile cycle.
     pub extras: Vec<StockpileExtra>,
-    /// PDA bump seed.
-    pub bump: u8,
 }
 
 pub const STOCKPILE_EXTRAS_DISCRIMINATOR: [u8; 8] = [134, 65, 169, 219, 213, 106, 88, 158];
