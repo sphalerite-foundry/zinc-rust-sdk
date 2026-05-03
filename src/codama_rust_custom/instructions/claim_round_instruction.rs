@@ -70,7 +70,6 @@ impl InstructionsHelper {
             config: PdaHelper::get_config_address(),
             round: PdaHelper::get_round_address(round_id),
             miner: PdaHelper::get_miner_address(round_id, &player),
-            player,
             player_profile: PdaHelper::get_player_profile_address(&player),
             treasury,
             zinc_mint,
@@ -79,7 +78,6 @@ impl InstructionsHelper {
             round_zinc_reward_token_account: PdaHelper::get_round_zinc_reward_token_account_address(
             ),
             token_program: Pubkey::new_from_array(TOKEN_PROGRAM_ID.to_bytes()),
-            system_program: PdaHelper::get_system_program_address(),
         }
         .instruction()
     }
