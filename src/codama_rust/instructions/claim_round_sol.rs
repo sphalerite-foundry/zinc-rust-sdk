@@ -15,6 +15,8 @@ pub const CLAIM_ROUND_SOL_DISCRIMINATOR: [u8; 8] = [245, 106, 176, 41, 4, 167, 2
 pub struct ClaimRoundSol {
     /// Signer that submits the claim transaction.
     pub signer: solana_address::Address,
+    /// Global config containing the crank authority allowed to automate SOL claims.
+    pub config: solana_address::Address,
     /// Settled round whose SOL payout is being claimed.
     pub round: solana_address::Address,
     /// Per-player round position that tracks winning stake and split claim status.
@@ -33,10 +35,14 @@ impl ClaimRoundSol {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.signer,
             true,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.config,
+            false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.round, false));
         accounts.push(solana_instruction::AccountMeta::new(self.miner, false));
@@ -80,12 +86,14 @@ impl Default for ClaimRoundSolInstructionData {
 /// ### Accounts:
 ///
 ///   0. `[signer]` signer
-///   1. `[writable]` round
-///   2. `[writable]` miner
-///   3. `[writable]` player
+///   1. `[]` config
+///   2. `[writable]` round
+///   3. `[writable]` miner
+///   4. `[writable]` player
 #[derive(Clone, Debug, Default)]
 pub struct ClaimRoundSolBuilder {
     signer: Option<solana_address::Address>,
+    config: Option<solana_address::Address>,
     round: Option<solana_address::Address>,
     miner: Option<solana_address::Address>,
     player: Option<solana_address::Address>,
@@ -100,6 +108,12 @@ impl ClaimRoundSolBuilder {
     #[inline(always)]
     pub fn signer(&mut self, signer: solana_address::Address) -> &mut Self {
         self.signer = Some(signer);
+        self
+    }
+    /// Global config containing the crank authority allowed to automate SOL claims.
+    #[inline(always)]
+    pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
+        self.config = Some(config);
         self
     }
     /// Settled round whose SOL payout is being claimed.
@@ -138,6 +152,7 @@ impl ClaimRoundSolBuilder {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         let accounts = ClaimRoundSol {
             signer: self.signer.expect("signer is not set"),
+            config: self.config.expect("config is not set"),
             round: self.round.expect("round is not set"),
             miner: self.miner.expect("miner is not set"),
             player: self.player.expect("player is not set"),
@@ -151,6 +166,8 @@ impl ClaimRoundSolBuilder {
 pub struct ClaimRoundSolCpiAccounts<'a, 'b> {
     /// Signer that submits the claim transaction.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
+    /// Global config containing the crank authority allowed to automate SOL claims.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Settled round whose SOL payout is being claimed.
     pub round: &'b solana_account_info::AccountInfo<'a>,
     /// Per-player round position that tracks winning stake and split claim status.
@@ -165,6 +182,8 @@ pub struct ClaimRoundSolCpi<'a, 'b> {
     pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// Signer that submits the claim transaction.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
+    /// Global config containing the crank authority allowed to automate SOL claims.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Settled round whose SOL payout is being claimed.
     pub round: &'b solana_account_info::AccountInfo<'a>,
     /// Per-player round position that tracks winning stake and split claim status.
@@ -181,6 +200,7 @@ impl<'a, 'b> ClaimRoundSolCpi<'a, 'b> {
         Self {
             __program: program,
             signer: accounts.signer,
+            config: accounts.config,
             round: accounts.round,
             miner: accounts.miner,
             player: accounts.player,
@@ -209,10 +229,14 @@ impl<'a, 'b> ClaimRoundSolCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.signer.key,
             true,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.config.key,
+            false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
         accounts.push(solana_instruction::AccountMeta::new(*self.miner.key, false));
@@ -234,9 +258,10 @@ impl<'a, 'b> ClaimRoundSolCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(6 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
+        account_infos.push(self.config.clone());
         account_infos.push(self.round.clone());
         account_infos.push(self.miner.clone());
         account_infos.push(self.player.clone());
@@ -257,9 +282,10 @@ impl<'a, 'b> ClaimRoundSolCpi<'a, 'b> {
 /// ### Accounts:
 ///
 ///   0. `[signer]` signer
-///   1. `[writable]` round
-///   2. `[writable]` miner
-///   3. `[writable]` player
+///   1. `[]` config
+///   2. `[writable]` round
+///   3. `[writable]` miner
+///   4. `[writable]` player
 #[derive(Clone, Debug)]
 pub struct ClaimRoundSolCpiBuilder<'a, 'b> {
     instruction: Box<ClaimRoundSolCpiBuilderInstruction<'a, 'b>>,
@@ -270,6 +296,7 @@ impl<'a, 'b> ClaimRoundSolCpiBuilder<'a, 'b> {
         let instruction = Box::new(ClaimRoundSolCpiBuilderInstruction {
             __program: program,
             signer: None,
+            config: None,
             round: None,
             miner: None,
             player: None,
@@ -281,6 +308,12 @@ impl<'a, 'b> ClaimRoundSolCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn signer(&mut self, signer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.signer = Some(signer);
+        self
+    }
+    /// Global config containing the crank authority allowed to automate SOL claims.
+    #[inline(always)]
+    pub fn config(&mut self, config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.config = Some(config);
         self
     }
     /// Settled round whose SOL payout is being claimed.
@@ -339,6 +372,8 @@ impl<'a, 'b> ClaimRoundSolCpiBuilder<'a, 'b> {
 
             signer: self.instruction.signer.expect("signer is not set"),
 
+            config: self.instruction.config.expect("config is not set"),
+
             round: self.instruction.round.expect("round is not set"),
 
             miner: self.instruction.miner.expect("miner is not set"),
@@ -356,6 +391,7 @@ impl<'a, 'b> ClaimRoundSolCpiBuilder<'a, 'b> {
 struct ClaimRoundSolCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     signer: Option<&'b solana_account_info::AccountInfo<'a>>,
+    config: Option<&'b solana_account_info::AccountInfo<'a>>,
     round: Option<&'b solana_account_info::AccountInfo<'a>>,
     miner: Option<&'b solana_account_info::AccountInfo<'a>>,
     player: Option<&'b solana_account_info::AccountInfo<'a>>,

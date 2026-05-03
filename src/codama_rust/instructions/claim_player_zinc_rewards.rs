@@ -8,40 +8,34 @@
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
-pub const CLAIM_ROUND_ZINC_DISCRIMINATOR: [u8; 8] = [239, 212, 229, 179, 158, 191, 185, 253];
+pub const CLAIM_PLAYER_ZINC_REWARDS_DISCRIMINATOR: [u8; 8] = [65, 17, 118, 123, 60, 247, 49, 165];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct ClaimRoundZinc {
-    /// Signer that submits the claim transaction and pays ATA rent if needed.
+pub struct ClaimPlayerZincRewards {
+    /// Player signer that owns the profile reward ledger and receives ZINC.
     pub signer: solana_address::Address,
-    /// Settled round whose ZINC payouts are being claimed.
-    pub round: solana_address::Address,
-    /// Global config containing the live ZINC claim fee.
+    /// Global config containing the live round ZINC claim fee.
     pub config: solana_address::Address,
-    /// Per-player round position that tracks winning stake and split claim status.
-    pub miner: solana_address::Address,
-
-    pub player: solana_address::Address,
-    /// Treasury PDA that stores the canonical ZINC mint and owns the Bonanza vault.
+    /// Treasury PDA that owns the singleton round-reward vault.
     pub treasury: solana_address::Address,
-    /// Protocol ZINC mint used for round winner claims.
+    /// Protocol ZINC mint.
     pub zinc_mint: solana_address::Address,
-    /// Round-owned payout vault that funds direct-winner payouts.
-    pub round_zinc_payout_token_account: solana_address::Address,
-    /// Treasury-owned Bonanza vault that funds captured Bonanza winner payouts.
-    pub bonanza_token_account: solana_address::Address,
-
-    pub player_zinc_token_account: solana_address::Address,
-    /// Associated Token Program used to create the player's ATA on demand.
+    /// Player profile holding aggregate round ZINC reward accounting.
+    pub player_profile: solana_address::Address,
+    /// Treasury-owned reward vault that funds aggregate round ZINC claims.
+    pub round_zinc_reward_token_account: solana_address::Address,
+    /// Signer-owned destination account for claimed ZINC rewards.
+    pub signer_zinc_token_account: solana_address::Address,
+    /// Associated Token Program used to create the signer ATA on demand.
     pub associated_token_program: solana_address::Address,
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// SPL Token Program that owns the reward vault and ZINC mint.
     pub token_program: solana_address::Address,
-    /// System Program used if the player's ATA needs to be created.
+    /// System Program used if the signer ATA needs to be created.
     pub system_program: solana_address::Address,
 }
 
-impl ClaimRoundZinc {
+impl ClaimPlayerZincRewards {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(&[])
     }
@@ -51,33 +45,27 @@ impl ClaimRoundZinc {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
-        accounts.push(solana_instruction::AccountMeta::new(self.round, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new(self.miner, false));
-        accounts.push(solana_instruction::AccountMeta::new(self.player, false));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.treasury,
-            false,
-        ));
+        accounts.push(solana_instruction::AccountMeta::new(self.treasury, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.zinc_mint,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.round_zinc_payout_token_account,
+            self.player_profile,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.bonanza_token_account,
+            self.round_zinc_reward_token_account,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.player_zinc_token_account,
+            self.signer_zinc_token_account,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -93,7 +81,9 @@ impl ClaimRoundZinc {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = ClaimRoundZincInstructionData::new().try_to_vec().unwrap();
+        let data = ClaimPlayerZincRewardsInstructionData::new()
+            .try_to_vec()
+            .unwrap();
 
         solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
@@ -104,14 +94,14 @@ impl ClaimRoundZinc {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct ClaimRoundZincInstructionData {
+pub struct ClaimPlayerZincRewardsInstructionData {
     discriminator: [u8; 8],
 }
 
-impl ClaimRoundZincInstructionData {
+impl ClaimPlayerZincRewardsInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [239, 212, 229, 179, 158, 191, 185, 253],
+            discriminator: [65, 17, 118, 123, 60, 247, 49, 165],
         }
     }
 
@@ -120,120 +110,95 @@ impl ClaimRoundZincInstructionData {
     }
 }
 
-impl Default for ClaimRoundZincInstructionData {
+impl Default for ClaimPlayerZincRewardsInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Instruction builder for `ClaimRoundZinc`.
+/// Instruction builder for `ClaimPlayerZincRewards`.
 ///
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` signer
-///   1. `[writable]` round
-///   2. `[]` config
-///   3. `[writable]` miner
-///   4. `[writable]` player
-///   5. `[]` treasury
-///   6. `[]` zinc_mint
-///   7. `[writable]` round_zinc_payout_token_account
-///   8. `[writable]` bonanza_token_account
-///   9. `[writable]` player_zinc_token_account
-///   10. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
-///   11. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   12. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   1. `[]` config
+///   2. `[writable]` treasury
+///   3. `[]` zinc_mint
+///   4. `[writable]` player_profile
+///   5. `[writable]` round_zinc_reward_token_account
+///   6. `[writable]` signer_zinc_token_account
+///   7. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   8. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   9. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
-pub struct ClaimRoundZincBuilder {
+pub struct ClaimPlayerZincRewardsBuilder {
     signer: Option<solana_address::Address>,
-    round: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
-    miner: Option<solana_address::Address>,
-    player: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
     zinc_mint: Option<solana_address::Address>,
-    round_zinc_payout_token_account: Option<solana_address::Address>,
-    bonanza_token_account: Option<solana_address::Address>,
-    player_zinc_token_account: Option<solana_address::Address>,
+    player_profile: Option<solana_address::Address>,
+    round_zinc_reward_token_account: Option<solana_address::Address>,
+    signer_zinc_token_account: Option<solana_address::Address>,
     associated_token_program: Option<solana_address::Address>,
     token_program: Option<solana_address::Address>,
     system_program: Option<solana_address::Address>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl ClaimRoundZincBuilder {
+impl ClaimPlayerZincRewardsBuilder {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Signer that submits the claim transaction and pays ATA rent if needed.
+    /// Player signer that owns the profile reward ledger and receives ZINC.
     #[inline(always)]
     pub fn signer(&mut self, signer: solana_address::Address) -> &mut Self {
         self.signer = Some(signer);
         self
     }
-    /// Settled round whose ZINC payouts are being claimed.
-    #[inline(always)]
-    pub fn round(&mut self, round: solana_address::Address) -> &mut Self {
-        self.round = Some(round);
-        self
-    }
-    /// Global config containing the live ZINC claim fee.
+    /// Global config containing the live round ZINC claim fee.
     #[inline(always)]
     pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
         self.config = Some(config);
         self
     }
-    /// Per-player round position that tracks winning stake and split claim status.
-    #[inline(always)]
-    pub fn miner(&mut self, miner: solana_address::Address) -> &mut Self {
-        self.miner = Some(miner);
-        self
-    }
-    #[inline(always)]
-    pub fn player(&mut self, player: solana_address::Address) -> &mut Self {
-        self.player = Some(player);
-        self
-    }
-    /// Treasury PDA that stores the canonical ZINC mint and owns the Bonanza vault.
+    /// Treasury PDA that owns the singleton round-reward vault.
     #[inline(always)]
     pub fn treasury(&mut self, treasury: solana_address::Address) -> &mut Self {
         self.treasury = Some(treasury);
         self
     }
-    /// Protocol ZINC mint used for round winner claims.
+    /// Protocol ZINC mint.
     #[inline(always)]
     pub fn zinc_mint(&mut self, zinc_mint: solana_address::Address) -> &mut Self {
         self.zinc_mint = Some(zinc_mint);
         self
     }
-    /// Round-owned payout vault that funds direct-winner payouts.
+    /// Player profile holding aggregate round ZINC reward accounting.
     #[inline(always)]
-    pub fn round_zinc_payout_token_account(
-        &mut self,
-        round_zinc_payout_token_account: solana_address::Address,
-    ) -> &mut Self {
-        self.round_zinc_payout_token_account = Some(round_zinc_payout_token_account);
+    pub fn player_profile(&mut self, player_profile: solana_address::Address) -> &mut Self {
+        self.player_profile = Some(player_profile);
         self
     }
-    /// Treasury-owned Bonanza vault that funds captured Bonanza winner payouts.
+    /// Treasury-owned reward vault that funds aggregate round ZINC claims.
     #[inline(always)]
-    pub fn bonanza_token_account(
+    pub fn round_zinc_reward_token_account(
         &mut self,
-        bonanza_token_account: solana_address::Address,
+        round_zinc_reward_token_account: solana_address::Address,
     ) -> &mut Self {
-        self.bonanza_token_account = Some(bonanza_token_account);
+        self.round_zinc_reward_token_account = Some(round_zinc_reward_token_account);
         self
     }
+    /// Signer-owned destination account for claimed ZINC rewards.
     #[inline(always)]
-    pub fn player_zinc_token_account(
+    pub fn signer_zinc_token_account(
         &mut self,
-        player_zinc_token_account: solana_address::Address,
+        signer_zinc_token_account: solana_address::Address,
     ) -> &mut Self {
-        self.player_zinc_token_account = Some(player_zinc_token_account);
+        self.signer_zinc_token_account = Some(signer_zinc_token_account);
         self
     }
     /// `[optional account, default to 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL']`
-    /// Associated Token Program used to create the player's ATA on demand.
+    /// Associated Token Program used to create the signer ATA on demand.
     #[inline(always)]
     pub fn associated_token_program(
         &mut self,
@@ -243,14 +208,14 @@ impl ClaimRoundZincBuilder {
         self
     }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// SPL Token Program that owns the reward vault and ZINC mint.
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_address::Address) -> &mut Self {
         self.token_program = Some(token_program);
         self
     }
     /// `[optional account, default to '11111111111111111111111111111111']`
-    /// System Program used if the player's ATA needs to be created.
+    /// System Program used if the signer ATA needs to be created.
     #[inline(always)]
     pub fn system_program(&mut self, system_program: solana_address::Address) -> &mut Self {
         self.system_program = Some(system_program);
@@ -273,23 +238,18 @@ impl ClaimRoundZincBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = ClaimRoundZinc {
+        let accounts = ClaimPlayerZincRewards {
             signer: self.signer.expect("signer is not set"),
-            round: self.round.expect("round is not set"),
             config: self.config.expect("config is not set"),
-            miner: self.miner.expect("miner is not set"),
-            player: self.player.expect("player is not set"),
             treasury: self.treasury.expect("treasury is not set"),
             zinc_mint: self.zinc_mint.expect("zinc_mint is not set"),
-            round_zinc_payout_token_account: self
-                .round_zinc_payout_token_account
-                .expect("round_zinc_payout_token_account is not set"),
-            bonanza_token_account: self
-                .bonanza_token_account
-                .expect("bonanza_token_account is not set"),
-            player_zinc_token_account: self
-                .player_zinc_token_account
-                .expect("player_zinc_token_account is not set"),
+            player_profile: self.player_profile.expect("player_profile is not set"),
+            round_zinc_reward_token_account: self
+                .round_zinc_reward_token_account
+                .expect("round_zinc_reward_token_account is not set"),
+            signer_zinc_token_account: self
+                .signer_zinc_token_account
+                .expect("signer_zinc_token_account is not set"),
             associated_token_program: self.associated_token_program.unwrap_or(
                 solana_address::address!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
             ),
@@ -305,85 +265,70 @@ impl ClaimRoundZincBuilder {
     }
 }
 
-/// `claim_round_zinc` CPI accounts.
-pub struct ClaimRoundZincCpiAccounts<'a, 'b> {
-    /// Signer that submits the claim transaction and pays ATA rent if needed.
+/// `claim_player_zinc_rewards` CPI accounts.
+pub struct ClaimPlayerZincRewardsCpiAccounts<'a, 'b> {
+    /// Player signer that owns the profile reward ledger and receives ZINC.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
-    /// Settled round whose ZINC payouts are being claimed.
-    pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Global config containing the live ZINC claim fee.
+    /// Global config containing the live round ZINC claim fee.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Per-player round position that tracks winning stake and split claim status.
-    pub miner: &'b solana_account_info::AccountInfo<'a>,
-
-    pub player: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury PDA that stores the canonical ZINC mint and owns the Bonanza vault.
+    /// Treasury PDA that owns the singleton round-reward vault.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
-    /// Protocol ZINC mint used for round winner claims.
+    /// Protocol ZINC mint.
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
-    /// Round-owned payout vault that funds direct-winner payouts.
-    pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury-owned Bonanza vault that funds captured Bonanza winner payouts.
-    pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
-
-    pub player_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Associated Token Program used to create the player's ATA on demand.
+    /// Player profile holding aggregate round ZINC reward accounting.
+    pub player_profile: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned reward vault that funds aggregate round ZINC claims.
+    pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Signer-owned destination account for claimed ZINC rewards.
+    pub signer_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Associated Token Program used to create the signer ATA on demand.
     pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// SPL Token Program that owns the reward vault and ZINC mint.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// System Program used if the player's ATA needs to be created.
+    /// System Program used if the signer ATA needs to be created.
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `claim_round_zinc` CPI instruction.
-pub struct ClaimRoundZincCpi<'a, 'b> {
+/// `claim_player_zinc_rewards` CPI instruction.
+pub struct ClaimPlayerZincRewardsCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
-    /// Signer that submits the claim transaction and pays ATA rent if needed.
+    /// Player signer that owns the profile reward ledger and receives ZINC.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
-    /// Settled round whose ZINC payouts are being claimed.
-    pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Global config containing the live ZINC claim fee.
+    /// Global config containing the live round ZINC claim fee.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Per-player round position that tracks winning stake and split claim status.
-    pub miner: &'b solana_account_info::AccountInfo<'a>,
-
-    pub player: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury PDA that stores the canonical ZINC mint and owns the Bonanza vault.
+    /// Treasury PDA that owns the singleton round-reward vault.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
-    /// Protocol ZINC mint used for round winner claims.
+    /// Protocol ZINC mint.
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
-    /// Round-owned payout vault that funds direct-winner payouts.
-    pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury-owned Bonanza vault that funds captured Bonanza winner payouts.
-    pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
-
-    pub player_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Associated Token Program used to create the player's ATA on demand.
+    /// Player profile holding aggregate round ZINC reward accounting.
+    pub player_profile: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned reward vault that funds aggregate round ZINC claims.
+    pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Signer-owned destination account for claimed ZINC rewards.
+    pub signer_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Associated Token Program used to create the signer ATA on demand.
     pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// SPL Token Program that owns the reward vault and ZINC mint.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// System Program used if the player's ATA needs to be created.
+    /// System Program used if the signer ATA needs to be created.
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-impl<'a, 'b> ClaimRoundZincCpi<'a, 'b> {
+impl<'a, 'b> ClaimPlayerZincRewardsCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: ClaimRoundZincCpiAccounts<'a, 'b>,
+        accounts: ClaimPlayerZincRewardsCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
             signer: accounts.signer,
-            round: accounts.round,
             config: accounts.config,
-            miner: accounts.miner,
-            player: accounts.player,
             treasury: accounts.treasury,
             zinc_mint: accounts.zinc_mint,
-            round_zinc_payout_token_account: accounts.round_zinc_payout_token_account,
-            bonanza_token_account: accounts.bonanza_token_account,
-            player_zinc_token_account: accounts.player_zinc_token_account,
+            player_profile: accounts.player_profile,
+            round_zinc_reward_token_account: accounts.round_zinc_reward_token_account,
+            signer_zinc_token_account: accounts.signer_zinc_token_account,
             associated_token_program: accounts.associated_token_program,
             token_program: accounts.token_program,
             system_program: accounts.system_program,
@@ -412,19 +357,13 @@ impl<'a, 'b> ClaimRoundZincCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
-        accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new(*self.miner.key, false));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.player.key,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.treasury.key,
             false,
         ));
@@ -433,15 +372,15 @@ impl<'a, 'b> ClaimRoundZincCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.round_zinc_payout_token_account.key,
+            *self.player_profile.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.bonanza_token_account.key,
+            *self.round_zinc_reward_token_account.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.player_zinc_token_account.key,
+            *self.signer_zinc_token_account.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -463,25 +402,24 @@ impl<'a, 'b> ClaimRoundZincCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = ClaimRoundZincInstructionData::new().try_to_vec().unwrap();
+        let data = ClaimPlayerZincRewardsInstructionData::new()
+            .try_to_vec()
+            .unwrap();
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(14 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(11 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
-        account_infos.push(self.round.clone());
         account_infos.push(self.config.clone());
-        account_infos.push(self.miner.clone());
-        account_infos.push(self.player.clone());
         account_infos.push(self.treasury.clone());
         account_infos.push(self.zinc_mint.clone());
-        account_infos.push(self.round_zinc_payout_token_account.clone());
-        account_infos.push(self.bonanza_token_account.clone());
-        account_infos.push(self.player_zinc_token_account.clone());
+        account_infos.push(self.player_profile.clone());
+        account_infos.push(self.round_zinc_reward_token_account.clone());
+        account_infos.push(self.signer_zinc_token_account.clone());
         account_infos.push(self.associated_token_program.clone());
         account_infos.push(self.token_program.clone());
         account_infos.push(self.system_program.clone());
@@ -497,42 +435,36 @@ impl<'a, 'b> ClaimRoundZincCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `ClaimRoundZinc` via CPI.
+/// Instruction builder for `ClaimPlayerZincRewards` via CPI.
 ///
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` signer
-///   1. `[writable]` round
-///   2. `[]` config
-///   3. `[writable]` miner
-///   4. `[writable]` player
-///   5. `[]` treasury
-///   6. `[]` zinc_mint
-///   7. `[writable]` round_zinc_payout_token_account
-///   8. `[writable]` bonanza_token_account
-///   9. `[writable]` player_zinc_token_account
-///   10. `[]` associated_token_program
-///   11. `[]` token_program
-///   12. `[]` system_program
+///   1. `[]` config
+///   2. `[writable]` treasury
+///   3. `[]` zinc_mint
+///   4. `[writable]` player_profile
+///   5. `[writable]` round_zinc_reward_token_account
+///   6. `[writable]` signer_zinc_token_account
+///   7. `[]` associated_token_program
+///   8. `[]` token_program
+///   9. `[]` system_program
 #[derive(Clone, Debug)]
-pub struct ClaimRoundZincCpiBuilder<'a, 'b> {
-    instruction: Box<ClaimRoundZincCpiBuilderInstruction<'a, 'b>>,
+pub struct ClaimPlayerZincRewardsCpiBuilder<'a, 'b> {
+    instruction: Box<ClaimPlayerZincRewardsCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> ClaimRoundZincCpiBuilder<'a, 'b> {
+impl<'a, 'b> ClaimPlayerZincRewardsCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(ClaimRoundZincCpiBuilderInstruction {
+        let instruction = Box::new(ClaimPlayerZincRewardsCpiBuilderInstruction {
             __program: program,
             signer: None,
-            round: None,
             config: None,
-            miner: None,
-            player: None,
             treasury: None,
             zinc_mint: None,
-            round_zinc_payout_token_account: None,
-            bonanza_token_account: None,
-            player_zinc_token_account: None,
+            player_profile: None,
+            round_zinc_reward_token_account: None,
+            signer_zinc_token_account: None,
             associated_token_program: None,
             token_program: None,
             system_program: None,
@@ -540,74 +472,58 @@ impl<'a, 'b> ClaimRoundZincCpiBuilder<'a, 'b> {
         });
         Self { instruction }
     }
-    /// Signer that submits the claim transaction and pays ATA rent if needed.
+    /// Player signer that owns the profile reward ledger and receives ZINC.
     #[inline(always)]
     pub fn signer(&mut self, signer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.signer = Some(signer);
         self
     }
-    /// Settled round whose ZINC payouts are being claimed.
-    #[inline(always)]
-    pub fn round(&mut self, round: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.round = Some(round);
-        self
-    }
-    /// Global config containing the live ZINC claim fee.
+    /// Global config containing the live round ZINC claim fee.
     #[inline(always)]
     pub fn config(&mut self, config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.config = Some(config);
         self
     }
-    /// Per-player round position that tracks winning stake and split claim status.
-    #[inline(always)]
-    pub fn miner(&mut self, miner: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.miner = Some(miner);
-        self
-    }
-    #[inline(always)]
-    pub fn player(&mut self, player: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.player = Some(player);
-        self
-    }
-    /// Treasury PDA that stores the canonical ZINC mint and owns the Bonanza vault.
+    /// Treasury PDA that owns the singleton round-reward vault.
     #[inline(always)]
     pub fn treasury(&mut self, treasury: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.treasury = Some(treasury);
         self
     }
-    /// Protocol ZINC mint used for round winner claims.
+    /// Protocol ZINC mint.
     #[inline(always)]
     pub fn zinc_mint(&mut self, zinc_mint: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.zinc_mint = Some(zinc_mint);
         self
     }
-    /// Round-owned payout vault that funds direct-winner payouts.
+    /// Player profile holding aggregate round ZINC reward accounting.
     #[inline(always)]
-    pub fn round_zinc_payout_token_account(
+    pub fn player_profile(
         &mut self,
-        round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
+        player_profile: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.round_zinc_payout_token_account = Some(round_zinc_payout_token_account);
+        self.instruction.player_profile = Some(player_profile);
         self
     }
-    /// Treasury-owned Bonanza vault that funds captured Bonanza winner payouts.
+    /// Treasury-owned reward vault that funds aggregate round ZINC claims.
     #[inline(always)]
-    pub fn bonanza_token_account(
+    pub fn round_zinc_reward_token_account(
         &mut self,
-        bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
+        round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.bonanza_token_account = Some(bonanza_token_account);
+        self.instruction.round_zinc_reward_token_account = Some(round_zinc_reward_token_account);
         self
     }
+    /// Signer-owned destination account for claimed ZINC rewards.
     #[inline(always)]
-    pub fn player_zinc_token_account(
+    pub fn signer_zinc_token_account(
         &mut self,
-        player_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+        signer_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.player_zinc_token_account = Some(player_zinc_token_account);
+        self.instruction.signer_zinc_token_account = Some(signer_zinc_token_account);
         self
     }
-    /// Associated Token Program used to create the player's ATA on demand.
+    /// Associated Token Program used to create the signer ATA on demand.
     #[inline(always)]
     pub fn associated_token_program(
         &mut self,
@@ -616,7 +532,7 @@ impl<'a, 'b> ClaimRoundZincCpiBuilder<'a, 'b> {
         self.instruction.associated_token_program = Some(associated_token_program);
         self
     }
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// SPL Token Program that owns the reward vault and ZINC mint.
     #[inline(always)]
     pub fn token_program(
         &mut self,
@@ -625,7 +541,7 @@ impl<'a, 'b> ClaimRoundZincCpiBuilder<'a, 'b> {
         self.instruction.token_program = Some(token_program);
         self
     }
-    /// System Program used if the player's ATA needs to be created.
+    /// System Program used if the signer ATA needs to be created.
     #[inline(always)]
     pub fn system_program(
         &mut self,
@@ -668,37 +584,31 @@ impl<'a, 'b> ClaimRoundZincCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let instruction = ClaimRoundZincCpi {
+        let instruction = ClaimPlayerZincRewardsCpi {
             __program: self.instruction.__program,
 
             signer: self.instruction.signer.expect("signer is not set"),
 
-            round: self.instruction.round.expect("round is not set"),
-
             config: self.instruction.config.expect("config is not set"),
-
-            miner: self.instruction.miner.expect("miner is not set"),
-
-            player: self.instruction.player.expect("player is not set"),
 
             treasury: self.instruction.treasury.expect("treasury is not set"),
 
             zinc_mint: self.instruction.zinc_mint.expect("zinc_mint is not set"),
 
-            round_zinc_payout_token_account: self
+            player_profile: self
                 .instruction
-                .round_zinc_payout_token_account
-                .expect("round_zinc_payout_token_account is not set"),
+                .player_profile
+                .expect("player_profile is not set"),
 
-            bonanza_token_account: self
+            round_zinc_reward_token_account: self
                 .instruction
-                .bonanza_token_account
-                .expect("bonanza_token_account is not set"),
+                .round_zinc_reward_token_account
+                .expect("round_zinc_reward_token_account is not set"),
 
-            player_zinc_token_account: self
+            signer_zinc_token_account: self
                 .instruction
-                .player_zinc_token_account
-                .expect("player_zinc_token_account is not set"),
+                .signer_zinc_token_account
+                .expect("signer_zinc_token_account is not set"),
 
             associated_token_program: self
                 .instruction
@@ -723,18 +633,15 @@ impl<'a, 'b> ClaimRoundZincCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct ClaimRoundZincCpiBuilderInstruction<'a, 'b> {
+struct ClaimPlayerZincRewardsCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     signer: Option<&'b solana_account_info::AccountInfo<'a>>,
-    round: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
-    miner: Option<&'b solana_account_info::AccountInfo<'a>>,
-    player: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
-    round_zinc_payout_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    bonanza_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    player_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    player_profile: Option<&'b solana_account_info::AccountInfo<'a>>,
+    round_zinc_reward_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    signer_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,

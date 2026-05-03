@@ -26,8 +26,8 @@ pub struct Miner {
     pub mask_ciphertext: [u8; 64],
     /// Whether this miner's SOL payout has been claimed.
     pub sol_claimed: bool,
-    /// Whether this miner's ZINC payout has been claimed.
-    pub zinc_claimed: bool,
+    /// Whether this miner's ZINC reward has been credited to the player's profile.
+    pub zinc_credited: bool,
     /// PDA bump seed.
     pub bump: u8,
     /// Amount effectively placed on the winning tile after settlement.
