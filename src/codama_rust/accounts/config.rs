@@ -62,12 +62,22 @@ pub struct Config {
     pub wildcat_winner_zinc_share_ppm: u64,
     /// Bonanza roll modulo divisor; `1` makes every winner-positive round eligible.
     pub bonanza_hit_divisor: u64,
+    /// ZINC fee skim for round winner claims, in basis points.
+    pub round_claim_zinc_fee_bps: u64,
+    /// Minimum ZINC fee required to enter one stockpile cycle, in mint base units.
+    pub stockpile_entry_min_zinc_fee: u64,
+    /// Stockpile entry fee as a share of the live stockpile ZINC pot, in basis points.
+    pub stockpile_entry_pot_fee_bps: u64,
+    /// Accepted-entry step multiplier for stockpile entry costs, in basis points.
+    pub stockpile_entry_step_bps: u64,
+    /// Staking brick issuance rate per claimed ZINC, in `x10k` units.
+    pub staking_bricks_per_zinc_x10k: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 266;
+    pub const LEN: usize = 306;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {

@@ -5,7 +5,6 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use crate::codama_rust::types::ClaimStatus;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 use solana_address::Address;
@@ -25,8 +24,10 @@ pub struct Miner {
     pub mask_nonce: u128,
     /// Ciphertext limbs for `Enc<Shared, Pack<[u8; 30]>>`.
     pub mask_ciphertext: [u8; 64],
-    /// Claimed or not.
-    pub claimed: ClaimStatus,
+    /// Whether this miner's SOL payout has been claimed.
+    pub sol_claimed: bool,
+    /// Whether this miner's ZINC payout has been claimed.
+    pub zinc_claimed: bool,
     /// PDA bump seed.
     pub bump: u8,
     /// Amount effectively placed on the winning tile after settlement.

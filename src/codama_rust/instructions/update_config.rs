@@ -99,6 +99,11 @@ pub struct UpdateConfigInstructionArgs {
     pub wildcat_round_frequency: Option<u64>,
     pub wildcat_winner_zinc_share_ppm: Option<u64>,
     pub bonanza_hit_divisor: Option<u64>,
+    pub round_claim_zinc_fee_bps: Option<u64>,
+    pub stockpile_entry_min_zinc_fee: Option<u64>,
+    pub stockpile_entry_pot_fee_bps: Option<u64>,
+    pub stockpile_entry_step_bps: Option<u64>,
+    pub staking_bricks_per_zinc_x10k: Option<u64>,
 }
 
 impl UpdateConfigInstructionArgs {
@@ -141,6 +146,11 @@ pub struct UpdateConfigBuilder {
     wildcat_round_frequency: Option<u64>,
     wildcat_winner_zinc_share_ppm: Option<u64>,
     bonanza_hit_divisor: Option<u64>,
+    round_claim_zinc_fee_bps: Option<u64>,
+    stockpile_entry_min_zinc_fee: Option<u64>,
+    stockpile_entry_pot_fee_bps: Option<u64>,
+    stockpile_entry_step_bps: Option<u64>,
+    staking_bricks_per_zinc_x10k: Option<u64>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -311,6 +321,36 @@ impl UpdateConfigBuilder {
         self.bonanza_hit_divisor = Some(bonanza_hit_divisor);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn round_claim_zinc_fee_bps(&mut self, round_claim_zinc_fee_bps: u64) -> &mut Self {
+        self.round_claim_zinc_fee_bps = Some(round_claim_zinc_fee_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_entry_min_zinc_fee(&mut self, stockpile_entry_min_zinc_fee: u64) -> &mut Self {
+        self.stockpile_entry_min_zinc_fee = Some(stockpile_entry_min_zinc_fee);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_entry_pot_fee_bps(&mut self, stockpile_entry_pot_fee_bps: u64) -> &mut Self {
+        self.stockpile_entry_pot_fee_bps = Some(stockpile_entry_pot_fee_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_entry_step_bps(&mut self, stockpile_entry_step_bps: u64) -> &mut Self {
+        self.stockpile_entry_step_bps = Some(stockpile_entry_step_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn staking_bricks_per_zinc_x10k(&mut self, staking_bricks_per_zinc_x10k: u64) -> &mut Self {
+        self.staking_bricks_per_zinc_x10k = Some(staking_bricks_per_zinc_x10k);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -358,6 +398,11 @@ impl UpdateConfigBuilder {
             wildcat_round_frequency: self.wildcat_round_frequency.clone(),
             wildcat_winner_zinc_share_ppm: self.wildcat_winner_zinc_share_ppm.clone(),
             bonanza_hit_divisor: self.bonanza_hit_divisor.clone(),
+            round_claim_zinc_fee_bps: self.round_claim_zinc_fee_bps.clone(),
+            stockpile_entry_min_zinc_fee: self.stockpile_entry_min_zinc_fee.clone(),
+            stockpile_entry_pot_fee_bps: self.stockpile_entry_pot_fee_bps.clone(),
+            stockpile_entry_step_bps: self.stockpile_entry_step_bps.clone(),
+            staking_bricks_per_zinc_x10k: self.staking_bricks_per_zinc_x10k.clone(),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -505,6 +550,11 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             wildcat_round_frequency: None,
             wildcat_winner_zinc_share_ppm: None,
             bonanza_hit_divisor: None,
+            round_claim_zinc_fee_bps: None,
+            stockpile_entry_min_zinc_fee: None,
+            stockpile_entry_pot_fee_bps: None,
+            stockpile_entry_step_bps: None,
+            staking_bricks_per_zinc_x10k: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -674,6 +724,36 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
         self.instruction.bonanza_hit_divisor = Some(bonanza_hit_divisor);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn round_claim_zinc_fee_bps(&mut self, round_claim_zinc_fee_bps: u64) -> &mut Self {
+        self.instruction.round_claim_zinc_fee_bps = Some(round_claim_zinc_fee_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_entry_min_zinc_fee(&mut self, stockpile_entry_min_zinc_fee: u64) -> &mut Self {
+        self.instruction.stockpile_entry_min_zinc_fee = Some(stockpile_entry_min_zinc_fee);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_entry_pot_fee_bps(&mut self, stockpile_entry_pot_fee_bps: u64) -> &mut Self {
+        self.instruction.stockpile_entry_pot_fee_bps = Some(stockpile_entry_pot_fee_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_entry_step_bps(&mut self, stockpile_entry_step_bps: u64) -> &mut Self {
+        self.instruction.stockpile_entry_step_bps = Some(stockpile_entry_step_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn staking_bricks_per_zinc_x10k(&mut self, staking_bricks_per_zinc_x10k: u64) -> &mut Self {
+        self.instruction.staking_bricks_per_zinc_x10k = Some(staking_bricks_per_zinc_x10k);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -740,6 +820,11 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             wildcat_round_frequency: self.instruction.wildcat_round_frequency.clone(),
             wildcat_winner_zinc_share_ppm: self.instruction.wildcat_winner_zinc_share_ppm.clone(),
             bonanza_hit_divisor: self.instruction.bonanza_hit_divisor.clone(),
+            round_claim_zinc_fee_bps: self.instruction.round_claim_zinc_fee_bps.clone(),
+            stockpile_entry_min_zinc_fee: self.instruction.stockpile_entry_min_zinc_fee.clone(),
+            stockpile_entry_pot_fee_bps: self.instruction.stockpile_entry_pot_fee_bps.clone(),
+            stockpile_entry_step_bps: self.instruction.stockpile_entry_step_bps.clone(),
+            staking_bricks_per_zinc_x10k: self.instruction.staking_bricks_per_zinc_x10k.clone(),
         };
         let instruction = UpdateConfigCpi {
             __program: self.instruction.__program,
@@ -786,6 +871,11 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     wildcat_round_frequency: Option<u64>,
     wildcat_winner_zinc_share_ppm: Option<u64>,
     bonanza_hit_divisor: Option<u64>,
+    round_claim_zinc_fee_bps: Option<u64>,
+    stockpile_entry_min_zinc_fee: Option<u64>,
+    stockpile_entry_pot_fee_bps: Option<u64>,
+    stockpile_entry_step_bps: Option<u64>,
+    staking_bricks_per_zinc_x10k: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

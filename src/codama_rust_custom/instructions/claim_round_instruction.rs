@@ -1,4 +1,4 @@
-use crate::codama_rust::instructions::ClaimRound;
+use crate::codama_rust::instructions::{ClaimRoundSol, ClaimRoundZinc};
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
@@ -21,7 +21,7 @@ pub struct ClaimRoundInstructionInputs {
     pub zinc_mint: Pubkey,
 }
 
-/// Derives the canonical player ATA used by the unified claim instruction.
+/// Derives the canonical player ATA used by the ZINC claim instruction.
 fn get_player_zinc_token_account(player: &Pubkey, zinc_mint: &Pubkey) -> Pubkey {
     Pubkey::find_program_address(
         &[
@@ -35,8 +35,8 @@ fn get_player_zinc_token_account(player: &Pubkey, zinc_mint: &Pubkey) -> Pubkey 
 }
 
 impl InstructionsHelper {
-    /// Builds the unified claim-round instruction with treasury and player ATA accounts resolved.
-    pub fn claim_round_instruction(inputs: ClaimRoundInstructionInputs) -> Instruction {
+    /// Builds the ZINC claim-round instruction with treasury and player ATA accounts resolved.
+    pub fn claim_round_zinc_instruction(inputs: ClaimRoundInstructionInputs) -> Instruction {
         let ClaimRoundInstructionInputs {
             signer,
             player,
@@ -47,9 +47,10 @@ impl InstructionsHelper {
         let round_zinc_payout_token_account =
             PdaHelper::get_round_zinc_payout_token_account_address(round_id, &treasury, &zinc_mint);
         let bonanza_token_account = PdaHelper::get_bonanza_token_account_address();
-        ClaimRound {
+        ClaimRoundZinc {
             signer,
             round: PdaHelper::get_round_address(round_id),
+            config: PdaHelper::get_config_address(),
             miner: PdaHelper::get_miner_address(round_id, &player),
             player,
             treasury,
@@ -64,5 +65,27 @@ impl InstructionsHelper {
             system_program: PdaHelper::get_system_program_address(),
         }
         .instruction()
+    }
+
+    /// Builds the SOL claim-round instruction.
+    pub fn claim_round_sol_instruction(inputs: ClaimRoundInstructionInputs) -> Instruction {
+        let ClaimRoundInstructionInputs {
+            signer,
+            player,
+            round_id,
+            zinc_mint: _,
+        } = inputs;
+        ClaimRoundSol {
+            signer,
+            round: PdaHelper::get_round_address(round_id),
+            miner: PdaHelper::get_miner_address(round_id, &player),
+            player,
+        }
+        .instruction()
+    }
+
+    /// Backward-compatible alias for the ZINC-only split claim instruction.
+    pub fn claim_round_instruction(inputs: ClaimRoundInstructionInputs) -> Instruction {
+        Self::claim_round_zinc_instruction(inputs)
     }
 }

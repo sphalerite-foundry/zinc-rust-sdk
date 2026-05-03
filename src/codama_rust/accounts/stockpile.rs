@@ -5,7 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use crate::codama_rust::types::StockpileEntryRange;
+use crate::codama_rust::types::StockpileEntry;
 use crate::codama_rust::types::StockpileStatus;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
@@ -42,8 +42,10 @@ pub struct Stockpile {
     pub zinc_payout_amount: u64,
     /// PDA bump seed.
     pub bump: u8,
-    /// All joined ranges for this cycle.
-    pub entries: Vec<StockpileEntryRange>,
+    /// Number of accepted joins including same-player top-ups.
+    pub accepted_join_count: u64,
+    /// All joined entries for this cycle.
+    pub entries: Vec<StockpileEntry>,
 }
 
 pub const STOCKPILE_DISCRIMINATOR: [u8; 8] = [218, 41, 100, 84, 84, 16, 69, 252];

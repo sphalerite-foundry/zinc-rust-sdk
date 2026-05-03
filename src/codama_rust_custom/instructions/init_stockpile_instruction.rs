@@ -1,7 +1,6 @@
 use crate::codama_rust::instructions::{InitStockpile, InitStockpileInstructionArgs};
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
-use solana_instruction::AccountMeta;
 use solana_instruction::Instruction;
 use solana_pubkey::Pubkey;
 
@@ -23,21 +22,6 @@ pub struct InitStockpileInstructionInputs {
 #[cfg(test)]
 #[path = "init_stockpile_instruction_tests.rs"]
 mod tests;
-
-/// Adds the associated token program for generated clients whose IDL is not refreshed yet.
-fn append_associated_token_program_if_missing(instruction: &mut Instruction) {
-    if instruction
-        .accounts
-        .iter()
-        .any(|account| account.pubkey == PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID)
-    {
-        return;
-    }
-    instruction.accounts.push(AccountMeta::new_readonly(
-        PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID,
-        false,
-    ));
-}
 
 impl InstructionsHelper {
     /// Builds the init-stockpile instruction with the treasury-stored ZINC vault account.
@@ -78,9 +62,6 @@ impl InstructionsHelper {
             arcium_program: PdaHelper::ARCIUM_PROGRAM_ID,
             associated_token_program: PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID,
         };
-        let mut instruction =
-            instruction.instruction(InitStockpileInstructionArgs { computation_offset });
-        append_associated_token_program_if_missing(&mut instruction);
-        instruction
+        instruction.instruction(InitStockpileInstructionArgs { computation_offset })
     }
 }
