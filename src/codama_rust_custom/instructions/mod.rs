@@ -1,3 +1,4 @@
+pub mod auto_miner_instruction;
 pub mod buyback_instruction;
 pub mod claim_round_instruction;
 pub mod close_config_instruction;

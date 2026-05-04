@@ -19,7 +19,7 @@ pub struct InitRound {
     pub config: solana_address::Address,
     /// Tracks the active round, if any, and the next allocatable ID.
     pub board: solana_address::Address,
-    /// Treasury PDA that may refill the crank before queueing Arcium work.
+    /// Treasury PDA used to validate the canonical protocol configuration.
     pub treasury: solana_address::Address,
     /// Newly allocated round account awaiting encrypted entropy.
     pub round: solana_address::Address,
@@ -232,7 +232,7 @@ impl InitRoundBuilder {
         self.board = Some(board);
         self
     }
-    /// Treasury PDA that may refill the crank before queueing Arcium work.
+    /// Treasury PDA used to validate the canonical protocol configuration.
     #[inline(always)]
     pub fn treasury(&mut self, treasury: solana_address::Address) -> &mut Self {
         self.treasury = Some(treasury);
@@ -394,7 +394,7 @@ pub struct InitRoundCpiAccounts<'a, 'b> {
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Tracks the active round, if any, and the next allocatable ID.
     pub board: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury PDA that may refill the crank before queueing Arcium work.
+    /// Treasury PDA used to validate the canonical protocol configuration.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Newly allocated round account awaiting encrypted entropy.
     pub round: &'b solana_account_info::AccountInfo<'a>,
@@ -434,7 +434,7 @@ pub struct InitRoundCpi<'a, 'b> {
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Tracks the active round, if any, and the next allocatable ID.
     pub board: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury PDA that may refill the crank before queueing Arcium work.
+    /// Treasury PDA used to validate the canonical protocol configuration.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Newly allocated round account awaiting encrypted entropy.
     pub round: &'b solana_account_info::AccountInfo<'a>,
@@ -695,7 +695,7 @@ impl<'a, 'b> InitRoundCpiBuilder<'a, 'b> {
         self.instruction.board = Some(board);
         self
     }
-    /// Treasury PDA that may refill the crank before queueing Arcium work.
+    /// Treasury PDA used to validate the canonical protocol configuration.
     #[inline(always)]
     pub fn treasury(&mut self, treasury: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.treasury = Some(treasury);

@@ -8,20 +8,20 @@
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
-pub const CREDIT_ROUND_ZINC_DISCRIMINATOR: [u8; 8] = [236, 221, 193, 26, 45, 137, 4, 147];
+pub const CREDIT_ROUND_REWARDS_DISCRIMINATOR: [u8; 8] = [180, 14, 54, 75, 153, 232, 67, 94];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct CreditRoundZinc {
+pub struct CreditRoundRewards {
     /// Crank signer that submits the reward-credit transaction.
     pub signer: solana_address::Address,
     /// Global config containing the crank authority.
     pub config: solana_address::Address,
-    /// Settled round whose ZINC rewards are being credited.
+    /// Settled round whose rewards are being credited.
     pub round: solana_address::Address,
-    /// Per-player round position that tracks winning stake and split terminal state.
+    /// Per-player round position that tracks winning stake and terminal state.
     pub miner: solana_address::Address,
-    /// Player profile that receives the durable round ZINC reward credit.
+    /// Player profile that receives durable round SOL and ZINC reward credits.
     pub player_profile: solana_address::Address,
     /// Treasury PDA that owns the Bonanza and singleton round-reward vaults.
     pub treasury: solana_address::Address,
@@ -37,7 +37,7 @@ pub struct CreditRoundZinc {
     pub token_program: solana_address::Address,
 }
 
-impl CreditRoundZinc {
+impl CreditRoundRewards {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(&[])
     }
@@ -81,7 +81,9 @@ impl CreditRoundZinc {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = CreditRoundZincInstructionData::new().try_to_vec().unwrap();
+        let data = CreditRoundRewardsInstructionData::new()
+            .try_to_vec()
+            .unwrap();
 
         solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
@@ -92,14 +94,14 @@ impl CreditRoundZinc {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct CreditRoundZincInstructionData {
+pub struct CreditRoundRewardsInstructionData {
     discriminator: [u8; 8],
 }
 
-impl CreditRoundZincInstructionData {
+impl CreditRoundRewardsInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [236, 221, 193, 26, 45, 137, 4, 147],
+            discriminator: [180, 14, 54, 75, 153, 232, 67, 94],
         }
     }
 
@@ -108,13 +110,13 @@ impl CreditRoundZincInstructionData {
     }
 }
 
-impl Default for CreditRoundZincInstructionData {
+impl Default for CreditRoundRewardsInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Instruction builder for `CreditRoundZinc`.
+/// Instruction builder for `CreditRoundRewards`.
 ///
 /// ### Accounts:
 ///
@@ -130,7 +132,7 @@ impl Default for CreditRoundZincInstructionData {
 ///   9. `[writable]` round_zinc_reward_token_account
 ///   10. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
-pub struct CreditRoundZincBuilder {
+pub struct CreditRoundRewardsBuilder {
     signer: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     round: Option<solana_address::Address>,
@@ -145,7 +147,7 @@ pub struct CreditRoundZincBuilder {
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl CreditRoundZincBuilder {
+impl CreditRoundRewardsBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -161,19 +163,19 @@ impl CreditRoundZincBuilder {
         self.config = Some(config);
         self
     }
-    /// Settled round whose ZINC rewards are being credited.
+    /// Settled round whose rewards are being credited.
     #[inline(always)]
     pub fn round(&mut self, round: solana_address::Address) -> &mut Self {
         self.round = Some(round);
         self
     }
-    /// Per-player round position that tracks winning stake and split terminal state.
+    /// Per-player round position that tracks winning stake and terminal state.
     #[inline(always)]
     pub fn miner(&mut self, miner: solana_address::Address) -> &mut Self {
         self.miner = Some(miner);
         self
     }
-    /// Player profile that receives the durable round ZINC reward credit.
+    /// Player profile that receives durable round SOL and ZINC reward credits.
     #[inline(always)]
     pub fn player_profile(&mut self, player_profile: solana_address::Address) -> &mut Self {
         self.player_profile = Some(player_profile);
@@ -242,7 +244,7 @@ impl CreditRoundZincBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = CreditRoundZinc {
+        let accounts = CreditRoundRewards {
             signer: self.signer.expect("signer is not set"),
             config: self.config.expect("config is not set"),
             round: self.round.expect("round is not set"),
@@ -268,17 +270,17 @@ impl CreditRoundZincBuilder {
     }
 }
 
-/// `credit_round_zinc` CPI accounts.
-pub struct CreditRoundZincCpiAccounts<'a, 'b> {
+/// `credit_round_rewards` CPI accounts.
+pub struct CreditRoundRewardsCpiAccounts<'a, 'b> {
     /// Crank signer that submits the reward-credit transaction.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
     /// Global config containing the crank authority.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Settled round whose ZINC rewards are being credited.
+    /// Settled round whose rewards are being credited.
     pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Per-player round position that tracks winning stake and split terminal state.
+    /// Per-player round position that tracks winning stake and terminal state.
     pub miner: &'b solana_account_info::AccountInfo<'a>,
-    /// Player profile that receives the durable round ZINC reward credit.
+    /// Player profile that receives durable round SOL and ZINC reward credits.
     pub player_profile: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that owns the Bonanza and singleton round-reward vaults.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
@@ -294,19 +296,19 @@ pub struct CreditRoundZincCpiAccounts<'a, 'b> {
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `credit_round_zinc` CPI instruction.
-pub struct CreditRoundZincCpi<'a, 'b> {
+/// `credit_round_rewards` CPI instruction.
+pub struct CreditRoundRewardsCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// Crank signer that submits the reward-credit transaction.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
     /// Global config containing the crank authority.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Settled round whose ZINC rewards are being credited.
+    /// Settled round whose rewards are being credited.
     pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Per-player round position that tracks winning stake and split terminal state.
+    /// Per-player round position that tracks winning stake and terminal state.
     pub miner: &'b solana_account_info::AccountInfo<'a>,
-    /// Player profile that receives the durable round ZINC reward credit.
+    /// Player profile that receives durable round SOL and ZINC reward credits.
     pub player_profile: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that owns the Bonanza and singleton round-reward vaults.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
@@ -322,10 +324,10 @@ pub struct CreditRoundZincCpi<'a, 'b> {
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-impl<'a, 'b> CreditRoundZincCpi<'a, 'b> {
+impl<'a, 'b> CreditRoundRewardsCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: CreditRoundZincCpiAccounts<'a, 'b>,
+        accounts: CreditRoundRewardsCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
@@ -408,7 +410,9 @@ impl<'a, 'b> CreditRoundZincCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = CreditRoundZincInstructionData::new().try_to_vec().unwrap();
+        let data = CreditRoundRewardsInstructionData::new()
+            .try_to_vec()
+            .unwrap();
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
@@ -440,7 +444,7 @@ impl<'a, 'b> CreditRoundZincCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `CreditRoundZinc` via CPI.
+/// Instruction builder for `CreditRoundRewards` via CPI.
 ///
 /// ### Accounts:
 ///
@@ -456,13 +460,13 @@ impl<'a, 'b> CreditRoundZincCpi<'a, 'b> {
 ///   9. `[writable]` round_zinc_reward_token_account
 ///   10. `[]` token_program
 #[derive(Clone, Debug)]
-pub struct CreditRoundZincCpiBuilder<'a, 'b> {
-    instruction: Box<CreditRoundZincCpiBuilderInstruction<'a, 'b>>,
+pub struct CreditRoundRewardsCpiBuilder<'a, 'b> {
+    instruction: Box<CreditRoundRewardsCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> CreditRoundZincCpiBuilder<'a, 'b> {
+impl<'a, 'b> CreditRoundRewardsCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(CreditRoundZincCpiBuilderInstruction {
+        let instruction = Box::new(CreditRoundRewardsCpiBuilderInstruction {
             __program: program,
             signer: None,
             config: None,
@@ -491,19 +495,19 @@ impl<'a, 'b> CreditRoundZincCpiBuilder<'a, 'b> {
         self.instruction.config = Some(config);
         self
     }
-    /// Settled round whose ZINC rewards are being credited.
+    /// Settled round whose rewards are being credited.
     #[inline(always)]
     pub fn round(&mut self, round: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.round = Some(round);
         self
     }
-    /// Per-player round position that tracks winning stake and split terminal state.
+    /// Per-player round position that tracks winning stake and terminal state.
     #[inline(always)]
     pub fn miner(&mut self, miner: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.miner = Some(miner);
         self
     }
-    /// Player profile that receives the durable round ZINC reward credit.
+    /// Player profile that receives durable round SOL and ZINC reward credits.
     #[inline(always)]
     pub fn player_profile(
         &mut self,
@@ -594,7 +598,7 @@ impl<'a, 'b> CreditRoundZincCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let instruction = CreditRoundZincCpi {
+        let instruction = CreditRoundRewardsCpi {
             __program: self.instruction.__program,
 
             signer: self.instruction.signer.expect("signer is not set"),
@@ -642,7 +646,7 @@ impl<'a, 'b> CreditRoundZincCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct CreditRoundZincCpiBuilderInstruction<'a, 'b> {
+struct CreditRoundRewardsCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     signer: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,

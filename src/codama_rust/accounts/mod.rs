@@ -6,6 +6,7 @@
 //!
 
 pub(crate) mod r#arcium_signer_account;
+pub(crate) mod r#auto_miner_session;
 pub(crate) mod r#board;
 pub(crate) mod r#buyback_pool;
 pub(crate) mod r#buyback_sol_vault;
@@ -27,6 +28,7 @@ pub(crate) mod r#stockpile_sol_vault;
 pub(crate) mod r#treasury;
 
 pub use self::r#arcium_signer_account::*;
+pub use self::r#auto_miner_session::*;
 pub use self::r#board::*;
 pub use self::r#buyback_pool::*;
 pub use self::r#buyback_sol_vault::*;
