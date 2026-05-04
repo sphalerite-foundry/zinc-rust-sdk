@@ -34,6 +34,10 @@ pub struct PlayerProfile {
     pub pending_affiliate_pay_lamports: u64,
     /// Lifetime affiliate SOL accrued for this wallet.
     pub total_affiliate_pay_lamports: u64,
+    /// Claimable round SOL currently held on this player-profile PDA.
+    pub claimable_round_sol_lamports: u64,
+    /// Lifetime round SOL credited to this player profile.
+    pub lifetime_round_sol_lamports: u64,
     /// Lifetime stockpile bricks earned from streak and hidden-bonus accrual, in `x10k` units.
     pub lifetime_stockpile_bricks_earned_x10k: u64,
     /// Lifetime stockpile bricks earned from staking-yield claims, in `x10k` units.

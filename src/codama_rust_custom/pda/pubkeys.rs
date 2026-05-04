@@ -115,6 +115,11 @@ impl PdaHelper {
         Pubkey::find_program_address(&[b"player-profile", player.as_ref()], &ZINC_ID).0
     }
 
+    /// Derives one player-owned auto-miner session PDA.
+    pub fn get_auto_miner_session_address(authority: &Pubkey) -> Pubkey {
+        Pubkey::find_program_address(&[b"auto-miner-session", authority.as_ref()], &ZINC_ID).0
+    }
+
     pub fn get_treasury_address() -> Pubkey {
         Pubkey::find_program_address(&[b"treasury"], &ZINC_ID).0
     }

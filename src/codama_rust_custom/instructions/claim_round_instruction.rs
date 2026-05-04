@@ -1,4 +1,4 @@
-use crate::codama_rust::instructions::{ClaimPlayerZincRewards, ClaimRoundSol, CreditRoundZinc};
+use crate::codama_rust::instructions::{ClaimPlayerZincRewards, ClaimRoundSol, CreditRoundRewards};
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
@@ -17,9 +17,9 @@ pub struct ClaimPlayerZincRewardsInstructionInputs {
     pub zinc_mint: Pubkey,
 }
 
-/// Inputs used to credit one settled round's ZINC rewards into a player profile.
-pub struct CreditRoundZincInstructionInputs {
-    /// Crank signer submitting the automatic ZINC credit transaction.
+/// Inputs used to credit one settled round's rewards into a player profile.
+pub struct CreditRoundRewardsInstructionInputs {
+    /// Crank signer submitting the automatic reward credit transaction.
     pub signer: Pubkey,
     /// Player whose miner rewards are credited.
     pub player: Pubkey,
@@ -53,9 +53,11 @@ fn get_player_zinc_token_account(player: &Pubkey, zinc_mint: &Pubkey) -> Pubkey 
 }
 
 impl InstructionsHelper {
-    /// Builds the crank-only round ZINC credit instruction.
-    pub fn credit_round_zinc_instruction(inputs: CreditRoundZincInstructionInputs) -> Instruction {
-        let CreditRoundZincInstructionInputs {
+    /// Builds the crank-only round reward credit instruction.
+    pub fn credit_round_rewards_instruction(
+        inputs: CreditRoundRewardsInstructionInputs,
+    ) -> Instruction {
+        let CreditRoundRewardsInstructionInputs {
             signer,
             player,
             round_id,
@@ -65,7 +67,7 @@ impl InstructionsHelper {
         let round_zinc_payout_token_account =
             PdaHelper::get_round_zinc_payout_token_account_address(round_id, &treasury, &zinc_mint);
         let bonanza_token_account = PdaHelper::get_bonanza_token_account_address();
-        CreditRoundZinc {
+        CreditRoundRewards {
             signer,
             config: PdaHelper::get_config_address(),
             round: PdaHelper::get_round_address(round_id),
