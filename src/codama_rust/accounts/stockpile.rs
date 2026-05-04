@@ -20,11 +20,11 @@ pub struct Stockpile {
     pub id: u64,
     /// True once this PDA has been initialized for a concrete stockpile cycle.
     pub initialized: bool,
-    /// Configured slot duration captured when the cycle was created.
+    /// Slot duration captured when the cycle was created for historical metadata.
     pub duration_slots: u64,
     /// Slot when the cycle opened for joins.
     pub open_slot: Option<u64>,
-    /// Slot after which the cycle may be closed.
+    /// Initial close slot captured at open; live close checks use current config duration.
     pub close_after_slot: Option<u64>,
     /// Number of joined entries in this cycle.
     pub entrant_count: u64,
