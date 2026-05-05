@@ -28,7 +28,7 @@ pub struct AutoMinerSession {
     pub mask_bits_key_version: u16,
     /// User-funded lamport budget available for deploys and reimbursements.
     pub remaining_budget: u64,
-    /// Maximum number of auto deploys allowed by this session.
+    /// Funding quote round count retained for compatibility; budget is the deploy limiter.
     pub max_rounds: u64,
     /// Number of successful deploys already executed.
     pub rounds_used: u64,
