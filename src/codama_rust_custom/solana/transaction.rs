@@ -10,11 +10,24 @@ use solana_sdk::transaction::VersionedTransaction;
 use std::{env, str::FromStr};
 use tokio::time::{sleep, Duration};
 
+/// Priority-fee tier used when sending a Zinc transaction.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PriorityFeeTier {
+    /// Latency-sensitive protocol work that should land quickly for user-facing flows.
+    Urgent,
+    /// Best-effort maintenance work that can tolerate lower priority fees.
+    Background,
+}
+
 impl SolanaHelper {
     const CONFIRMATION_POLL_INTERVAL_MS: u64 = 1_000;
     const CONFIRMATION_RETRIES: u8 = 10;
-    const COMPUTE_UNIT_PRICE_ENV: &str = "ZINC_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS";
-    const DEFAULT_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS: u64 = 10_000;
+    const LEGACY_COMPUTE_UNIT_PRICE_ENV: &str = "ZINC_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS";
+    const URGENT_COMPUTE_UNIT_PRICE_ENV: &str = "ZINC_URGENT_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS";
+    const BACKGROUND_COMPUTE_UNIT_PRICE_ENV: &str =
+        "ZINC_BACKGROUND_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS";
+    const DEFAULT_URGENT_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS: u64 = 10_000;
+    const DEFAULT_BACKGROUND_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS: u64 = 2_500;
 
     /// Sends a v0 transaction signed only by the payer keypair.
     pub async fn send_transaction(
@@ -26,6 +39,25 @@ impl SolanaHelper {
         Self::send_transaction_with_signers(rpc, signer, &[], instructions, lookup_tables).await
     }
 
+    /// Sends a v0 transaction signed only by the payer keypair with the selected fee tier.
+    pub async fn send_transaction_with_fee_tier(
+        rpc: &RpcClient,
+        signer: &Keypair,
+        instructions: Vec<solana_instruction::Instruction>,
+        lookup_tables: &[AddressLookupTableAccount],
+        fee_tier: PriorityFeeTier,
+    ) -> anyhow::Result<String> {
+        Self::send_transaction_with_signers_and_fee_tier(
+            rpc,
+            signer,
+            &[],
+            instructions,
+            lookup_tables,
+            fee_tier,
+        )
+        .await
+    }
+
     /// Sends a v0 transaction signed by the payer plus any additional signer keypairs.
     pub async fn send_transaction_with_signers(
         rpc: &RpcClient,
@@ -34,9 +66,29 @@ impl SolanaHelper {
         instructions: Vec<solana_instruction::Instruction>,
         lookup_tables: &[AddressLookupTableAccount],
     ) -> anyhow::Result<String> {
+        Self::send_transaction_with_signers_and_fee_tier(
+            rpc,
+            signer,
+            additional_signers,
+            instructions,
+            lookup_tables,
+            PriorityFeeTier::Urgent,
+        )
+        .await
+    }
+
+    /// Sends a v0 transaction signed by the payer plus additional signer keypairs with the selected fee tier.
+    pub async fn send_transaction_with_signers_and_fee_tier(
+        rpc: &RpcClient,
+        signer: &Keypair,
+        additional_signers: &[&Keypair],
+        instructions: Vec<solana_instruction::Instruction>,
+        lookup_tables: &[AddressLookupTableAccount],
+        fee_tier: PriorityFeeTier,
+    ) -> anyhow::Result<String> {
         let confirmed_commitment = CommitmentConfig::confirmed();
         let compute_budget = ComputeBudgetInstruction::set_compute_unit_limit(3_000_000);
-        let compute_unit_price = Self::compute_unit_price_micro_lamports()?;
+        let compute_unit_price = Self::compute_unit_price_micro_lamports(fee_tier)?;
         let recent_blockhash = rpc.get_latest_blockhash().await?;
         let mut tx_instructions = vec![compute_budget];
         if let Some(compute_unit_price) = compute_unit_price {
@@ -111,18 +163,39 @@ impl SolanaHelper {
         }
     }
 
-    /// Loads the configured compute-unit price for priority fees.
-    fn compute_unit_price_micro_lamports() -> anyhow::Result<Option<u64>> {
-        let raw_value = env::var(Self::COMPUTE_UNIT_PRICE_ENV)
-            .unwrap_or_else(|_| Self::DEFAULT_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS.to_string());
+    /// Loads the configured compute-unit price for a priority-fee tier.
+    fn compute_unit_price_micro_lamports(fee_tier: PriorityFeeTier) -> anyhow::Result<Option<u64>> {
+        let (env_name, raw_value) = Self::compute_unit_price_raw_value(fee_tier);
         let trimmed_value = raw_value.trim();
-        let price = trimmed_value.parse::<u64>().map_err(|error| {
-            anyhow!(
-                "invalid {} value {trimmed_value:?}: {error}",
-                Self::COMPUTE_UNIT_PRICE_ENV
-            )
-        })?;
+        let price = trimmed_value
+            .parse::<u64>()
+            .map_err(|error| anyhow!("invalid {env_name} value {trimmed_value:?}: {error}"))?;
 
         Ok((price > 0).then_some(price))
+    }
+
+    /// Resolves the raw configured compute-unit price for a priority-fee tier.
+    fn compute_unit_price_raw_value(fee_tier: PriorityFeeTier) -> (&'static str, String) {
+        match fee_tier {
+            PriorityFeeTier::Urgent => {
+                if let Ok(raw_value) = env::var(Self::URGENT_COMPUTE_UNIT_PRICE_ENV) {
+                    return (Self::URGENT_COMPUTE_UNIT_PRICE_ENV, raw_value);
+                }
+                if let Ok(raw_value) = env::var(Self::LEGACY_COMPUTE_UNIT_PRICE_ENV) {
+                    return (Self::LEGACY_COMPUTE_UNIT_PRICE_ENV, raw_value);
+                }
+                (
+                    Self::URGENT_COMPUTE_UNIT_PRICE_ENV,
+                    Self::DEFAULT_URGENT_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS.to_string(),
+                )
+            }
+            PriorityFeeTier::Background => {
+                let raw_value =
+                    env::var(Self::BACKGROUND_COMPUTE_UNIT_PRICE_ENV).unwrap_or_else(|_| {
+                        Self::DEFAULT_BACKGROUND_COMPUTE_UNIT_PRICE_MICRO_LAMPORTS.to_string()
+                    });
+                (Self::BACKGROUND_COMPUTE_UNIT_PRICE_ENV, raw_value)
+            }
+        }
     }
 }
