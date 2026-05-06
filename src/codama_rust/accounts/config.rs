@@ -72,12 +72,14 @@ pub struct Config {
     pub stockpile_entry_step_bps: u64,
     /// Staking brick issuance rate per claimed ZINC, in `x10k` units.
     pub staking_bricks_per_zinc_x10k: u64,
+    /// Number of slots over which newly melted staking rewards vest.
+    pub staking_reward_vesting_slots: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 306;
+    pub const LEN: usize = 314;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
