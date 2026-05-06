@@ -2,6 +2,8 @@ pub mod account;
 pub mod lut;
 pub mod transaction;
 
+pub use transaction::PriorityFeeTier;
+
 pub struct SolanaHelper;
 
 pub fn to_sdk_pubkey(address: solana_address::Address) -> solana_sdk::pubkey::Pubkey {
