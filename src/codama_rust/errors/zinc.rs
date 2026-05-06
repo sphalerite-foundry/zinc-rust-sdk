@@ -406,81 +406,75 @@ pub enum ZincError {
     /// 6131 - Auto-miner session has expired
     #[error("Auto-miner session has expired")]
     AutoMinerSessionExpired = 0x17F3,
-    /// 6132 - Auto-miner session exhausted its approved rounds
-    #[error("Auto-miner session exhausted its approved rounds")]
-    AutoMinerSessionExhausted = 0x17F4,
-    /// 6133 - Auto-miner session budget is insufficient
+    /// 6132 - Auto-miner session budget is insufficient
     #[error("Auto-miner session budget is insufficient")]
-    AutoMinerInsufficientBudget = 0x17F5,
-    /// 6134 - Auto-miner max rounds cannot be below rounds already used
-    #[error("Auto-miner max rounds cannot be below rounds already used")]
-    AutoMinerMaxRoundsBelowUsed = 0x17F6,
-    /// 6135 - Auto-miner authority lamports are insufficient
+    AutoMinerInsufficientBudget = 0x17F4,
+    /// 6133 - Auto-miner authority lamports are insufficient
     #[error("Auto-miner authority lamports are insufficient")]
-    AutoMinerAuthorityInsufficientLamports = 0x17F7,
-    /// 6136 - Auto-miner encrypted tile pattern is invalid
+    AutoMinerAuthorityInsufficientLamports = 0x17F5,
+    /// 6134 - Auto-miner encrypted tile pattern is invalid
     #[error("Auto-miner encrypted tile pattern is invalid")]
-    InvalidAutoMinerEncryptedPattern = 0x17F8,
-    /// 6137 - Stockpile duration must be greater than zero
+    InvalidAutoMinerEncryptedPattern = 0x17F6,
+    /// 6135 - Stockpile duration must be greater than zero
     #[error("Stockpile duration must be greater than zero")]
-    InvalidStockpileDuration = 0x17F9,
-    /// 6138 - Config must be closed with close_config
+    InvalidStockpileDuration = 0x17F7,
+    /// 6136 - Config must be closed with close_config
     #[error("Config must be closed with close_config")]
-    ClosePdaCannotCloseConfig = 0x17FA,
-    /// 6139 - Wrong treasury token account
+    ClosePdaCannotCloseConfig = 0x17F8,
+    /// 6137 - Wrong treasury token account
     #[error("Wrong treasury token account")]
-    WrongTreasuryTokenAccount = 0x17FB,
-    /// 6140 - Not Admin or Crank
+    WrongTreasuryTokenAccount = 0x17F9,
+    /// 6138 - Not Admin or Crank
     #[error("Not Admin or Crank")]
-    NotAdminOrCrank = 0x17FC,
-    /// 6141 - Round cleanup is incomplete
+    NotAdminOrCrank = 0x17FA,
+    /// 6139 - Round cleanup is incomplete
     #[error("Round cleanup is incomplete")]
-    RoundCleanupIncomplete = 0x17FD,
-    /// 6142 - Round cleanup is already complete
+    RoundCleanupIncomplete = 0x17FB,
+    /// 6140 - Round cleanup is already complete
     #[error("Round cleanup is already complete")]
-    RoundCleanupComplete = 0x17FE,
-    /// 6143 - Round is still referenced by the board
+    RoundCleanupComplete = 0x17FC,
+    /// 6141 - Round is still referenced by the board
     #[error("Round is still referenced by the board")]
-    BoardRoundStillReferenced = 0x17FF,
-    /// 6144 - Miner claim state is not terminal
+    BoardRoundStillReferenced = 0x17FD,
+    /// 6142 - Miner claim state is not terminal
     #[error("Miner claim state is not terminal")]
-    MinerClaimNotTerminal = 0x1800,
-    /// 6145 - Round still has outstanding winner claims
+    MinerClaimNotTerminal = 0x17FE,
+    /// 6143 - Round still has outstanding winner claims
     #[error("Round still has outstanding winner claims")]
-    OutstandingWinnerClaims = 0x1801,
-    /// 6146 - Wrong round secret
+    OutstandingWinnerClaims = 0x17FF,
+    /// 6144 - Wrong round secret
     #[error("Wrong round secret")]
-    WrongRoundSecret = 0x1802,
-    /// 6147 - Wildcat winner selection is not ready
+    WrongRoundSecret = 0x1800,
+    /// 6145 - Wildcat winner selection is not ready
     #[error("Wildcat winner selection is not ready")]
-    WildcatSelectionNotReady = 0x1803,
-    /// 6148 - Wildcat winner selection is already complete
+    WildcatSelectionNotReady = 0x1801,
+    /// 6146 - Wildcat winner selection is already complete
     #[error("Wildcat winner selection is already complete")]
-    WildcatSelectionComplete = 0x1804,
-    /// 6149 - Wildcat winner is missing
+    WildcatSelectionComplete = 0x1802,
+    /// 6147 - Wildcat winner is missing
     #[error("Wildcat winner is missing")]
-    WildcatWinnerMissing = 0x1805,
-    /// 6150 - Wildcat ZINC claim is not ready
+    WildcatWinnerMissing = 0x1803,
+    /// 6148 - Wildcat ZINC claim is not ready
     #[error("Wildcat ZINC claim is not ready")]
-    WildcatClaimNotReady = 0x1806,
-    /// 6151 - Wildcat ZINC has already been claimed
+    WildcatClaimNotReady = 0x1804,
+    /// 6149 - Wildcat ZINC has already been claimed
     #[error("Wildcat ZINC has already been claimed")]
-    WildcatAlreadyClaimed = 0x1807,
-    /// 6152 - Wildcat ZINC claim is incomplete
+    WildcatAlreadyClaimed = 0x1805,
+    /// 6150 - Wildcat ZINC claim is incomplete
     #[error("Wildcat ZINC claim is incomplete")]
-    WildcatClaimIncomplete = 0x1808,
-    /// 6153 - Wildcat entry capacity is exhausted
+    WildcatClaimIncomplete = 0x1806,
+    /// 6151 - Wildcat entry capacity is exhausted
     #[error("Wildcat entry capacity is exhausted")]
-    WildcatEntryCapacityExceeded = 0x1809,
-    /// 6154 - Wildcat winner ZINC share exceeds one million ppm
+    WildcatEntryCapacityExceeded = 0x1807,
+    /// 6152 - Wildcat winner ZINC share exceeds one million ppm
     #[error("Wildcat winner ZINC share exceeds one million ppm")]
-    InvalidWildcatWinnerZincSharePpm = 0x180A,
-    /// 6155 - Board cannot be closed with close_pda
+    InvalidWildcatWinnerZincSharePpm = 0x1808,
+    /// 6153 - Board cannot be closed with close_pda
     #[error("Board cannot be closed with close_pda")]
-    ClosePdaCannotCloseBoard = 0x180B,
-    /// 6156 - Treasury cannot be closed with close_pda
+    ClosePdaCannotCloseBoard = 0x1809,
+    /// 6154 - Treasury cannot be closed with close_pda
     #[error("Treasury cannot be closed with close_pda")]
-    ClosePdaCannotCloseTreasury = 0x180C,
+    ClosePdaCannotCloseTreasury = 0x180A,
 }
 
 impl From<ZincError> for solana_program_error::ProgramError {

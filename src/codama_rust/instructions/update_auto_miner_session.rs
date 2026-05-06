@@ -89,7 +89,6 @@ pub struct UpdateAutoMinerSessionInstructionArgs {
     pub mask_bits_nonce: u128,
     pub mask_bits_ciphertext: [u8; 32],
     pub mask_bits_key_version: u16,
-    pub max_rounds: u64,
     pub expiry_slot: Option<u64>,
     pub paused: bool,
     pub crank_reimbursement_lamports: u64,
@@ -117,7 +116,6 @@ pub struct UpdateAutoMinerSessionBuilder {
     mask_bits_nonce: Option<u128>,
     mask_bits_ciphertext: Option<[u8; 32]>,
     mask_bits_key_version: Option<u16>,
-    max_rounds: Option<u64>,
     expiry_slot: Option<u64>,
     paused: Option<bool>,
     crank_reimbursement_lamports: Option<u64>,
@@ -168,11 +166,6 @@ impl UpdateAutoMinerSessionBuilder {
     #[inline(always)]
     pub fn mask_bits_key_version(&mut self, mask_bits_key_version: u16) -> &mut Self {
         self.mask_bits_key_version = Some(mask_bits_key_version);
-        self
-    }
-    #[inline(always)]
-    pub fn max_rounds(&mut self, max_rounds: u64) -> &mut Self {
-        self.max_rounds = Some(max_rounds);
         self
     }
     /// `[optional argument]`
@@ -236,7 +229,6 @@ impl UpdateAutoMinerSessionBuilder {
                 .mask_bits_key_version
                 .clone()
                 .expect("mask_bits_key_version is not set"),
-            max_rounds: self.max_rounds.clone().expect("max_rounds is not set"),
             expiry_slot: self.expiry_slot.clone(),
             paused: self.paused.clone().expect("paused is not set"),
             crank_reimbursement_lamports: self
@@ -371,7 +363,6 @@ impl<'a, 'b> UpdateAutoMinerSessionCpiBuilder<'a, 'b> {
             mask_bits_nonce: None,
             mask_bits_ciphertext: None,
             mask_bits_key_version: None,
-            max_rounds: None,
             expiry_slot: None,
             paused: None,
             crank_reimbursement_lamports: None,
@@ -422,11 +413,6 @@ impl<'a, 'b> UpdateAutoMinerSessionCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn mask_bits_key_version(&mut self, mask_bits_key_version: u16) -> &mut Self {
         self.instruction.mask_bits_key_version = Some(mask_bits_key_version);
-        self
-    }
-    #[inline(always)]
-    pub fn max_rounds(&mut self, max_rounds: u64) -> &mut Self {
-        self.instruction.max_rounds = Some(max_rounds);
         self
     }
     /// `[optional argument]`
@@ -510,11 +496,6 @@ impl<'a, 'b> UpdateAutoMinerSessionCpiBuilder<'a, 'b> {
                 .mask_bits_key_version
                 .clone()
                 .expect("mask_bits_key_version is not set"),
-            max_rounds: self
-                .instruction
-                .max_rounds
-                .clone()
-                .expect("max_rounds is not set"),
             expiry_slot: self.instruction.expiry_slot.clone(),
             paused: self.instruction.paused.clone().expect("paused is not set"),
             crank_reimbursement_lamports: self
@@ -552,7 +533,6 @@ struct UpdateAutoMinerSessionCpiBuilderInstruction<'a, 'b> {
     mask_bits_nonce: Option<u128>,
     mask_bits_ciphertext: Option<[u8; 32]>,
     mask_bits_key_version: Option<u16>,
-    max_rounds: Option<u64>,
     expiry_slot: Option<u64>,
     paused: Option<bool>,
     crank_reimbursement_lamports: Option<u64>,

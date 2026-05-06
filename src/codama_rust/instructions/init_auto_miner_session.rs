@@ -99,7 +99,6 @@ pub struct InitAutoMinerSessionInstructionArgs {
     pub mask_bits_ciphertext: [u8; 32],
     pub mask_bits_key_version: u16,
     pub initial_budget: u64,
-    pub max_rounds: u64,
     pub expiry_slot: Option<u64>,
     pub crank_reimbursement_lamports: u64,
 }
@@ -131,7 +130,6 @@ pub struct InitAutoMinerSessionBuilder {
     mask_bits_ciphertext: Option<[u8; 32]>,
     mask_bits_key_version: Option<u16>,
     initial_budget: Option<u64>,
-    max_rounds: Option<u64>,
     expiry_slot: Option<u64>,
     crank_reimbursement_lamports: Option<u64>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
@@ -201,11 +199,6 @@ impl InitAutoMinerSessionBuilder {
         self.initial_budget = Some(initial_budget);
         self
     }
-    #[inline(always)]
-    pub fn max_rounds(&mut self, max_rounds: u64) -> &mut Self {
-        self.max_rounds = Some(max_rounds);
-        self
-    }
     /// `[optional argument]`
     #[inline(always)]
     pub fn expiry_slot(&mut self, expiry_slot: u64) -> &mut Self {
@@ -270,7 +263,6 @@ impl InitAutoMinerSessionBuilder {
                 .initial_budget
                 .clone()
                 .expect("initial_budget is not set"),
-            max_rounds: self.max_rounds.clone().expect("max_rounds is not set"),
             expiry_slot: self.expiry_slot.clone(),
             crank_reimbursement_lamports: self
                 .crank_reimbursement_lamports
@@ -429,7 +421,6 @@ impl<'a, 'b> InitAutoMinerSessionCpiBuilder<'a, 'b> {
             mask_bits_ciphertext: None,
             mask_bits_key_version: None,
             initial_budget: None,
-            max_rounds: None,
             expiry_slot: None,
             crank_reimbursement_lamports: None,
             __remaining_accounts: Vec::new(),
@@ -502,11 +493,6 @@ impl<'a, 'b> InitAutoMinerSessionCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn initial_budget(&mut self, initial_budget: u64) -> &mut Self {
         self.instruction.initial_budget = Some(initial_budget);
-        self
-    }
-    #[inline(always)]
-    pub fn max_rounds(&mut self, max_rounds: u64) -> &mut Self {
-        self.instruction.max_rounds = Some(max_rounds);
         self
     }
     /// `[optional argument]`
@@ -590,11 +576,6 @@ impl<'a, 'b> InitAutoMinerSessionCpiBuilder<'a, 'b> {
                 .initial_budget
                 .clone()
                 .expect("initial_budget is not set"),
-            max_rounds: self
-                .instruction
-                .max_rounds
-                .clone()
-                .expect("max_rounds is not set"),
             expiry_slot: self.instruction.expiry_slot.clone(),
             crank_reimbursement_lamports: self
                 .instruction
@@ -644,7 +625,6 @@ struct InitAutoMinerSessionCpiBuilderInstruction<'a, 'b> {
     mask_bits_ciphertext: Option<[u8; 32]>,
     mask_bits_key_version: Option<u16>,
     initial_budget: Option<u64>,
-    max_rounds: Option<u64>,
     expiry_slot: Option<u64>,
     crank_reimbursement_lamports: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
