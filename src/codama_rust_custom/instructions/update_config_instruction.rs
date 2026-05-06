@@ -33,6 +33,8 @@ pub struct UpdateConfigInstructionInputs {
     pub stockpile_entry_step_bps: Option<u64>,
     /// Optional staking brick issuance rate per claimed ZINC, in `x10k` units.
     pub staking_bricks_per_zinc_x10k: Option<u64>,
+    /// Optional slots over which newly melted staking rewards vest.
+    pub staking_reward_vesting_slots: Option<u64>,
     /// Optional toggle for affiliate withdrawals.
     pub affiliate_withdrawals_enabled: Option<bool>,
     /// Optional round duration in slots.
@@ -80,6 +82,7 @@ impl InstructionsHelper {
             stockpile_entry_pot_fee_bps,
             stockpile_entry_step_bps,
             staking_bricks_per_zinc_x10k,
+            staking_reward_vesting_slots,
             affiliate_withdrawals_enabled,
             round_duration_slots,
             stockpile_duration_slots,
@@ -128,6 +131,7 @@ impl InstructionsHelper {
             stockpile_entry_pot_fee_bps,
             stockpile_entry_step_bps,
             staking_bricks_per_zinc_x10k,
+            staking_reward_vesting_slots,
         })
     }
 }

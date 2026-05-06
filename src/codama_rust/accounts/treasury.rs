@@ -48,12 +48,18 @@ pub struct Treasury {
     pub round_zinc_rewards_factor: u128,
     /// Pool-level carry remainder used when converting one claim fee into the cumulative factor.
     pub round_zinc_rewards_remainder: u64,
+    /// Melted staking rewards held in the reward vault but not yet vested into the reward factor.
+    pub staking_unvested_rewards: u64,
+    /// Last slot at which the global staking vesting bucket was settled or paused.
+    pub staking_rewards_vesting_last_slot: u64,
+    /// Slot at which the current global staking vesting bucket fully vests if staking stays active.
+    pub staking_rewards_vesting_end_slot: u64,
 }
 
 pub const TREASURY_DISCRIMINATOR: [u8; 8] = [238, 239, 123, 238, 89, 1, 168, 253];
 
 impl Treasury {
-    pub const LEN: usize = 329;
+    pub const LEN: usize = 353;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {

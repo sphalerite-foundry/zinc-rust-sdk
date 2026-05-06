@@ -15,6 +15,8 @@ pub const MELT_DISCRIMINATOR: [u8; 8] = [42, 127, 85, 29, 150, 84, 21, 158];
 pub struct Melt {
     /// Wallet that contributes ZINC into the shared melt sink.
     pub signer: solana_address::Address,
+    /// Protocol config containing the staking reward vesting window.
+    pub config: solana_address::Address,
     /// Treasury PDA that owns global staking accounting.
     pub treasury: solana_address::Address,
     /// Protocol ZINC mint.
@@ -38,8 +40,12 @@ impl Melt {
         args: MeltInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.config,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new(self.treasury, false));
         accounts.push(solana_instruction::AccountMeta::new(self.zinc_mint, false));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -106,14 +112,16 @@ impl MeltInstructionArgs {
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` signer
-///   1. `[writable]` treasury
-///   2. `[writable]` zinc_mint
-///   3. `[writable]` signer_zinc_token_account
-///   4. `[writable]` staking_reward_token_account
-///   5. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   1. `[]` config
+///   2. `[writable]` treasury
+///   3. `[writable]` zinc_mint
+///   4. `[writable]` signer_zinc_token_account
+///   5. `[writable]` staking_reward_token_account
+///   6. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
 pub struct MeltBuilder {
     signer: Option<solana_address::Address>,
+    config: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
     zinc_mint: Option<solana_address::Address>,
     signer_zinc_token_account: Option<solana_address::Address>,
@@ -131,6 +139,12 @@ impl MeltBuilder {
     #[inline(always)]
     pub fn signer(&mut self, signer: solana_address::Address) -> &mut Self {
         self.signer = Some(signer);
+        self
+    }
+    /// Protocol config containing the staking reward vesting window.
+    #[inline(always)]
+    pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
+        self.config = Some(config);
         self
     }
     /// Treasury PDA that owns global staking accounting.
@@ -194,6 +208,7 @@ impl MeltBuilder {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         let accounts = Melt {
             signer: self.signer.expect("signer is not set"),
+            config: self.config.expect("config is not set"),
             treasury: self.treasury.expect("treasury is not set"),
             zinc_mint: self.zinc_mint.expect("zinc_mint is not set"),
             signer_zinc_token_account: self
@@ -218,6 +233,8 @@ impl MeltBuilder {
 pub struct MeltCpiAccounts<'a, 'b> {
     /// Wallet that contributes ZINC into the shared melt sink.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
+    /// Protocol config containing the staking reward vesting window.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that owns global staking accounting.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Protocol ZINC mint.
@@ -236,6 +253,8 @@ pub struct MeltCpi<'a, 'b> {
     pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// Wallet that contributes ZINC into the shared melt sink.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
+    /// Protocol config containing the staking reward vesting window.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that owns global staking accounting.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Protocol ZINC mint.
@@ -259,6 +278,7 @@ impl<'a, 'b> MeltCpi<'a, 'b> {
         Self {
             __program: program,
             signer: accounts.signer,
+            config: accounts.config,
             treasury: accounts.treasury,
             zinc_mint: accounts.zinc_mint,
             signer_zinc_token_account: accounts.signer_zinc_token_account,
@@ -290,8 +310,12 @@ impl<'a, 'b> MeltCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(6 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.config.key,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.treasury.key,
             false,
@@ -328,9 +352,10 @@ impl<'a, 'b> MeltCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(7 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(8 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
+        account_infos.push(self.config.clone());
         account_infos.push(self.treasury.clone());
         account_infos.push(self.zinc_mint.clone());
         account_infos.push(self.signer_zinc_token_account.clone());
@@ -353,11 +378,12 @@ impl<'a, 'b> MeltCpi<'a, 'b> {
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` signer
-///   1. `[writable]` treasury
-///   2. `[writable]` zinc_mint
-///   3. `[writable]` signer_zinc_token_account
-///   4. `[writable]` staking_reward_token_account
-///   5. `[]` token_program
+///   1. `[]` config
+///   2. `[writable]` treasury
+///   3. `[writable]` zinc_mint
+///   4. `[writable]` signer_zinc_token_account
+///   5. `[writable]` staking_reward_token_account
+///   6. `[]` token_program
 #[derive(Clone, Debug)]
 pub struct MeltCpiBuilder<'a, 'b> {
     instruction: Box<MeltCpiBuilderInstruction<'a, 'b>>,
@@ -368,6 +394,7 @@ impl<'a, 'b> MeltCpiBuilder<'a, 'b> {
         let instruction = Box::new(MeltCpiBuilderInstruction {
             __program: program,
             signer: None,
+            config: None,
             treasury: None,
             zinc_mint: None,
             signer_zinc_token_account: None,
@@ -382,6 +409,12 @@ impl<'a, 'b> MeltCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn signer(&mut self, signer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.signer = Some(signer);
+        self
+    }
+    /// Protocol config containing the staking reward vesting window.
+    #[inline(always)]
+    pub fn config(&mut self, config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.config = Some(config);
         self
     }
     /// Treasury PDA that owns global staking accounting.
@@ -470,6 +503,8 @@ impl<'a, 'b> MeltCpiBuilder<'a, 'b> {
 
             signer: self.instruction.signer.expect("signer is not set"),
 
+            config: self.instruction.config.expect("config is not set"),
+
             treasury: self.instruction.treasury.expect("treasury is not set"),
 
             zinc_mint: self.instruction.zinc_mint.expect("zinc_mint is not set"),
@@ -501,6 +536,7 @@ impl<'a, 'b> MeltCpiBuilder<'a, 'b> {
 struct MeltCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     signer: Option<&'b solana_account_info::AccountInfo<'a>>,
+    config: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
     signer_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
