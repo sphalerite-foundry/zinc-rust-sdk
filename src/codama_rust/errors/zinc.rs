@@ -475,6 +475,9 @@ pub enum ZincError {
     /// 6154 - Treasury cannot be closed with close_pda
     #[error("Treasury cannot be closed with close_pda")]
     ClosePdaCannotCloseTreasury = 0x180A,
+    /// 6155 - Wrong ZINC mint authority
+    #[error("Wrong ZINC mint authority")]
+    WrongZincMintAuthority = 0x180B,
 }
 
 impl From<ZincError> for solana_program_error::ProgramError {

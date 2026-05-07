@@ -51,9 +51,7 @@ impl CloseTreasuryTokenAccount {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.treasury, false));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.mint, false,
-        ));
+        accounts.push(solana_instruction::AccountMeta::new(self.mint, false));
         accounts.push(solana_instruction::AccountMeta::new(
             self.source_token_account,
             false,
@@ -117,7 +115,7 @@ impl Default for CloseTreasuryTokenAccountInstructionData {
 ///   0. `[writable, signer]` admin
 ///   1. `[]` config
 ///   2. `[writable]` treasury
-///   3. `[]` mint
+///   3. `[writable]` mint
 ///   4. `[writable]` source_token_account
 ///   5. `[writable]` admin_token_account
 ///   6. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
@@ -347,10 +345,7 @@ impl<'a, 'b> CloseTreasuryTokenAccountCpi<'a, 'b> {
             *self.treasury.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.mint.key,
-            false,
-        ));
+        accounts.push(solana_instruction::AccountMeta::new(*self.mint.key, false));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.source_token_account.key,
             false,
@@ -417,7 +412,7 @@ impl<'a, 'b> CloseTreasuryTokenAccountCpi<'a, 'b> {
 ///   0. `[writable, signer]` admin
 ///   1. `[]` config
 ///   2. `[writable]` treasury
-///   3. `[]` mint
+///   3. `[writable]` mint
 ///   4. `[writable]` source_token_account
 ///   5. `[writable]` admin_token_account
 ///   6. `[]` associated_token_program

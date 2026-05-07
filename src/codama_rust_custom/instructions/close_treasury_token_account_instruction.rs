@@ -17,7 +17,7 @@ pub struct CloseTreasuryTokenAccountInstructionInputs {
 }
 
 impl InstructionsHelper {
-    /// Builds the admin-only instruction that drains and closes one treasury token account.
+    /// Builds the admin-only close instruction; canonical ZINC returns mint authority to admin.
     pub fn close_treasury_token_account_instruction(
         inputs: CloseTreasuryTokenAccountInstructionInputs,
     ) -> Instruction {
