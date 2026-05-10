@@ -27,6 +27,8 @@ pub struct RevealRoundRandCallback {
     pub instructions_sysvar: solana_address::Address,
     /// Round being settled after Arcium reveals its random value.
     pub round: solana_address::Address,
+    /// Board transition gate that is opened by this reveal.
+    pub board: solana_address::Address,
     /// Live config used to resolve Wildcat eligibility at reveal time.
     pub config: solana_address::Address,
 }
@@ -45,7 +47,7 @@ impl RevealRoundRandCallback {
         args: RevealRoundRandCallbackInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.arcium_program,
             false,
@@ -71,6 +73,7 @@ impl RevealRoundRandCallback {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.round, false));
+        accounts.push(solana_instruction::AccountMeta::new(self.board, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -135,7 +138,8 @@ impl RevealRoundRandCallbackInstructionArgs {
 ///   4. `[]` cluster_account
 ///   5. `[optional]` instructions_sysvar (default to `Sysvar1nstructions1111111111111111111111111`)
 ///   6. `[writable]` round
-///   7. `[]` config
+///   7. `[writable]` board
+///   8. `[]` config
 #[derive(Clone, Debug, Default)]
 pub struct RevealRoundRandCallbackBuilder {
     arcium_program: Option<solana_address::Address>,
@@ -145,6 +149,7 @@ pub struct RevealRoundRandCallbackBuilder {
     cluster_account: Option<solana_address::Address>,
     instructions_sysvar: Option<solana_address::Address>,
     round: Option<solana_address::Address>,
+    board: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     output: Option<SignedComputationOutputsRevealRoundRandOutput>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
@@ -201,6 +206,12 @@ impl RevealRoundRandCallbackBuilder {
         self.round = Some(round);
         self
     }
+    /// Board transition gate that is opened by this reveal.
+    #[inline(always)]
+    pub fn board(&mut self, board: solana_address::Address) -> &mut Self {
+        self.board = Some(board);
+        self
+    }
     /// Live config used to resolve Wildcat eligibility at reveal time.
     #[inline(always)]
     pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
@@ -243,6 +254,7 @@ impl RevealRoundRandCallbackBuilder {
                 "Sysvar1nstructions1111111111111111111111111"
             )),
             round: self.round.expect("round is not set"),
+            board: self.board.expect("board is not set"),
             config: self.config.expect("config is not set"),
         };
         let args = RevealRoundRandCallbackInstructionArgs {
@@ -268,6 +280,8 @@ pub struct RevealRoundRandCallbackCpiAccounts<'a, 'b> {
     pub instructions_sysvar: &'b solana_account_info::AccountInfo<'a>,
     /// Round being settled after Arcium reveals its random value.
     pub round: &'b solana_account_info::AccountInfo<'a>,
+    /// Board transition gate that is opened by this reveal.
+    pub board: &'b solana_account_info::AccountInfo<'a>,
     /// Live config used to resolve Wildcat eligibility at reveal time.
     pub config: &'b solana_account_info::AccountInfo<'a>,
 }
@@ -290,6 +304,8 @@ pub struct RevealRoundRandCallbackCpi<'a, 'b> {
     pub instructions_sysvar: &'b solana_account_info::AccountInfo<'a>,
     /// Round being settled after Arcium reveals its random value.
     pub round: &'b solana_account_info::AccountInfo<'a>,
+    /// Board transition gate that is opened by this reveal.
+    pub board: &'b solana_account_info::AccountInfo<'a>,
     /// Live config used to resolve Wildcat eligibility at reveal time.
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
@@ -311,6 +327,7 @@ impl<'a, 'b> RevealRoundRandCallbackCpi<'a, 'b> {
             cluster_account: accounts.cluster_account,
             instructions_sysvar: accounts.instructions_sysvar,
             round: accounts.round,
+            board: accounts.board,
             config: accounts.config,
             __args: args,
         }
@@ -338,7 +355,7 @@ impl<'a, 'b> RevealRoundRandCallbackCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.arcium_program.key,
             false,
@@ -364,6 +381,7 @@ impl<'a, 'b> RevealRoundRandCallbackCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
+        accounts.push(solana_instruction::AccountMeta::new(*self.board.key, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -386,7 +404,7 @@ impl<'a, 'b> RevealRoundRandCallbackCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(9 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(10 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.arcium_program.clone());
         account_infos.push(self.comp_def_account.clone());
@@ -395,6 +413,7 @@ impl<'a, 'b> RevealRoundRandCallbackCpi<'a, 'b> {
         account_infos.push(self.cluster_account.clone());
         account_infos.push(self.instructions_sysvar.clone());
         account_infos.push(self.round.clone());
+        account_infos.push(self.board.clone());
         account_infos.push(self.config.clone());
         remaining_accounts
             .iter()
@@ -419,7 +438,8 @@ impl<'a, 'b> RevealRoundRandCallbackCpi<'a, 'b> {
 ///   4. `[]` cluster_account
 ///   5. `[]` instructions_sysvar
 ///   6. `[writable]` round
-///   7. `[]` config
+///   7. `[writable]` board
+///   8. `[]` config
 #[derive(Clone, Debug)]
 pub struct RevealRoundRandCallbackCpiBuilder<'a, 'b> {
     instruction: Box<RevealRoundRandCallbackCpiBuilderInstruction<'a, 'b>>,
@@ -436,6 +456,7 @@ impl<'a, 'b> RevealRoundRandCallbackCpiBuilder<'a, 'b> {
             cluster_account: None,
             instructions_sysvar: None,
             round: None,
+            board: None,
             config: None,
             output: None,
             __remaining_accounts: Vec::new(),
@@ -497,6 +518,12 @@ impl<'a, 'b> RevealRoundRandCallbackCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn round(&mut self, round: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.round = Some(round);
+        self
+    }
+    /// Board transition gate that is opened by this reveal.
+    #[inline(always)]
+    pub fn board(&mut self, board: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.board = Some(board);
         self
     }
     /// Live config used to resolve Wildcat eligibility at reveal time.
@@ -582,6 +609,8 @@ impl<'a, 'b> RevealRoundRandCallbackCpiBuilder<'a, 'b> {
 
             round: self.instruction.round.expect("round is not set"),
 
+            board: self.instruction.board.expect("board is not set"),
+
             config: self.instruction.config.expect("config is not set"),
             __args: args,
         };
@@ -602,6 +631,7 @@ struct RevealRoundRandCallbackCpiBuilderInstruction<'a, 'b> {
     cluster_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     instructions_sysvar: Option<&'b solana_account_info::AccountInfo<'a>>,
     round: Option<&'b solana_account_info::AccountInfo<'a>>,
+    board: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
     output: Option<SignedComputationOutputsRevealRoundRandOutput>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.

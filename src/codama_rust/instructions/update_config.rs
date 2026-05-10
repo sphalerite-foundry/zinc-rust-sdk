@@ -79,6 +79,7 @@ impl Default for UpdateConfigInstructionData {
 pub struct UpdateConfigInstructionArgs {
     pub deploy_total_fee_bps: Option<u64>,
     pub round_duration_slots: Option<u64>,
+    pub round_start_delay_slots: Option<u64>,
     pub stockpile_duration_slots: Option<u64>,
     pub stockpile_min_entry_bricks_x10k: Option<u64>,
     pub deploy_admin_fee_bps: Option<u64>,
@@ -127,6 +128,7 @@ pub struct UpdateConfigBuilder {
     board: Option<solana_address::Address>,
     deploy_total_fee_bps: Option<u64>,
     round_duration_slots: Option<u64>,
+    round_start_delay_slots: Option<u64>,
     stockpile_duration_slots: Option<u64>,
     stockpile_min_entry_bricks_x10k: Option<u64>,
     deploy_admin_fee_bps: Option<u64>,
@@ -186,6 +188,12 @@ impl UpdateConfigBuilder {
     #[inline(always)]
     pub fn round_duration_slots(&mut self, round_duration_slots: u64) -> &mut Self {
         self.round_duration_slots = Some(round_duration_slots);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn round_start_delay_slots(&mut self, round_start_delay_slots: u64) -> &mut Self {
+        self.round_start_delay_slots = Some(round_start_delay_slots);
         self
     }
     /// `[optional argument]`
@@ -384,6 +392,7 @@ impl UpdateConfigBuilder {
         let args = UpdateConfigInstructionArgs {
             deploy_total_fee_bps: self.deploy_total_fee_bps.clone(),
             round_duration_slots: self.round_duration_slots.clone(),
+            round_start_delay_slots: self.round_start_delay_slots.clone(),
             stockpile_duration_slots: self.stockpile_duration_slots.clone(),
             stockpile_min_entry_bricks_x10k: self.stockpile_min_entry_bricks_x10k.clone(),
             deploy_admin_fee_bps: self.deploy_admin_fee_bps.clone(),
@@ -539,6 +548,7 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             board: None,
             deploy_total_fee_bps: None,
             round_duration_slots: None,
+            round_start_delay_slots: None,
             stockpile_duration_slots: None,
             stockpile_min_entry_bricks_x10k: None,
             deploy_admin_fee_bps: None,
@@ -595,6 +605,12 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn round_duration_slots(&mut self, round_duration_slots: u64) -> &mut Self {
         self.instruction.round_duration_slots = Some(round_duration_slots);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn round_start_delay_slots(&mut self, round_start_delay_slots: u64) -> &mut Self {
+        self.instruction.round_start_delay_slots = Some(round_start_delay_slots);
         self
     }
     /// `[optional argument]`
@@ -807,6 +823,7 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
         let args = UpdateConfigInstructionArgs {
             deploy_total_fee_bps: self.instruction.deploy_total_fee_bps.clone(),
             round_duration_slots: self.instruction.round_duration_slots.clone(),
+            round_start_delay_slots: self.instruction.round_start_delay_slots.clone(),
             stockpile_duration_slots: self.instruction.stockpile_duration_slots.clone(),
             stockpile_min_entry_bricks_x10k: self
                 .instruction
@@ -868,6 +885,7 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     board: Option<&'b solana_account_info::AccountInfo<'a>>,
     deploy_total_fee_bps: Option<u64>,
     round_duration_slots: Option<u64>,
+    round_start_delay_slots: Option<u64>,
     stockpile_duration_slots: Option<u64>,
     stockpile_min_entry_bricks_x10k: Option<u64>,
     deploy_admin_fee_bps: Option<u64>,

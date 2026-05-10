@@ -74,12 +74,14 @@ pub struct Config {
     pub staking_bricks_per_zinc_x10k: u64,
     /// Number of slots over which newly melted staking rewards vest.
     pub staking_reward_vesting_slots: u64,
+    /// Number of slots after reveal before selecting the next playable round.
+    pub round_start_delay_slots: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 314;
+    pub const LEN: usize = 322;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
