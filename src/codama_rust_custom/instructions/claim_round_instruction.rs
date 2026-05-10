@@ -1,4 +1,6 @@
-use crate::codama_rust::instructions::{ClaimPlayerZincRewards, ClaimRoundSol, CreditRoundRewards};
+use crate::codama_rust::instructions::{
+    ClaimPlayerSolRewards, ClaimPlayerZincRewards, ClaimRoundSol, CreditRoundRewards,
+};
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
@@ -15,6 +17,12 @@ pub struct ClaimPlayerZincRewardsInstructionInputs {
     pub signer: Pubkey,
     /// Protocol ZINC mint persisted on the treasury account.
     pub zinc_mint: Pubkey,
+}
+
+/// Inputs used to claim a player's aggregate round SOL rewards.
+pub struct ClaimPlayerSolRewardsInstructionInputs {
+    /// Player signer claiming the aggregate round SOL rewards.
+    pub signer: Pubkey,
 }
 
 /// Inputs used to credit one settled round's rewards into a player profile.
@@ -101,6 +109,18 @@ impl InstructionsHelper {
         .instruction()
     }
 
+    /// Builds the aggregate player SOL reward claim instruction.
+    pub fn claim_player_sol_rewards_instruction(
+        inputs: ClaimPlayerSolRewardsInstructionInputs,
+    ) -> Instruction {
+        let ClaimPlayerSolRewardsInstructionInputs { signer } = inputs;
+        ClaimPlayerSolRewards {
+            signer,
+            player_profile: PdaHelper::get_player_profile_address(&signer),
+        }
+        .instruction()
+    }
+
     /// Builds the aggregate player ZINC reward claim instruction.
     pub fn claim_player_zinc_rewards_instruction(
         inputs: ClaimPlayerZincRewardsInstructionInputs,
@@ -128,5 +148,39 @@ impl InstructionsHelper {
     /// Backward-compatible alias for the aggregate ZINC reward claim instruction.
     pub fn claim_round_instruction(inputs: ClaimPlayerZincRewardsInstructionInputs) -> Instruction {
         Self::claim_player_zinc_rewards_instruction(inputs)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::codama_rust::instructions::CLAIM_PLAYER_SOL_REWARDS_DISCRIMINATOR;
+    use crate::ZINC_ID;
+
+    #[test]
+    fn claim_player_sol_rewards_instruction_uses_signer_profile_and_sol_discriminator() {
+        let signer = Pubkey::new_unique();
+
+        let instruction = InstructionsHelper::claim_player_sol_rewards_instruction(
+            ClaimPlayerSolRewardsInstructionInputs { signer },
+        );
+
+        assert_eq!(instruction.program_id, ZINC_ID);
+        assert_eq!(
+            instruction
+                .data
+                .get(..CLAIM_PLAYER_SOL_REWARDS_DISCRIMINATOR.len()),
+            Some(CLAIM_PLAYER_SOL_REWARDS_DISCRIMINATOR.as_slice())
+        );
+        assert_eq!(instruction.accounts.len(), 2);
+        assert_eq!(instruction.accounts[0].pubkey, signer);
+        assert!(instruction.accounts[0].is_signer);
+        assert!(instruction.accounts[0].is_writable);
+        assert_eq!(
+            instruction.accounts[1].pubkey,
+            PdaHelper::get_player_profile_address(&signer)
+        );
+        assert!(!instruction.accounts[1].is_signer);
+        assert!(instruction.accounts[1].is_writable);
     }
 }
