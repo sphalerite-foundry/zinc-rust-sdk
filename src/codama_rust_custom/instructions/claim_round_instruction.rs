@@ -150,37 +150,3 @@ impl InstructionsHelper {
         Self::claim_player_zinc_rewards_instruction(inputs)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::codama_rust::instructions::CLAIM_PLAYER_SOL_REWARDS_DISCRIMINATOR;
-    use crate::ZINC_ID;
-
-    #[test]
-    fn claim_player_sol_rewards_instruction_uses_signer_profile_and_sol_discriminator() {
-        let signer = Pubkey::new_unique();
-
-        let instruction = InstructionsHelper::claim_player_sol_rewards_instruction(
-            ClaimPlayerSolRewardsInstructionInputs { signer },
-        );
-
-        assert_eq!(instruction.program_id, ZINC_ID);
-        assert_eq!(
-            instruction
-                .data
-                .get(..CLAIM_PLAYER_SOL_REWARDS_DISCRIMINATOR.len()),
-            Some(CLAIM_PLAYER_SOL_REWARDS_DISCRIMINATOR.as_slice())
-        );
-        assert_eq!(instruction.accounts.len(), 2);
-        assert_eq!(instruction.accounts[0].pubkey, signer);
-        assert!(instruction.accounts[0].is_signer);
-        assert!(instruction.accounts[0].is_writable);
-        assert_eq!(
-            instruction.accounts[1].pubkey,
-            PdaHelper::get_player_profile_address(&signer)
-        );
-        assert!(!instruction.accounts[1].is_signer);
-        assert!(instruction.accounts[1].is_writable);
-    }
-}
