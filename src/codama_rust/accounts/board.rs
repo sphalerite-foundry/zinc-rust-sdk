@@ -28,6 +28,10 @@ pub struct Board {
     pub crank_authority: Address,
     /// PDA bump seed.
     pub bump: u8,
+    /// Closed round whose reveal must be visible before the next playable round is selected.
+    pub transition_round_id: Option<u64>,
+    /// Earliest slot when the next playable round may be selected after reveal.
+    pub next_round_selectable_after_slot: Option<u64>,
 }
 
 pub const BOARD_DISCRIMINATOR: [u8; 8] = [79, 48, 160, 63, 153, 132, 240, 56];

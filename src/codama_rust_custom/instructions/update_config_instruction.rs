@@ -41,6 +41,8 @@ pub struct UpdateConfigInstructionInputs {
     pub round_duration_slots: Option<u64>,
     /// Optional stockpile duration in slots.
     pub stockpile_duration_slots: Option<u64>,
+    /// Optional inter-round delay in slots after winning tile reveal.
+    pub round_start_delay_slots: Option<u64>,
     /// Optional minimum stockpile entry size in `x10k` bricks.
     pub stockpile_min_entry_bricks_x10k: Option<u64>,
     /// Optional curve-minted ZINC admin skim in basis points.
@@ -86,6 +88,7 @@ impl InstructionsHelper {
             affiliate_withdrawals_enabled,
             round_duration_slots,
             stockpile_duration_slots,
+            round_start_delay_slots,
             stockpile_min_entry_bricks_x10k,
             curve_admin_fee_bps,
             winner_zinc_share_bps,
@@ -108,6 +111,7 @@ impl InstructionsHelper {
             affiliate_withdrawals_enabled,
             round_duration_slots,
             stockpile_duration_slots,
+            round_start_delay_slots,
             stockpile_min_entry_bricks_x10k,
             deploy_admin_fee_bps,
             deploy_stockpile_fee_bps,
