@@ -1,6 +1,4 @@
-use crate::codama_rust::instructions::{
-    ClaimPlayerSolRewards, ClaimPlayerZincRewards, ClaimRoundSol, CreditRoundRewards,
-};
+use crate::codama_rust::instructions::{ClaimPlayerZincRewards, ClaimRoundSol, CreditRoundRewards};
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
@@ -17,12 +15,6 @@ pub struct ClaimPlayerZincRewardsInstructionInputs {
     pub signer: Pubkey,
     /// Protocol ZINC mint persisted on the treasury account.
     pub zinc_mint: Pubkey,
-}
-
-/// Inputs used to claim aggregate round SOL rewards from a player profile.
-pub struct ClaimPlayerSolRewardsInstructionInputs {
-    /// Player signer that owns the profile and receives the SOL payout.
-    pub signer: Pubkey,
 }
 
 /// Inputs used to credit one settled round's rewards into a player profile.
@@ -105,18 +97,6 @@ impl InstructionsHelper {
             round: PdaHelper::get_round_address(round_id),
             miner: PdaHelper::get_miner_address(round_id, &player),
             player,
-        }
-        .instruction()
-    }
-
-    /// Builds the aggregate player SOL reward claim instruction.
-    pub fn claim_player_sol_rewards_instruction(
-        inputs: ClaimPlayerSolRewardsInstructionInputs,
-    ) -> Instruction {
-        let ClaimPlayerSolRewardsInstructionInputs { signer } = inputs;
-        ClaimPlayerSolRewards {
-            signer,
-            player_profile: PdaHelper::get_player_profile_address(&signer),
         }
         .instruction()
     }
