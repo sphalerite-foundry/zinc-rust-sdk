@@ -1,5 +1,6 @@
 use crate::codama_rust::instructions::{
     DeployRoundFromAutoSession, DeployRoundFromAutoSessionInstructionArgs,
+    ReloadAutoMinerSessionSol,
 };
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
@@ -23,6 +24,13 @@ pub struct DeployRoundFromAutoSessionInstructionInputs {
     pub mask_nonce: u128,
     /// Ciphertext limbs for the encrypted hidden tile mask payload.
     pub mask_ciphertext: [u8; 64],
+}
+
+pub struct ReloadAutoMinerSessionSolInstructionInputs {
+    /// Configured crank signer executing the reward reload.
+    pub executor: Pubkey,
+    /// Wallet that owns the session being reloaded.
+    pub authority: Pubkey,
 }
 
 impl InstructionsHelper {
@@ -64,5 +72,23 @@ impl InstructionsHelper {
             mask_nonce,
             mask_ciphertext,
         })
+    }
+
+    /// Builds one crank-executed auto-miner reward reload instruction.
+    pub fn reload_auto_miner_session_sol_instruction(
+        inputs: ReloadAutoMinerSessionSolInstructionInputs,
+    ) -> Instruction {
+        let ReloadAutoMinerSessionSolInstructionInputs {
+            executor,
+            authority,
+        } = inputs;
+        ReloadAutoMinerSessionSol {
+            executor,
+            config: PdaHelper::get_config_address(),
+            authority,
+            auto_miner_session: PdaHelper::get_auto_miner_session_address(&authority),
+            player_profile: PdaHelper::get_player_profile_address(&authority),
+        }
+        .instruction()
     }
 }
