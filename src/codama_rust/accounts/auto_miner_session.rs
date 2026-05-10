@@ -38,6 +38,8 @@ pub struct AutoMinerSession {
     pub bump: u8,
     /// Optional last slot at which the session can still deploy.
     pub expiry_slot: Option<u64>,
+    /// Whether credited round SOL rewards can be reloaded into the session budget.
+    pub auto_reload_sol_rewards: bool,
 }
 
 pub const AUTO_MINER_SESSION_DISCRIMINATOR: [u8; 8] = [9, 91, 249, 138, 188, 84, 49, 61];

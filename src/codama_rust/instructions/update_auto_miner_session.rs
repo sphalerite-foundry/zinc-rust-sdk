@@ -92,6 +92,7 @@ pub struct UpdateAutoMinerSessionInstructionArgs {
     pub expiry_slot: Option<u64>,
     pub paused: bool,
     pub crank_reimbursement_lamports: u64,
+    pub auto_reload_sol_rewards: bool,
 }
 
 impl UpdateAutoMinerSessionInstructionArgs {
@@ -119,6 +120,7 @@ pub struct UpdateAutoMinerSessionBuilder {
     expiry_slot: Option<u64>,
     paused: Option<bool>,
     crank_reimbursement_lamports: Option<u64>,
+    auto_reload_sol_rewards: Option<bool>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -184,6 +186,11 @@ impl UpdateAutoMinerSessionBuilder {
         self.crank_reimbursement_lamports = Some(crank_reimbursement_lamports);
         self
     }
+    #[inline(always)]
+    pub fn auto_reload_sol_rewards(&mut self, auto_reload_sol_rewards: bool) -> &mut Self {
+        self.auto_reload_sol_rewards = Some(auto_reload_sol_rewards);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -235,6 +242,10 @@ impl UpdateAutoMinerSessionBuilder {
                 .crank_reimbursement_lamports
                 .clone()
                 .expect("crank_reimbursement_lamports is not set"),
+            auto_reload_sol_rewards: self
+                .auto_reload_sol_rewards
+                .clone()
+                .expect("auto_reload_sol_rewards is not set"),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -366,6 +377,7 @@ impl<'a, 'b> UpdateAutoMinerSessionCpiBuilder<'a, 'b> {
             expiry_slot: None,
             paused: None,
             crank_reimbursement_lamports: None,
+            auto_reload_sol_rewards: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -429,6 +441,11 @@ impl<'a, 'b> UpdateAutoMinerSessionCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn crank_reimbursement_lamports(&mut self, crank_reimbursement_lamports: u64) -> &mut Self {
         self.instruction.crank_reimbursement_lamports = Some(crank_reimbursement_lamports);
+        self
+    }
+    #[inline(always)]
+    pub fn auto_reload_sol_rewards(&mut self, auto_reload_sol_rewards: bool) -> &mut Self {
+        self.instruction.auto_reload_sol_rewards = Some(auto_reload_sol_rewards);
         self
     }
     /// Add an additional account to the instruction.
@@ -503,6 +520,11 @@ impl<'a, 'b> UpdateAutoMinerSessionCpiBuilder<'a, 'b> {
                 .crank_reimbursement_lamports
                 .clone()
                 .expect("crank_reimbursement_lamports is not set"),
+            auto_reload_sol_rewards: self
+                .instruction
+                .auto_reload_sol_rewards
+                .clone()
+                .expect("auto_reload_sol_rewards is not set"),
         };
         let instruction = UpdateAutoMinerSessionCpi {
             __program: self.instruction.__program,
@@ -536,6 +558,7 @@ struct UpdateAutoMinerSessionCpiBuilderInstruction<'a, 'b> {
     expiry_slot: Option<u64>,
     paused: Option<bool>,
     crank_reimbursement_lamports: Option<u64>,
+    auto_reload_sol_rewards: Option<bool>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }
