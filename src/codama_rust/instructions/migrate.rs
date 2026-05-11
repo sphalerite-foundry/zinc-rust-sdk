@@ -8,22 +8,22 @@
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
-pub const MIGRATE_BOARD_DISCRIMINATOR: [u8; 8] = [193, 200, 206, 200, 229, 146, 107, 47];
+pub const MIGRATE_DISCRIMINATOR: [u8; 8] = [155, 234, 231, 146, 236, 158, 162, 30];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct MigrateBoard {
+pub struct Migrate {
     /// Admin signer that pays any rent increase and authorizes the migration.
     pub admin: solana_address::Address,
-    /// Global config containing the admin authority.
+
     pub config: solana_address::Address,
 
-    pub board: solana_address::Address,
+    pub account: solana_address::Address,
 
     pub system_program: solana_address::Address,
 }
 
-impl MigrateBoard {
+impl Migrate {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(&[])
     }
@@ -35,17 +35,14 @@ impl MigrateBoard {
     ) -> solana_instruction::Instruction {
         let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.admin, true));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.config,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new(self.board, false));
+        accounts.push(solana_instruction::AccountMeta::new(self.config, false));
+        accounts.push(solana_instruction::AccountMeta::new(self.account, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.system_program,
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = MigrateBoardInstructionData::new().try_to_vec().unwrap();
+        let data = MigrateInstructionData::new().try_to_vec().unwrap();
 
         solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
@@ -56,14 +53,14 @@ impl MigrateBoard {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct MigrateBoardInstructionData {
+pub struct MigrateInstructionData {
     discriminator: [u8; 8],
 }
 
-impl MigrateBoardInstructionData {
+impl MigrateInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [193, 200, 206, 200, 229, 146, 107, 47],
+            discriminator: [155, 234, 231, 146, 236, 158, 162, 30],
         }
     }
 
@@ -72,30 +69,30 @@ impl MigrateBoardInstructionData {
     }
 }
 
-impl Default for MigrateBoardInstructionData {
+impl Default for MigrateInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Instruction builder for `MigrateBoard`.
+/// Instruction builder for `Migrate`.
 ///
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` admin
-///   1. `[]` config
-///   2. `[writable]` board
+///   1. `[writable]` config
+///   2. `[writable]` account
 ///   3. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
-pub struct MigrateBoardBuilder {
+pub struct MigrateBuilder {
     admin: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
-    board: Option<solana_address::Address>,
+    account: Option<solana_address::Address>,
     system_program: Option<solana_address::Address>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl MigrateBoardBuilder {
+impl MigrateBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -105,15 +102,14 @@ impl MigrateBoardBuilder {
         self.admin = Some(admin);
         self
     }
-    /// Global config containing the admin authority.
     #[inline(always)]
     pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
         self.config = Some(config);
         self
     }
     #[inline(always)]
-    pub fn board(&mut self, board: solana_address::Address) -> &mut Self {
-        self.board = Some(board);
+    pub fn account(&mut self, account: solana_address::Address) -> &mut Self {
+        self.account = Some(account);
         self
     }
     /// `[optional account, default to '11111111111111111111111111111111']`
@@ -139,10 +135,10 @@ impl MigrateBoardBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = MigrateBoard {
+        let accounts = Migrate {
             admin: self.admin.expect("admin is not set"),
             config: self.config.expect("config is not set"),
-            board: self.board.expect("board is not set"),
+            account: self.account.expect("account is not set"),
             system_program: self
                 .system_program
                 .unwrap_or(solana_address::address!("11111111111111111111111111111111")),
@@ -152,42 +148,42 @@ impl MigrateBoardBuilder {
     }
 }
 
-/// `migrate_board` CPI accounts.
-pub struct MigrateBoardCpiAccounts<'a, 'b> {
+/// `migrate` CPI accounts.
+pub struct MigrateCpiAccounts<'a, 'b> {
     /// Admin signer that pays any rent increase and authorizes the migration.
     pub admin: &'b solana_account_info::AccountInfo<'a>,
-    /// Global config containing the admin authority.
+
     pub config: &'b solana_account_info::AccountInfo<'a>,
 
-    pub board: &'b solana_account_info::AccountInfo<'a>,
+    pub account: &'b solana_account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `migrate_board` CPI instruction.
-pub struct MigrateBoardCpi<'a, 'b> {
+/// `migrate` CPI instruction.
+pub struct MigrateCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// Admin signer that pays any rent increase and authorizes the migration.
     pub admin: &'b solana_account_info::AccountInfo<'a>,
-    /// Global config containing the admin authority.
+
     pub config: &'b solana_account_info::AccountInfo<'a>,
 
-    pub board: &'b solana_account_info::AccountInfo<'a>,
+    pub account: &'b solana_account_info::AccountInfo<'a>,
 
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-impl<'a, 'b> MigrateBoardCpi<'a, 'b> {
+impl<'a, 'b> MigrateCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: MigrateBoardCpiAccounts<'a, 'b>,
+        accounts: MigrateCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
             admin: accounts.admin,
             config: accounts.config,
-            board: accounts.board,
+            account: accounts.account,
             system_program: accounts.system_program,
         }
     }
@@ -216,11 +212,14 @@ impl<'a, 'b> MigrateBoardCpi<'a, 'b> {
     ) -> solana_program_error::ProgramResult {
         let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.admin.key, true));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
+        accounts.push(solana_instruction::AccountMeta::new(
             *self.config.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new(*self.board.key, false));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.account.key,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.system_program.key,
             false,
@@ -232,7 +231,7 @@ impl<'a, 'b> MigrateBoardCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = MigrateBoardInstructionData::new().try_to_vec().unwrap();
+        let data = MigrateInstructionData::new().try_to_vec().unwrap();
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
@@ -243,7 +242,7 @@ impl<'a, 'b> MigrateBoardCpi<'a, 'b> {
         account_infos.push(self.__program.clone());
         account_infos.push(self.admin.clone());
         account_infos.push(self.config.clone());
-        account_infos.push(self.board.clone());
+        account_infos.push(self.account.clone());
         account_infos.push(self.system_program.clone());
         remaining_accounts
             .iter()
@@ -257,26 +256,26 @@ impl<'a, 'b> MigrateBoardCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `MigrateBoard` via CPI.
+/// Instruction builder for `Migrate` via CPI.
 ///
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` admin
-///   1. `[]` config
-///   2. `[writable]` board
+///   1. `[writable]` config
+///   2. `[writable]` account
 ///   3. `[]` system_program
 #[derive(Clone, Debug)]
-pub struct MigrateBoardCpiBuilder<'a, 'b> {
-    instruction: Box<MigrateBoardCpiBuilderInstruction<'a, 'b>>,
+pub struct MigrateCpiBuilder<'a, 'b> {
+    instruction: Box<MigrateCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> MigrateBoardCpiBuilder<'a, 'b> {
+impl<'a, 'b> MigrateCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(MigrateBoardCpiBuilderInstruction {
+        let instruction = Box::new(MigrateCpiBuilderInstruction {
             __program: program,
             admin: None,
             config: None,
-            board: None,
+            account: None,
             system_program: None,
             __remaining_accounts: Vec::new(),
         });
@@ -288,15 +287,14 @@ impl<'a, 'b> MigrateBoardCpiBuilder<'a, 'b> {
         self.instruction.admin = Some(admin);
         self
     }
-    /// Global config containing the admin authority.
     #[inline(always)]
     pub fn config(&mut self, config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.config = Some(config);
         self
     }
     #[inline(always)]
-    pub fn board(&mut self, board: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.board = Some(board);
+    pub fn account(&mut self, account: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.account = Some(account);
         self
     }
     #[inline(always)]
@@ -341,14 +339,14 @@ impl<'a, 'b> MigrateBoardCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let instruction = MigrateBoardCpi {
+        let instruction = MigrateCpi {
             __program: self.instruction.__program,
 
             admin: self.instruction.admin.expect("admin is not set"),
 
             config: self.instruction.config.expect("config is not set"),
 
-            board: self.instruction.board.expect("board is not set"),
+            account: self.instruction.account.expect("account is not set"),
 
             system_program: self
                 .instruction
@@ -363,11 +361,11 @@ impl<'a, 'b> MigrateBoardCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct MigrateBoardCpiBuilderInstruction<'a, 'b> {
+struct MigrateCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     admin: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
-    board: Option<&'b solana_account_info::AccountInfo<'a>>,
+    account: Option<&'b solana_account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
