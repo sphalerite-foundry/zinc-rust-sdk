@@ -19,7 +19,7 @@ pub struct Migrate {
     pub config: solana_address::Address,
 
     pub account: solana_address::Address,
-
+    /// System program used for migration rent top-ups.
     pub system_program: solana_address::Address,
 }
 
@@ -113,6 +113,7 @@ impl MigrateBuilder {
         self
     }
     /// `[optional account, default to '11111111111111111111111111111111']`
+    /// System program used for migration rent top-ups.
     #[inline(always)]
     pub fn system_program(&mut self, system_program: solana_address::Address) -> &mut Self {
         self.system_program = Some(system_program);
@@ -156,7 +157,7 @@ pub struct MigrateCpiAccounts<'a, 'b> {
     pub config: &'b solana_account_info::AccountInfo<'a>,
 
     pub account: &'b solana_account_info::AccountInfo<'a>,
-
+    /// System program used for migration rent top-ups.
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
@@ -170,7 +171,7 @@ pub struct MigrateCpi<'a, 'b> {
     pub config: &'b solana_account_info::AccountInfo<'a>,
 
     pub account: &'b solana_account_info::AccountInfo<'a>,
-
+    /// System program used for migration rent top-ups.
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
@@ -297,6 +298,7 @@ impl<'a, 'b> MigrateCpiBuilder<'a, 'b> {
         self.instruction.account = Some(account);
         self
     }
+    /// System program used for migration rent top-ups.
     #[inline(always)]
     pub fn system_program(
         &mut self,
