@@ -76,12 +76,14 @@ pub struct Config {
     pub staking_reward_vesting_slots: u64,
     /// Number of slots after reveal before selecting the next playable round.
     pub round_start_delay_slots: u64,
+    /// Arcium priority price per CU for round reveal computations, in micro-lamports.
+    pub arcium_reveal_cu_price_micro: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 322;
+    pub const LEN: usize = 330;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
