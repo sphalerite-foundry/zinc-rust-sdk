@@ -5,9 +5,13 @@ use solana_instruction::Instruction;
 use solana_pubkey::Pubkey;
 
 pub struct QueueRoundSettlementInstructionInputs {
+    /// Authority signing the reveal queue transaction.
     pub signer: Pubkey,
+    /// Round whose encrypted secret should be revealed.
     pub round_id: u64,
+    /// Arcium cluster offset used to derive queue accounts.
     pub cluster_offset: u32,
+    /// Per-computation Arcium account offset for this reveal.
     pub computation_offset: u64,
 }
 

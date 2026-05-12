@@ -106,6 +106,7 @@ pub struct UpdateConfigInstructionArgs {
     pub stockpile_entry_step_bps: Option<u64>,
     pub staking_bricks_per_zinc_x10k: Option<u64>,
     pub staking_reward_vesting_slots: Option<u64>,
+    pub arcium_reveal_cu_price_micro: Option<u64>,
 }
 
 impl UpdateConfigInstructionArgs {
@@ -155,6 +156,7 @@ pub struct UpdateConfigBuilder {
     stockpile_entry_step_bps: Option<u64>,
     staking_bricks_per_zinc_x10k: Option<u64>,
     staking_reward_vesting_slots: Option<u64>,
+    arcium_reveal_cu_price_micro: Option<u64>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -367,6 +369,12 @@ impl UpdateConfigBuilder {
         self.staking_reward_vesting_slots = Some(staking_reward_vesting_slots);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn arcium_reveal_cu_price_micro(&mut self, arcium_reveal_cu_price_micro: u64) -> &mut Self {
+        self.arcium_reveal_cu_price_micro = Some(arcium_reveal_cu_price_micro);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -421,6 +429,7 @@ impl UpdateConfigBuilder {
             stockpile_entry_step_bps: self.stockpile_entry_step_bps.clone(),
             staking_bricks_per_zinc_x10k: self.staking_bricks_per_zinc_x10k.clone(),
             staking_reward_vesting_slots: self.staking_reward_vesting_slots.clone(),
+            arcium_reveal_cu_price_micro: self.arcium_reveal_cu_price_micro.clone(),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -575,6 +584,7 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             stockpile_entry_step_bps: None,
             staking_bricks_per_zinc_x10k: None,
             staking_reward_vesting_slots: None,
+            arcium_reveal_cu_price_micro: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -786,6 +796,12 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
         self.instruction.staking_reward_vesting_slots = Some(staking_reward_vesting_slots);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn arcium_reveal_cu_price_micro(&mut self, arcium_reveal_cu_price_micro: u64) -> &mut Self {
+        self.instruction.arcium_reveal_cu_price_micro = Some(arcium_reveal_cu_price_micro);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -859,6 +875,7 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             stockpile_entry_step_bps: self.instruction.stockpile_entry_step_bps.clone(),
             staking_bricks_per_zinc_x10k: self.instruction.staking_bricks_per_zinc_x10k.clone(),
             staking_reward_vesting_slots: self.instruction.staking_reward_vesting_slots.clone(),
+            arcium_reveal_cu_price_micro: self.instruction.arcium_reveal_cu_price_micro.clone(),
         };
         let instruction = UpdateConfigCpi {
             __program: self.instruction.__program,
@@ -912,6 +929,7 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     stockpile_entry_step_bps: Option<u64>,
     staking_bricks_per_zinc_x10k: Option<u64>,
     staking_reward_vesting_slots: Option<u64>,
+    arcium_reveal_cu_price_micro: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }
