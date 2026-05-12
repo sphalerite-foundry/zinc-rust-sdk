@@ -493,6 +493,9 @@ pub enum ZincError {
     /// 6160 - Treasury cannot be closed with close_pda
     #[error("Treasury cannot be closed with close_pda")]
     ClosePdaCannotCloseTreasury = 0x1810,
+    /// 6161 - Ready round is not the next sequential round
+    #[error("Ready round is not the next sequential round")]
+    RoundNotNextSequential = 0x1811,
 }
 
 impl From<ZincError> for solana_program_error::ProgramError {
