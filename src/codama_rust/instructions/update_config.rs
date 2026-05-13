@@ -89,6 +89,8 @@ pub struct UpdateConfigInstructionArgs {
     pub curve_admin_fee_bps: Option<u64>,
     pub winner_zinc_share_bps: Option<u64>,
     pub stockpile_zinc_share_bps: Option<u64>,
+    pub no_winner_direct_winner_zinc_bonanza_share_bps: Option<u64>,
+    pub no_winner_direct_winner_zinc_stockpile_share_bps: Option<u64>,
     pub min_deploy_lamports: Option<u64>,
     pub curve_max_round_mint: Option<u64>,
     pub curve_saturation_lamports: Option<u64>,
@@ -139,6 +141,8 @@ pub struct UpdateConfigBuilder {
     curve_admin_fee_bps: Option<u64>,
     winner_zinc_share_bps: Option<u64>,
     stockpile_zinc_share_bps: Option<u64>,
+    no_winner_direct_winner_zinc_bonanza_share_bps: Option<u64>,
+    no_winner_direct_winner_zinc_stockpile_share_bps: Option<u64>,
     min_deploy_lamports: Option<u64>,
     curve_max_round_mint: Option<u64>,
     curve_saturation_lamports: Option<u64>,
@@ -256,6 +260,26 @@ impl UpdateConfigBuilder {
     #[inline(always)]
     pub fn stockpile_zinc_share_bps(&mut self, stockpile_zinc_share_bps: u64) -> &mut Self {
         self.stockpile_zinc_share_bps = Some(stockpile_zinc_share_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn no_winner_direct_winner_zinc_bonanza_share_bps(
+        &mut self,
+        no_winner_direct_winner_zinc_bonanza_share_bps: u64,
+    ) -> &mut Self {
+        self.no_winner_direct_winner_zinc_bonanza_share_bps =
+            Some(no_winner_direct_winner_zinc_bonanza_share_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn no_winner_direct_winner_zinc_stockpile_share_bps(
+        &mut self,
+        no_winner_direct_winner_zinc_stockpile_share_bps: u64,
+    ) -> &mut Self {
+        self.no_winner_direct_winner_zinc_stockpile_share_bps =
+            Some(no_winner_direct_winner_zinc_stockpile_share_bps);
         self
     }
     /// `[optional argument]`
@@ -410,6 +434,12 @@ impl UpdateConfigBuilder {
             curve_admin_fee_bps: self.curve_admin_fee_bps.clone(),
             winner_zinc_share_bps: self.winner_zinc_share_bps.clone(),
             stockpile_zinc_share_bps: self.stockpile_zinc_share_bps.clone(),
+            no_winner_direct_winner_zinc_bonanza_share_bps: self
+                .no_winner_direct_winner_zinc_bonanza_share_bps
+                .clone(),
+            no_winner_direct_winner_zinc_stockpile_share_bps: self
+                .no_winner_direct_winner_zinc_stockpile_share_bps
+                .clone(),
             min_deploy_lamports: self.min_deploy_lamports.clone(),
             curve_max_round_mint: self.curve_max_round_mint.clone(),
             curve_saturation_lamports: self.curve_saturation_lamports.clone(),
@@ -567,6 +597,8 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             curve_admin_fee_bps: None,
             winner_zinc_share_bps: None,
             stockpile_zinc_share_bps: None,
+            no_winner_direct_winner_zinc_bonanza_share_bps: None,
+            no_winner_direct_winner_zinc_stockpile_share_bps: None,
             min_deploy_lamports: None,
             curve_max_round_mint: None,
             curve_saturation_lamports: None,
@@ -681,6 +713,28 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn stockpile_zinc_share_bps(&mut self, stockpile_zinc_share_bps: u64) -> &mut Self {
         self.instruction.stockpile_zinc_share_bps = Some(stockpile_zinc_share_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn no_winner_direct_winner_zinc_bonanza_share_bps(
+        &mut self,
+        no_winner_direct_winner_zinc_bonanza_share_bps: u64,
+    ) -> &mut Self {
+        self.instruction
+            .no_winner_direct_winner_zinc_bonanza_share_bps =
+            Some(no_winner_direct_winner_zinc_bonanza_share_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn no_winner_direct_winner_zinc_stockpile_share_bps(
+        &mut self,
+        no_winner_direct_winner_zinc_stockpile_share_bps: u64,
+    ) -> &mut Self {
+        self.instruction
+            .no_winner_direct_winner_zinc_stockpile_share_bps =
+            Some(no_winner_direct_winner_zinc_stockpile_share_bps);
         self
     }
     /// `[optional argument]`
@@ -852,6 +906,14 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             curve_admin_fee_bps: self.instruction.curve_admin_fee_bps.clone(),
             winner_zinc_share_bps: self.instruction.winner_zinc_share_bps.clone(),
             stockpile_zinc_share_bps: self.instruction.stockpile_zinc_share_bps.clone(),
+            no_winner_direct_winner_zinc_bonanza_share_bps: self
+                .instruction
+                .no_winner_direct_winner_zinc_bonanza_share_bps
+                .clone(),
+            no_winner_direct_winner_zinc_stockpile_share_bps: self
+                .instruction
+                .no_winner_direct_winner_zinc_stockpile_share_bps
+                .clone(),
             min_deploy_lamports: self.instruction.min_deploy_lamports.clone(),
             curve_max_round_mint: self.instruction.curve_max_round_mint.clone(),
             curve_saturation_lamports: self.instruction.curve_saturation_lamports.clone(),
@@ -912,6 +974,8 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     curve_admin_fee_bps: Option<u64>,
     winner_zinc_share_bps: Option<u64>,
     stockpile_zinc_share_bps: Option<u64>,
+    no_winner_direct_winner_zinc_bonanza_share_bps: Option<u64>,
+    no_winner_direct_winner_zinc_stockpile_share_bps: Option<u64>,
     min_deploy_lamports: Option<u64>,
     curve_max_round_mint: Option<u64>,
     curve_saturation_lamports: Option<u64>,

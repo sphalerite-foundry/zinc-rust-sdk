@@ -53,6 +53,10 @@ pub struct UpdateConfigInstructionInputs {
     pub winner_zinc_share_bps: Option<u64>,
     /// Optional share of post-skim ZINC allocated to stockpile ZINC.
     pub stockpile_zinc_share_bps: Option<u64>,
+    /// Optional no-winner direct-winner ZINC redirect share allocated to Bonanza.
+    pub no_winner_direct_winner_zinc_bonanza_share_bps: Option<u64>,
+    /// Optional no-winner direct-winner ZINC redirect share allocated to stockpile.
+    pub no_winner_direct_winner_zinc_stockpile_share_bps: Option<u64>,
     /// Optional minimum gross lamports required to deploy into a round.
     pub min_deploy_lamports: Option<u64>,
     /// Optional launch-time maximum mint for one round before ZINC factoring and support caps.
@@ -96,6 +100,8 @@ impl InstructionsHelper {
             curve_admin_fee_bps,
             winner_zinc_share_bps,
             stockpile_zinc_share_bps,
+            no_winner_direct_winner_zinc_bonanza_share_bps,
+            no_winner_direct_winner_zinc_stockpile_share_bps,
             min_deploy_lamports,
             curve_max_round_mint,
             curve_saturation_lamports,
@@ -122,6 +128,8 @@ impl InstructionsHelper {
             curve_admin_fee_bps,
             winner_zinc_share_bps,
             stockpile_zinc_share_bps,
+            no_winner_direct_winner_zinc_bonanza_share_bps,
+            no_winner_direct_winner_zinc_stockpile_share_bps,
             min_deploy_lamports,
             curve_max_round_mint,
             curve_saturation_lamports,
