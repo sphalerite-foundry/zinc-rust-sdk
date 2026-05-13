@@ -7,6 +7,7 @@ publish = false
 license = "UNLICENSED"
 description = "Rust SDK for the Zinc protocol"
 readme = "README.md"
+repository = "https://github.com/sphalerite-foundry/zinc-rust-sdk"
 
 [lib]
 name = "zinc_rust_sdk"
