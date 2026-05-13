@@ -38,6 +38,10 @@ pub struct Config {
     pub winner_zinc_share_bps: u64,
     /// Share of post-skim curve mint that accrues to the stockpile ZINC pot, in basis points.
     pub stockpile_zinc_share_bps: u64,
+    /// No-winner direct-winner ZINC redirect share that accrues to Bonanza, in basis points.
+    pub no_winner_direct_winner_zinc_bonanza_share_bps: u64,
+    /// No-winner direct-winner ZINC redirect share that accrues to stockpile, in basis points.
+    pub no_winner_direct_winner_zinc_stockpile_share_bps: u64,
     /// Minimum gross lamports required to enter a round.
     pub min_deploy_lamports: u64,
     /// Launch-time maximum mint for one round before ZINC factoring and support caps.
@@ -83,7 +87,7 @@ pub struct Config {
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 330;
+    pub const LEN: usize = 346;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {

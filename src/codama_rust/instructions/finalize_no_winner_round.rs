@@ -29,9 +29,9 @@ pub struct FinalizeNoWinnerRound {
     pub zinc_mint: solana_address::Address,
     /// Round-owned ZINC vault that funds the no-winner redirect.
     pub round_zinc_payout_token_account: solana_address::Address,
-    /// Treasury-owned Bonanza vault that receives the 70% redirect share.
+    /// Treasury-owned Bonanza vault that receives the configured redirect share.
     pub bonanza_token_account: solana_address::Address,
-    /// Treasury-owned stockpile ZINC vault that receives the 30% redirect share.
+    /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
     pub stockpile_token_account: solana_address::Address,
     /// SPL Token program used for the direct-winner redirect transfer.
     pub token_program: solana_address::Address,
@@ -204,7 +204,7 @@ impl FinalizeNoWinnerRoundBuilder {
         self.round_zinc_payout_token_account = Some(round_zinc_payout_token_account);
         self
     }
-    /// Treasury-owned Bonanza vault that receives the 70% redirect share.
+    /// Treasury-owned Bonanza vault that receives the configured redirect share.
     #[inline(always)]
     pub fn bonanza_token_account(
         &mut self,
@@ -213,7 +213,7 @@ impl FinalizeNoWinnerRoundBuilder {
         self.bonanza_token_account = Some(bonanza_token_account);
         self
     }
-    /// Treasury-owned stockpile ZINC vault that receives the 30% redirect share.
+    /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
     #[inline(always)]
     pub fn stockpile_token_account(
         &mut self,
@@ -292,9 +292,9 @@ pub struct FinalizeNoWinnerRoundCpiAccounts<'a, 'b> {
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
     /// Round-owned ZINC vault that funds the no-winner redirect.
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury-owned Bonanza vault that receives the 70% redirect share.
+    /// Treasury-owned Bonanza vault that receives the configured redirect share.
     pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury-owned stockpile ZINC vault that receives the 30% redirect share.
+    /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
     pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// SPL Token program used for the direct-winner redirect transfer.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
@@ -320,9 +320,9 @@ pub struct FinalizeNoWinnerRoundCpi<'a, 'b> {
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
     /// Round-owned ZINC vault that funds the no-winner redirect.
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury-owned Bonanza vault that receives the 70% redirect share.
+    /// Treasury-owned Bonanza vault that receives the configured redirect share.
     pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury-owned stockpile ZINC vault that receives the 30% redirect share.
+    /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
     pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// SPL Token program used for the direct-winner redirect transfer.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
@@ -544,7 +544,7 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpiBuilder<'a, 'b> {
         self.instruction.round_zinc_payout_token_account = Some(round_zinc_payout_token_account);
         self
     }
-    /// Treasury-owned Bonanza vault that receives the 70% redirect share.
+    /// Treasury-owned Bonanza vault that receives the configured redirect share.
     #[inline(always)]
     pub fn bonanza_token_account(
         &mut self,
@@ -553,7 +553,7 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpiBuilder<'a, 'b> {
         self.instruction.bonanza_token_account = Some(bonanza_token_account);
         self
     }
-    /// Treasury-owned stockpile ZINC vault that receives the 30% redirect share.
+    /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
     #[inline(always)]
     pub fn stockpile_token_account(
         &mut self,
