@@ -82,12 +82,14 @@ pub struct Config {
     pub round_start_delay_slots: u64,
     /// Arcium priority price per CU for round reveal computations, in micro-lamports.
     pub arcium_reveal_cu_price_micro: u64,
+    /// Minimum refill size as a share of current stockpile entry bricks, in basis points.
+    pub stockpile_refill_min_entry_bps: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 346;
+    pub const LEN: usize = 354;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
