@@ -259,243 +259,246 @@ pub enum ZincError {
     /// 6082 - Insufficient stockpile bricks
     #[error("Insufficient stockpile bricks")]
     InsufficientStockpileBricks = 0x17C2,
-    /// 6083 - Stockpile winner is missing
+    /// 6083 - Insufficient stockpile ZINC
+    #[error("Insufficient stockpile ZINC")]
+    InsufficientStockpileZinc = 0x17C3,
+    /// 6084 - Stockpile winner is missing
     #[error("Stockpile winner is missing")]
-    StockpileWinnerMissing = 0x17C3,
-    /// 6084 - Wrong stockpile token account
+    StockpileWinnerMissing = 0x17C4,
+    /// 6085 - Wrong stockpile token account
     #[error("Wrong stockpile token account")]
-    WrongStockpileTokenAccount = 0x17C4,
-    /// 6085 - Wrong stockpile SOL vault
+    WrongStockpileTokenAccount = 0x17C5,
+    /// 6086 - Wrong stockpile SOL vault
     #[error("Wrong stockpile SOL vault")]
-    WrongStockpileSolVault = 0x17C5,
-    /// 6086 - Wrong buyback SOL vault
+    WrongStockpileSolVault = 0x17C6,
+    /// 6087 - Wrong buyback SOL vault
     #[error("Wrong buyback SOL vault")]
-    WrongBuybackSolVault = 0x17C6,
-    /// 6087 - Wrong wrapped SOL mint
+    WrongBuybackSolVault = 0x17C7,
+    /// 6088 - Wrong wrapped SOL mint
     #[error("Wrong wrapped SOL mint")]
-    WrongWrappedSolMint = 0x17C7,
-    /// 6088 - Insufficient buyback SOL
+    WrongWrappedSolMint = 0x17C8,
+    /// 6089 - Insufficient buyback SOL
     #[error("Insufficient buyback SOL")]
-    InsufficientBuybackSol = 0x17C8,
-    /// 6089 - Insufficient buyback WSOL
+    InsufficientBuybackSol = 0x17C9,
+    /// 6090 - Insufficient buyback WSOL
     #[error("Insufficient buyback WSOL")]
-    InsufficientBuybackWsol = 0x17C9,
-    /// 6090 - Wrong Meteora DAMM v2 program
+    InsufficientBuybackWsol = 0x17CA,
+    /// 6091 - Wrong Meteora DAMM v2 program
     #[error("Wrong Meteora DAMM v2 program")]
-    WrongMeteoraProgram = 0x17CA,
-    /// 6091 - Wrong Meteora pool authority
+    WrongMeteoraProgram = 0x17CB,
+    /// 6092 - Wrong Meteora pool authority
     #[error("Wrong Meteora pool authority")]
-    WrongMeteoraPoolAuthority = 0x17CB,
-    /// 6092 - Wrong Meteora pool
+    WrongMeteoraPoolAuthority = 0x17CC,
+    /// 6093 - Wrong Meteora pool
     #[error("Wrong Meteora pool")]
-    WrongMeteoraPool = 0x17CC,
-    /// 6093 - Wrong Meteora pool vault
+    WrongMeteoraPool = 0x17CD,
+    /// 6094 - Wrong Meteora pool vault
     #[error("Wrong Meteora pool vault")]
-    WrongMeteoraVault = 0x17CD,
-    /// 6094 - Wrong Meteora position account
+    WrongMeteoraVault = 0x17CE,
+    /// 6095 - Wrong Meteora position account
     #[error("Wrong Meteora position account")]
-    WrongMeteoraPosition = 0x17CE,
-    /// 6095 - Wrong Meteora position NFT account
+    WrongMeteoraPosition = 0x17CF,
+    /// 6096 - Wrong Meteora position NFT account
     #[error("Wrong Meteora position NFT account")]
-    WrongMeteoraPositionNftAccount = 0x17CF,
-    /// 6096 - Wrong Meteora event authority
+    WrongMeteoraPositionNftAccount = 0x17D0,
+    /// 6097 - Wrong Meteora event authority
     #[error("Wrong Meteora event authority")]
-    WrongMeteoraEventAuthority = 0x17D0,
-    /// 6097 - Meteora instruction data serialization failed
+    WrongMeteoraEventAuthority = 0x17D1,
+    /// 6098 - Meteora instruction data serialization failed
     #[error("Meteora instruction data serialization failed")]
-    MeteoraInstructionSerializationFailed = 0x17D1,
-    /// 6098 - LP seed ZINC exceeds the configured supply cap
+    MeteoraInstructionSerializationFailed = 0x17D2,
+    /// 6099 - LP seed ZINC exceeds the configured supply cap
     #[error("LP seed ZINC exceeds the configured supply cap")]
-    BuybackPoolSeedExceedsSupplyCap = 0x17D2,
-    /// 6099 - Meteora pool did not consume the exact requested LP seed amounts
+    BuybackPoolSeedExceedsSupplyCap = 0x17D3,
+    /// 6100 - Meteora pool did not consume the exact requested LP seed amounts
     #[error("Meteora pool did not consume the exact requested LP seed amounts")]
-    BuybackPoolSeedContributionMismatch = 0x17D3,
-    /// 6100 - Buyback swap did not spend the exact requested WSOL amount
+    BuybackPoolSeedContributionMismatch = 0x17D4,
+    /// 6101 - Buyback swap did not spend the exact requested WSOL amount
     #[error("Buyback swap did not spend the exact requested WSOL amount")]
-    BuybackInputMismatch = 0x17D4,
-    /// 6101 - Buyback output was below the requested minimum
+    BuybackInputMismatch = 0x17D5,
+    /// 6102 - Buyback output was below the requested minimum
     #[error("Buyback output was below the requested minimum")]
-    BuybackSlippageExceeded = 0x17D5,
-    /// 6102 - Treasury lamports changed during buyback swap
+    BuybackSlippageExceeded = 0x17D6,
+    /// 6103 - Treasury lamports changed during buyback swap
     #[error("Treasury lamports changed during buyback swap")]
-    BuybackTreasuryLamportsChanged = 0x17D6,
-    /// 6103 - ZINC mint supply changed during buyback swap
+    BuybackTreasuryLamportsChanged = 0x17D7,
+    /// 6104 - ZINC mint supply changed during buyback swap
     #[error("ZINC mint supply changed during buyback swap")]
-    BuybackMintSupplyChanged = 0x17D7,
-    /// 6104 - Wrong staking token account
+    BuybackMintSupplyChanged = 0x17D8,
+    /// 6105 - Wrong staking token account
     #[error("Wrong staking token account")]
-    WrongStakingTokenAccount = 0x17D8,
-    /// 6105 - Wrong staking reward token account
+    WrongStakingTokenAccount = 0x17D9,
+    /// 6106 - Wrong staking reward token account
     #[error("Wrong staking reward token account")]
-    WrongStakingRewardTokenAccount = 0x17D9,
-    /// 6106 - Wrong round ZINC reward token account
+    WrongStakingRewardTokenAccount = 0x17DA,
+    /// 6107 - Wrong round ZINC reward token account
     #[error("Wrong round ZINC reward token account")]
-    WrongRoundZincRewardTokenAccount = 0x17DA,
-    /// 6107 - Wrong stake position
+    WrongRoundZincRewardTokenAccount = 0x17DB,
+    /// 6108 - Wrong stake position
     #[error("Wrong stake position")]
-    WrongStakePosition = 0x17DB,
-    /// 6108 - Amount must be greater than zero
+    WrongStakePosition = 0x17DC,
+    /// 6109 - Amount must be greater than zero
     #[error("Amount must be greater than zero")]
-    AmountMustBeGreaterThanZero = 0x17DC,
-    /// 6109 - No staking rewards are claimable
+    AmountMustBeGreaterThanZero = 0x17DD,
+    /// 6110 - No staking rewards are claimable
     #[error("No staking rewards are claimable")]
-    NoStakingRewards = 0x17DD,
-    /// 6110 - No round ZINC rewards are claimable
+    NoStakingRewards = 0x17DE,
+    /// 6111 - No round ZINC rewards are claimable
     #[error("No round ZINC rewards are claimable")]
-    NoRoundZincRewards = 0x17DE,
-    /// 6111 - No round SOL rewards are claimable
+    NoRoundZincRewards = 0x17DF,
+    /// 6112 - No round SOL rewards are claimable
     #[error("No round SOL rewards are claimable")]
-    NoRoundSolRewards = 0x17DF,
-    /// 6112 - Insufficient staked balance
+    NoRoundSolRewards = 0x17E0,
+    /// 6113 - Insufficient staked balance
     #[error("Insufficient staked balance")]
-    InsufficientStakedBalance = 0x17E0,
-    /// 6113 - Unsupported account version
+    InsufficientStakedBalance = 0x17E1,
+    /// 6114 - Unsupported account version
     #[error("Unsupported account version")]
-    UnsupportedAccountVersion = 0x17E1,
-    /// 6114 - Stockpile entry is below the minimum
+    UnsupportedAccountVersion = 0x17E2,
+    /// 6115 - Stockpile entry is below the minimum
     #[error("Stockpile entry is below the minimum")]
-    StockpileEntryBelowMinimum = 0x17E2,
-    /// 6115 - Stockpile has reached the maximum number of extras
+    StockpileEntryBelowMinimum = 0x17E3,
+    /// 6116 - Stockpile has reached the maximum number of extras
     #[error("Stockpile has reached the maximum number of extras")]
-    StockpileExtrasFull = 0x17E3,
-    /// 6116 - Stockpile extra amount must be greater than zero
+    StockpileExtrasFull = 0x17E4,
+    /// 6117 - Stockpile extra amount must be greater than zero
     #[error("Stockpile extra amount must be greater than zero")]
-    InvalidStockpileExtraAmount = 0x17E4,
-    /// 6117 - Unsupported stockpile extra mint
+    InvalidStockpileExtraAmount = 0x17E5,
+    /// 6118 - Unsupported stockpile extra mint
     #[error("Unsupported stockpile extra mint")]
-    UnsupportedStockpileExtraMint = 0x17E5,
-    /// 6118 - Stockpile extras already rolled to a newer stockpile
+    UnsupportedStockpileExtraMint = 0x17E6,
+    /// 6119 - Stockpile extras already rolled to a newer stockpile
     #[error("Stockpile extras already rolled to a newer stockpile")]
-    StockpileExtrasAlreadyRolled = 0x17E6,
-    /// 6119 - Stockpile extra is missing
+    StockpileExtrasAlreadyRolled = 0x17E7,
+    /// 6120 - Stockpile extra is missing
     #[error("Stockpile extra is missing")]
-    StockpileExtraMissing = 0x17E7,
-    /// 6120 - Stockpile extra is already paid
+    StockpileExtraMissing = 0x17E8,
+    /// 6121 - Stockpile extra is already paid
     #[error("Stockpile extra is already paid")]
-    StockpileExtraAlreadyPaid = 0x17E8,
-    /// 6121 - Wrong stockpile extra token account
+    StockpileExtraAlreadyPaid = 0x17E9,
+    /// 6122 - Wrong stockpile extra token account
     #[error("Wrong stockpile extra token account")]
-    WrongStockpileExtraTokenAccount = 0x17E9,
-    /// 6122 - Wrong winner stockpile extra token account
+    WrongStockpileExtraTokenAccount = 0x17EA,
+    /// 6123 - Wrong winner stockpile extra token account
     #[error("Wrong winner stockpile extra token account")]
-    WrongWinnerStockpileExtraTokenAccount = 0x17EA,
-    /// 6123 - Treasury does not have enough lamports to reimburse round creation
+    WrongWinnerStockpileExtraTokenAccount = 0x17EB,
+    /// 6124 - Treasury does not have enough lamports to reimburse round creation
     #[error("Treasury does not have enough lamports to reimburse round creation")]
-    InsufficientTreasuryLamports = 0x17EB,
-    /// 6124 - Wrong affiliate account
+    InsufficientTreasuryLamports = 0x17EC,
+    /// 6125 - Wrong affiliate account
     #[error("Wrong affiliate account")]
-    WrongAffiliate = 0x17EC,
-    /// 6125 - Affiliate cannot be the player
+    WrongAffiliate = 0x17ED,
+    /// 6126 - Affiliate cannot be the player
     #[error("Affiliate cannot be the player")]
-    AffiliateSelfReferral = 0x17ED,
-    /// 6126 - Affiliate binding is immutable after the first deploy
+    AffiliateSelfReferral = 0x17EE,
+    /// 6127 - Affiliate binding is immutable after the first deploy
     #[error("Affiliate binding is immutable after the first deploy")]
-    AffiliateBindingImmutable = 0x17EE,
-    /// 6127 - Deploy fee schedule is invalid
+    AffiliateBindingImmutable = 0x17EF,
+    /// 6128 - Deploy fee schedule is invalid
     #[error("Deploy fee schedule is invalid")]
-    InvalidDeployFeeBps = 0x17EF,
-    /// 6128 - Curve ZINC share schedule is invalid
+    InvalidDeployFeeBps = 0x17F0,
+    /// 6129 - Curve ZINC share schedule is invalid
     #[error("Curve ZINC share schedule is invalid")]
-    InvalidCurveZincShareBps = 0x17F0,
-    /// 6129 - Curve parameter is invalid
+    InvalidCurveZincShareBps = 0x17F1,
+    /// 6130 - Curve parameter is invalid
     #[error("Curve parameter is invalid")]
-    InvalidCurveParameter = 0x17F1,
-    /// 6130 - Missing affiliate accounts
+    InvalidCurveParameter = 0x17F2,
+    /// 6131 - Missing affiliate accounts
     #[error("Missing affiliate accounts")]
-    MissingAffiliateAccounts = 0x17F2,
-    /// 6131 - No affiliate balance is claimable
+    MissingAffiliateAccounts = 0x17F3,
+    /// 6132 - No affiliate balance is claimable
     #[error("No affiliate balance is claimable")]
-    NoAffiliateBalance = 0x17F3,
-    /// 6132 - Affiliate withdrawals are disabled
+    NoAffiliateBalance = 0x17F4,
+    /// 6133 - Affiliate withdrawals are disabled
     #[error("Affiliate withdrawals are disabled")]
-    AffiliateWithdrawalsDisabled = 0x17F4,
-    /// 6133 - Affiliate profile does not have enough lamports for the claim
+    AffiliateWithdrawalsDisabled = 0x17F5,
+    /// 6134 - Affiliate profile does not have enough lamports for the claim
     #[error("Affiliate profile does not have enough lamports for the claim")]
-    InsufficientAffiliateProfileLamports = 0x17F5,
-    /// 6134 - Player profile does not have enough lamports for the claim
+    InsufficientAffiliateProfileLamports = 0x17F6,
+    /// 6135 - Player profile does not have enough lamports for the claim
     #[error("Player profile does not have enough lamports for the claim")]
-    InsufficientPlayerProfileLamports = 0x17F6,
-    /// 6135 - Auto-miner session is paused
+    InsufficientPlayerProfileLamports = 0x17F7,
+    /// 6136 - Auto-miner session is paused
     #[error("Auto-miner session is paused")]
-    AutoMinerSessionPaused = 0x17F7,
-    /// 6136 - Auto-miner session has expired
+    AutoMinerSessionPaused = 0x17F8,
+    /// 6137 - Auto-miner session has expired
     #[error("Auto-miner session has expired")]
-    AutoMinerSessionExpired = 0x17F8,
-    /// 6137 - Auto-miner session budget is insufficient
+    AutoMinerSessionExpired = 0x17F9,
+    /// 6138 - Auto-miner session budget is insufficient
     #[error("Auto-miner session budget is insufficient")]
-    AutoMinerInsufficientBudget = 0x17F9,
-    /// 6138 - Auto-miner authority lamports are insufficient
+    AutoMinerInsufficientBudget = 0x17FA,
+    /// 6139 - Auto-miner authority lamports are insufficient
     #[error("Auto-miner authority lamports are insufficient")]
-    AutoMinerAuthorityInsufficientLamports = 0x17FA,
-    /// 6139 - Auto-miner encrypted tile pattern is invalid
+    AutoMinerAuthorityInsufficientLamports = 0x17FB,
+    /// 6140 - Auto-miner encrypted tile pattern is invalid
     #[error("Auto-miner encrypted tile pattern is invalid")]
-    InvalidAutoMinerEncryptedPattern = 0x17FB,
-    /// 6140 - Auto-miner SOL reward reload is disabled
+    InvalidAutoMinerEncryptedPattern = 0x17FC,
+    /// 6141 - Auto-miner SOL reward reload is disabled
     #[error("Auto-miner SOL reward reload is disabled")]
-    AutoMinerAutoReloadDisabled = 0x17FC,
-    /// 6141 - Stockpile duration must be greater than zero
+    AutoMinerAutoReloadDisabled = 0x17FD,
+    /// 6142 - Stockpile duration must be greater than zero
     #[error("Stockpile duration must be greater than zero")]
-    InvalidStockpileDuration = 0x17FD,
-    /// 6142 - Config must be closed with close_config
+    InvalidStockpileDuration = 0x17FE,
+    /// 6143 - Config must be closed with close_config
     #[error("Config must be closed with close_config")]
-    ClosePdaCannotCloseConfig = 0x17FE,
-    /// 6143 - Wrong treasury token account
+    ClosePdaCannotCloseConfig = 0x17FF,
+    /// 6144 - Wrong treasury token account
     #[error("Wrong treasury token account")]
-    WrongTreasuryTokenAccount = 0x17FF,
-    /// 6144 - Not Admin or Crank
+    WrongTreasuryTokenAccount = 0x1800,
+    /// 6145 - Not Admin or Crank
     #[error("Not Admin or Crank")]
-    NotAdminOrCrank = 0x1800,
-    /// 6145 - Round cleanup is incomplete
+    NotAdminOrCrank = 0x1801,
+    /// 6146 - Round cleanup is incomplete
     #[error("Round cleanup is incomplete")]
-    RoundCleanupIncomplete = 0x1801,
-    /// 6146 - Round cleanup is already complete
+    RoundCleanupIncomplete = 0x1802,
+    /// 6147 - Round cleanup is already complete
     #[error("Round cleanup is already complete")]
-    RoundCleanupComplete = 0x1802,
-    /// 6147 - Round is still referenced by the board
+    RoundCleanupComplete = 0x1803,
+    /// 6148 - Round is still referenced by the board
     #[error("Round is still referenced by the board")]
-    BoardRoundStillReferenced = 0x1803,
-    /// 6148 - Miner claim state is not terminal
+    BoardRoundStillReferenced = 0x1804,
+    /// 6149 - Miner claim state is not terminal
     #[error("Miner claim state is not terminal")]
-    MinerClaimNotTerminal = 0x1804,
-    /// 6149 - Round still has outstanding winner claims
+    MinerClaimNotTerminal = 0x1805,
+    /// 6150 - Round still has outstanding winner claims
     #[error("Round still has outstanding winner claims")]
-    OutstandingWinnerClaims = 0x1805,
-    /// 6150 - Wrong round secret
+    OutstandingWinnerClaims = 0x1806,
+    /// 6151 - Wrong round secret
     #[error("Wrong round secret")]
-    WrongRoundSecret = 0x1806,
-    /// 6151 - Wildcat winner selection is not ready
+    WrongRoundSecret = 0x1807,
+    /// 6152 - Wildcat winner selection is not ready
     #[error("Wildcat winner selection is not ready")]
-    WildcatSelectionNotReady = 0x1807,
-    /// 6152 - Wildcat winner selection is already complete
+    WildcatSelectionNotReady = 0x1808,
+    /// 6153 - Wildcat winner selection is already complete
     #[error("Wildcat winner selection is already complete")]
-    WildcatSelectionComplete = 0x1808,
-    /// 6153 - Wildcat winner is missing
+    WildcatSelectionComplete = 0x1809,
+    /// 6154 - Wildcat winner is missing
     #[error("Wildcat winner is missing")]
-    WildcatWinnerMissing = 0x1809,
-    /// 6154 - Wildcat ZINC claim is not ready
+    WildcatWinnerMissing = 0x180A,
+    /// 6155 - Wildcat ZINC claim is not ready
     #[error("Wildcat ZINC claim is not ready")]
-    WildcatClaimNotReady = 0x180A,
-    /// 6155 - Wildcat ZINC has already been claimed
+    WildcatClaimNotReady = 0x180B,
+    /// 6156 - Wildcat ZINC has already been claimed
     #[error("Wildcat ZINC has already been claimed")]
-    WildcatAlreadyClaimed = 0x180B,
-    /// 6156 - Wildcat ZINC claim is incomplete
+    WildcatAlreadyClaimed = 0x180C,
+    /// 6157 - Wildcat ZINC claim is incomplete
     #[error("Wildcat ZINC claim is incomplete")]
-    WildcatClaimIncomplete = 0x180C,
-    /// 6157 - Wildcat entry capacity is exhausted
+    WildcatClaimIncomplete = 0x180D,
+    /// 6158 - Wildcat entry capacity is exhausted
     #[error("Wildcat entry capacity is exhausted")]
-    WildcatEntryCapacityExceeded = 0x180D,
-    /// 6158 - Wildcat winner ZINC share exceeds one million ppm
+    WildcatEntryCapacityExceeded = 0x180E,
+    /// 6159 - Wildcat winner ZINC share exceeds one million ppm
     #[error("Wildcat winner ZINC share exceeds one million ppm")]
-    InvalidWildcatWinnerZincSharePpm = 0x180E,
-    /// 6159 - Board cannot be closed with close_pda
+    InvalidWildcatWinnerZincSharePpm = 0x180F,
+    /// 6160 - Board cannot be closed with close_pda
     #[error("Board cannot be closed with close_pda")]
-    ClosePdaCannotCloseBoard = 0x180F,
-    /// 6160 - Treasury cannot be closed with close_pda
+    ClosePdaCannotCloseBoard = 0x1810,
+    /// 6161 - Treasury cannot be closed with close_pda
     #[error("Treasury cannot be closed with close_pda")]
-    ClosePdaCannotCloseTreasury = 0x1810,
-    /// 6161 - Ready round is not the next sequential round
+    ClosePdaCannotCloseTreasury = 0x1811,
+    /// 6162 - Ready round is not the next sequential round
     #[error("Ready round is not the next sequential round")]
-    RoundNotNextSequential = 0x1811,
+    RoundNotNextSequential = 0x1812,
 }
 
 impl From<ZincError> for solana_program_error::ProgramError {

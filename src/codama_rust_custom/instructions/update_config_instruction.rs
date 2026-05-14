@@ -31,6 +31,8 @@ pub struct UpdateConfigInstructionInputs {
     pub stockpile_entry_pot_fee_bps: Option<u64>,
     /// Optional accepted-entry step multiplier for stockpile entry costs, in basis points.
     pub stockpile_entry_step_bps: Option<u64>,
+    /// Optional minimum refill size as a share of current stockpile entry bricks.
+    pub stockpile_refill_min_entry_bps: Option<u64>,
     /// Optional staking brick issuance rate per claimed ZINC, in `x10k` units.
     pub staking_bricks_per_zinc_x10k: Option<u64>,
     /// Optional slots over which newly melted staking rewards vest.
@@ -89,6 +91,7 @@ impl InstructionsHelper {
             stockpile_entry_min_zinc_fee,
             stockpile_entry_pot_fee_bps,
             stockpile_entry_step_bps,
+            stockpile_refill_min_entry_bps,
             staking_bricks_per_zinc_x10k,
             staking_reward_vesting_slots,
             arcium_reveal_cu_price_micro,
@@ -145,6 +148,7 @@ impl InstructionsHelper {
             stockpile_entry_min_zinc_fee,
             stockpile_entry_pot_fee_bps,
             stockpile_entry_step_bps,
+            stockpile_refill_min_entry_bps,
             staking_bricks_per_zinc_x10k,
             staking_reward_vesting_slots,
             arcium_reveal_cu_price_micro,
