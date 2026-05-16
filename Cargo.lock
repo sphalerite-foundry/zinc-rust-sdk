@@ -8381,7 +8381,7 @@ dependencies = [
 
 [[package]]
 name = "zinc-rust-sdk"
-version = "1.111.0"
+version = "1.112.0"
 dependencies = [
  "anchor-lang",
  "anyhow",
