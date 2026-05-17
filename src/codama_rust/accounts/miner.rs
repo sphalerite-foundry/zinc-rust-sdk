@@ -37,6 +37,8 @@ pub struct Miner {
     pub miner_index: u64,
     /// Hidden bonus stockpile bricks awarded during settlement, in `x10k` units.
     pub hidden_bonus_bricks_x10k: u64,
+    /// Auto-miner session PDA that created this miner, or `None` for manual and legacy miners.
+    pub auto_miner_session: Option<Address>,
 }
 
 pub const MINER_DISCRIMINATOR: [u8; 8] = [223, 113, 15, 54, 123, 122, 140, 100];
