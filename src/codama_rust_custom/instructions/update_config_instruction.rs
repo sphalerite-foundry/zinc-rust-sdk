@@ -1,4 +1,5 @@
 use crate::codama_rust::instructions::{UpdateConfig, UpdateConfigInstructionArgs};
+use crate::codama_rust::types::RoundRandomnessMode;
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
@@ -73,6 +74,10 @@ pub struct UpdateConfigInstructionInputs {
     pub curve_max_supply: Option<u64>,
     /// Optional crank authority to persist on config and board.
     pub crank: Option<Pubkey>,
+    /// Optional live randomness reveal path for closed rounds.
+    pub round_randomness_mode: Option<RoundRandomnessMode>,
+    /// Optional slot delay used before sampling SlotHashes in blockhash mode.
+    pub blockhash_reveal_delay_slots: Option<u64>,
 }
 
 impl InstructionsHelper {
@@ -112,6 +117,8 @@ impl InstructionsHelper {
             curve_target_support_lamports_per_zinc,
             curve_max_supply,
             crank,
+            round_randomness_mode,
+            blockhash_reveal_delay_slots,
         } = inputs;
         UpdateConfig {
             admin,
@@ -152,6 +159,8 @@ impl InstructionsHelper {
             staking_bricks_per_zinc_x10k,
             staking_reward_vesting_slots,
             arcium_reveal_cu_price_micro,
+            round_randomness_mode,
+            blockhash_reveal_delay_slots,
         })
     }
 }

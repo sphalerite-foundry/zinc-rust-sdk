@@ -5,6 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+use crate::codama_rust::types::RoundRandomnessMode;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 use solana_address::Address;
@@ -110,6 +111,8 @@ pub struct UpdateConfigInstructionArgs {
     pub staking_reward_vesting_slots: Option<u64>,
     pub arcium_reveal_cu_price_micro: Option<u64>,
     pub stockpile_refill_min_entry_bps: Option<u64>,
+    pub round_randomness_mode: Option<RoundRandomnessMode>,
+    pub blockhash_reveal_delay_slots: Option<u64>,
 }
 
 impl UpdateConfigInstructionArgs {
@@ -163,6 +166,8 @@ pub struct UpdateConfigBuilder {
     staking_reward_vesting_slots: Option<u64>,
     arcium_reveal_cu_price_micro: Option<u64>,
     stockpile_refill_min_entry_bps: Option<u64>,
+    round_randomness_mode: Option<RoundRandomnessMode>,
+    blockhash_reveal_delay_slots: Option<u64>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -410,6 +415,21 @@ impl UpdateConfigBuilder {
         self.stockpile_refill_min_entry_bps = Some(stockpile_refill_min_entry_bps);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn round_randomness_mode(
+        &mut self,
+        round_randomness_mode: RoundRandomnessMode,
+    ) -> &mut Self {
+        self.round_randomness_mode = Some(round_randomness_mode);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn blockhash_reveal_delay_slots(&mut self, blockhash_reveal_delay_slots: u64) -> &mut Self {
+        self.blockhash_reveal_delay_slots = Some(blockhash_reveal_delay_slots);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -472,6 +492,8 @@ impl UpdateConfigBuilder {
             staking_reward_vesting_slots: self.staking_reward_vesting_slots.clone(),
             arcium_reveal_cu_price_micro: self.arcium_reveal_cu_price_micro.clone(),
             stockpile_refill_min_entry_bps: self.stockpile_refill_min_entry_bps.clone(),
+            round_randomness_mode: self.round_randomness_mode.clone(),
+            blockhash_reveal_delay_slots: self.blockhash_reveal_delay_slots.clone(),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -630,6 +652,8 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             staking_reward_vesting_slots: None,
             arcium_reveal_cu_price_micro: None,
             stockpile_refill_min_entry_bps: None,
+            round_randomness_mode: None,
+            blockhash_reveal_delay_slots: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -878,6 +902,21 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
         self.instruction.stockpile_refill_min_entry_bps = Some(stockpile_refill_min_entry_bps);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn round_randomness_mode(
+        &mut self,
+        round_randomness_mode: RoundRandomnessMode,
+    ) -> &mut Self {
+        self.instruction.round_randomness_mode = Some(round_randomness_mode);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn blockhash_reveal_delay_slots(&mut self, blockhash_reveal_delay_slots: u64) -> &mut Self {
+        self.instruction.blockhash_reveal_delay_slots = Some(blockhash_reveal_delay_slots);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -961,6 +1000,8 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             staking_reward_vesting_slots: self.instruction.staking_reward_vesting_slots.clone(),
             arcium_reveal_cu_price_micro: self.instruction.arcium_reveal_cu_price_micro.clone(),
             stockpile_refill_min_entry_bps: self.instruction.stockpile_refill_min_entry_bps.clone(),
+            round_randomness_mode: self.instruction.round_randomness_mode.clone(),
+            blockhash_reveal_delay_slots: self.instruction.blockhash_reveal_delay_slots.clone(),
         };
         let instruction = UpdateConfigCpi {
             __program: self.instruction.__program,
@@ -1018,6 +1059,8 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     staking_reward_vesting_slots: Option<u64>,
     arcium_reveal_cu_price_micro: Option<u64>,
     stockpile_refill_min_entry_bps: Option<u64>,
+    round_randomness_mode: Option<RoundRandomnessMode>,
+    blockhash_reveal_delay_slots: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }
