@@ -39,6 +39,7 @@ pub(crate) mod r#signed_computation_outputs_settle_winning_stakes_batch_output;
 pub(crate) mod r#stockpile_entry;
 pub(crate) mod r#stockpile_extra;
 pub(crate) mod r#stockpile_status;
+pub(crate) mod r#stockpile_winner_rank;
 pub(crate) mod r#timestamp;
 pub(crate) mod r#utility_pubkeys;
 pub(crate) mod r#zinc_mint_metadata_args;
@@ -77,6 +78,7 @@ pub use self::r#signed_computation_outputs_settle_winning_stakes_batch_output::*
 pub use self::r#stockpile_entry::*;
 pub use self::r#stockpile_extra::*;
 pub use self::r#stockpile_status::*;
+pub use self::r#stockpile_winner_rank::*;
 pub use self::r#timestamp::*;
 pub use self::r#utility_pubkeys::*;
 pub use self::r#zinc_mint_metadata_args::*;

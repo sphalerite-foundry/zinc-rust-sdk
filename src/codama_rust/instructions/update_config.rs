@@ -114,6 +114,8 @@ pub struct UpdateConfigInstructionArgs {
     pub round_randomness_mode: Option<RoundRandomnessMode>,
     pub blockhash_reveal_delay_slots: Option<u64>,
     pub stockpile_bricks_per_zinc_x10k: Option<u64>,
+    pub stockpile_winner_count: Option<u8>,
+    pub stockpile_winner_share_bps: Option<[u64; 5]>,
 }
 
 impl UpdateConfigInstructionArgs {
@@ -170,6 +172,8 @@ pub struct UpdateConfigBuilder {
     round_randomness_mode: Option<RoundRandomnessMode>,
     blockhash_reveal_delay_slots: Option<u64>,
     stockpile_bricks_per_zinc_x10k: Option<u64>,
+    stockpile_winner_count: Option<u8>,
+    stockpile_winner_share_bps: Option<[u64; 5]>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -441,6 +445,21 @@ impl UpdateConfigBuilder {
         self.stockpile_bricks_per_zinc_x10k = Some(stockpile_bricks_per_zinc_x10k);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_winner_count(&mut self, stockpile_winner_count: u8) -> &mut Self {
+        self.stockpile_winner_count = Some(stockpile_winner_count);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_winner_share_bps(
+        &mut self,
+        stockpile_winner_share_bps: [u64; 5],
+    ) -> &mut Self {
+        self.stockpile_winner_share_bps = Some(stockpile_winner_share_bps);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -506,6 +525,8 @@ impl UpdateConfigBuilder {
             round_randomness_mode: self.round_randomness_mode.clone(),
             blockhash_reveal_delay_slots: self.blockhash_reveal_delay_slots.clone(),
             stockpile_bricks_per_zinc_x10k: self.stockpile_bricks_per_zinc_x10k.clone(),
+            stockpile_winner_count: self.stockpile_winner_count.clone(),
+            stockpile_winner_share_bps: self.stockpile_winner_share_bps.clone(),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -667,6 +688,8 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             round_randomness_mode: None,
             blockhash_reveal_delay_slots: None,
             stockpile_bricks_per_zinc_x10k: None,
+            stockpile_winner_count: None,
+            stockpile_winner_share_bps: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -939,6 +962,21 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
         self.instruction.stockpile_bricks_per_zinc_x10k = Some(stockpile_bricks_per_zinc_x10k);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_winner_count(&mut self, stockpile_winner_count: u8) -> &mut Self {
+        self.instruction.stockpile_winner_count = Some(stockpile_winner_count);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_winner_share_bps(
+        &mut self,
+        stockpile_winner_share_bps: [u64; 5],
+    ) -> &mut Self {
+        self.instruction.stockpile_winner_share_bps = Some(stockpile_winner_share_bps);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -1025,6 +1063,8 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             round_randomness_mode: self.instruction.round_randomness_mode.clone(),
             blockhash_reveal_delay_slots: self.instruction.blockhash_reveal_delay_slots.clone(),
             stockpile_bricks_per_zinc_x10k: self.instruction.stockpile_bricks_per_zinc_x10k.clone(),
+            stockpile_winner_count: self.instruction.stockpile_winner_count.clone(),
+            stockpile_winner_share_bps: self.instruction.stockpile_winner_share_bps.clone(),
         };
         let instruction = UpdateConfigCpi {
             __program: self.instruction.__program,
@@ -1085,6 +1125,8 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     round_randomness_mode: Option<RoundRandomnessMode>,
     blockhash_reveal_delay_slots: Option<u64>,
     stockpile_bricks_per_zinc_x10k: Option<u64>,
+    stockpile_winner_count: Option<u8>,
+    stockpile_winner_share_bps: Option<[u64; 5]>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

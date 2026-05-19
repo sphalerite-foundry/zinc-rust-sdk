@@ -27,6 +27,8 @@ pub struct InitStockpile {
     pub stockpile: solana_address::Address,
     /// Secret storage for the encrypted random value tied to this stockpile.
     pub stockpile_secret: solana_address::Address,
+    /// Ranked winner storage for this stockpile cycle.
+    pub stockpile_winners: solana_address::Address,
 
     pub stockpile_extras: solana_address::Address,
     /// Arcium signer PDA reused across queued computations.
@@ -75,7 +77,7 @@ impl InitStockpile {
         args: InitStockpileInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(23 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(24 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.payer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -93,6 +95,10 @@ impl InitStockpile {
         accounts.push(solana_instruction::AccountMeta::new(self.stockpile, false));
         accounts.push(solana_instruction::AccountMeta::new(
             self.stockpile_secret,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.stockpile_winners,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -217,22 +223,23 @@ impl InitStockpileInstructionArgs {
 ///   4. `[]` zinc_mint
 ///   5. `[writable]` stockpile
 ///   6. `[writable]` stockpile_secret
-///   7. `[writable]` stockpile_extras
-///   8. `[writable]` sign_pda_account
-///   9. `[]` mxe_account
-///   10. `[writable]` mempool_account
-///   11. `[writable]` executing_pool
-///   12. `[writable]` computation_account
-///   13. `[]` comp_def_account
-///   14. `[writable]` cluster_account
-///   15. `[writable, optional]` pool_account (default to `G2sRWJvi3xoyh5k2gY49eG9L8YhAEWQPtNb1zb1GXTtC`)
-///   16. `[writable, optional]` clock_account (default to `7EbMUTLo5DjdzbN7s8BXeZwXzEwNQb1hScfRvWg8a6ot`)
-///   17. `[writable]` stockpile_sol_vault
-///   18. `[writable]` stockpile_token_account
-///   19. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   20. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   21. `[optional]` arcium_program (default to `Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ`)
-///   22. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   7. `[writable]` stockpile_winners
+///   8. `[writable]` stockpile_extras
+///   9. `[writable]` sign_pda_account
+///   10. `[]` mxe_account
+///   11. `[writable]` mempool_account
+///   12. `[writable]` executing_pool
+///   13. `[writable]` computation_account
+///   14. `[]` comp_def_account
+///   15. `[writable]` cluster_account
+///   16. `[writable, optional]` pool_account (default to `G2sRWJvi3xoyh5k2gY49eG9L8YhAEWQPtNb1zb1GXTtC`)
+///   17. `[writable, optional]` clock_account (default to `7EbMUTLo5DjdzbN7s8BXeZwXzEwNQb1hScfRvWg8a6ot`)
+///   18. `[writable]` stockpile_sol_vault
+///   19. `[writable]` stockpile_token_account
+///   20. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   21. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   22. `[optional]` arcium_program (default to `Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ`)
+///   23. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
 #[derive(Clone, Debug, Default)]
 pub struct InitStockpileBuilder {
     payer: Option<solana_address::Address>,
@@ -242,6 +249,7 @@ pub struct InitStockpileBuilder {
     zinc_mint: Option<solana_address::Address>,
     stockpile: Option<solana_address::Address>,
     stockpile_secret: Option<solana_address::Address>,
+    stockpile_winners: Option<solana_address::Address>,
     stockpile_extras: Option<solana_address::Address>,
     sign_pda_account: Option<solana_address::Address>,
     mxe_account: Option<solana_address::Address>,
@@ -305,6 +313,12 @@ impl InitStockpileBuilder {
     #[inline(always)]
     pub fn stockpile_secret(&mut self, stockpile_secret: solana_address::Address) -> &mut Self {
         self.stockpile_secret = Some(stockpile_secret);
+        self
+    }
+    /// Ranked winner storage for this stockpile cycle.
+    #[inline(always)]
+    pub fn stockpile_winners(&mut self, stockpile_winners: solana_address::Address) -> &mut Self {
+        self.stockpile_winners = Some(stockpile_winners);
         self
     }
     #[inline(always)]
@@ -443,6 +457,9 @@ impl InitStockpileBuilder {
             zinc_mint: self.zinc_mint.expect("zinc_mint is not set"),
             stockpile: self.stockpile.expect("stockpile is not set"),
             stockpile_secret: self.stockpile_secret.expect("stockpile_secret is not set"),
+            stockpile_winners: self
+                .stockpile_winners
+                .expect("stockpile_winners is not set"),
             stockpile_extras: self.stockpile_extras.expect("stockpile_extras is not set"),
             sign_pda_account: self.sign_pda_account.expect("sign_pda_account is not set"),
             mxe_account: self.mxe_account.expect("mxe_account is not set"),
@@ -505,6 +522,8 @@ pub struct InitStockpileCpiAccounts<'a, 'b> {
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
     /// Secret storage for the encrypted random value tied to this stockpile.
     pub stockpile_secret: &'b solana_account_info::AccountInfo<'a>,
+    /// Ranked winner storage for this stockpile cycle.
+    pub stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
 
     pub stockpile_extras: &'b solana_account_info::AccountInfo<'a>,
     /// Arcium signer PDA reused across queued computations.
@@ -557,6 +576,8 @@ pub struct InitStockpileCpi<'a, 'b> {
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
     /// Secret storage for the encrypted random value tied to this stockpile.
     pub stockpile_secret: &'b solana_account_info::AccountInfo<'a>,
+    /// Ranked winner storage for this stockpile cycle.
+    pub stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
 
     pub stockpile_extras: &'b solana_account_info::AccountInfo<'a>,
     /// Arcium signer PDA reused across queued computations.
@@ -608,6 +629,7 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
             zinc_mint: accounts.zinc_mint,
             stockpile: accounts.stockpile,
             stockpile_secret: accounts.stockpile_secret,
+            stockpile_winners: accounts.stockpile_winners,
             stockpile_extras: accounts.stockpile_extras,
             sign_pda_account: accounts.sign_pda_account,
             mxe_account: accounts.mxe_account,
@@ -650,7 +672,7 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(23 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(24 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.payer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -671,6 +693,10 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.stockpile_secret.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.stockpile_winners.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -753,7 +779,7 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(24 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(25 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.payer.clone());
         account_infos.push(self.config.clone());
@@ -762,6 +788,7 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
         account_infos.push(self.zinc_mint.clone());
         account_infos.push(self.stockpile.clone());
         account_infos.push(self.stockpile_secret.clone());
+        account_infos.push(self.stockpile_winners.clone());
         account_infos.push(self.stockpile_extras.clone());
         account_infos.push(self.sign_pda_account.clone());
         account_infos.push(self.mxe_account.clone());
@@ -801,22 +828,23 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
 ///   4. `[]` zinc_mint
 ///   5. `[writable]` stockpile
 ///   6. `[writable]` stockpile_secret
-///   7. `[writable]` stockpile_extras
-///   8. `[writable]` sign_pda_account
-///   9. `[]` mxe_account
-///   10. `[writable]` mempool_account
-///   11. `[writable]` executing_pool
-///   12. `[writable]` computation_account
-///   13. `[]` comp_def_account
-///   14. `[writable]` cluster_account
-///   15. `[writable]` pool_account
-///   16. `[writable]` clock_account
-///   17. `[writable]` stockpile_sol_vault
-///   18. `[writable]` stockpile_token_account
-///   19. `[]` token_program
-///   20. `[]` system_program
-///   21. `[]` arcium_program
-///   22. `[]` associated_token_program
+///   7. `[writable]` stockpile_winners
+///   8. `[writable]` stockpile_extras
+///   9. `[writable]` sign_pda_account
+///   10. `[]` mxe_account
+///   11. `[writable]` mempool_account
+///   12. `[writable]` executing_pool
+///   13. `[writable]` computation_account
+///   14. `[]` comp_def_account
+///   15. `[writable]` cluster_account
+///   16. `[writable]` pool_account
+///   17. `[writable]` clock_account
+///   18. `[writable]` stockpile_sol_vault
+///   19. `[writable]` stockpile_token_account
+///   20. `[]` token_program
+///   21. `[]` system_program
+///   22. `[]` arcium_program
+///   23. `[]` associated_token_program
 #[derive(Clone, Debug)]
 pub struct InitStockpileCpiBuilder<'a, 'b> {
     instruction: Box<InitStockpileCpiBuilderInstruction<'a, 'b>>,
@@ -833,6 +861,7 @@ impl<'a, 'b> InitStockpileCpiBuilder<'a, 'b> {
             zinc_mint: None,
             stockpile: None,
             stockpile_secret: None,
+            stockpile_winners: None,
             stockpile_extras: None,
             sign_pda_account: None,
             mxe_account: None,
@@ -896,6 +925,15 @@ impl<'a, 'b> InitStockpileCpiBuilder<'a, 'b> {
         stockpile_secret: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.stockpile_secret = Some(stockpile_secret);
+        self
+    }
+    /// Ranked winner storage for this stockpile cycle.
+    #[inline(always)]
+    pub fn stockpile_winners(
+        &mut self,
+        stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.stockpile_winners = Some(stockpile_winners);
         self
     }
     #[inline(always)]
@@ -1100,6 +1138,11 @@ impl<'a, 'b> InitStockpileCpiBuilder<'a, 'b> {
                 .stockpile_secret
                 .expect("stockpile_secret is not set"),
 
+            stockpile_winners: self
+                .instruction
+                .stockpile_winners
+                .expect("stockpile_winners is not set"),
+
             stockpile_extras: self
                 .instruction
                 .stockpile_extras
@@ -1198,6 +1241,7 @@ struct InitStockpileCpiBuilderInstruction<'a, 'b> {
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_secret: Option<&'b solana_account_info::AccountInfo<'a>>,
+    stockpile_winners: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_extras: Option<&'b solana_account_info::AccountInfo<'a>>,
     sign_pda_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     mxe_account: Option<&'b solana_account_info::AccountInfo<'a>>,

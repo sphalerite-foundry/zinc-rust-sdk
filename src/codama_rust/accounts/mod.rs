@@ -25,6 +25,7 @@ pub(crate) mod r#stockpile;
 pub(crate) mod r#stockpile_extras;
 pub(crate) mod r#stockpile_secret;
 pub(crate) mod r#stockpile_sol_vault;
+pub(crate) mod r#stockpile_winners;
 pub(crate) mod r#treasury;
 
 pub use self::r#arcium_signer_account::*;
@@ -47,4 +48,5 @@ pub use self::r#stockpile::*;
 pub use self::r#stockpile_extras::*;
 pub use self::r#stockpile_secret::*;
 pub use self::r#stockpile_sol_vault::*;
+pub use self::r#stockpile_winners::*;
 pub use self::r#treasury::*;

@@ -23,6 +23,8 @@ pub struct PayoutStockpileExtraInstructionInputs {
     pub signer: Pubkey,
     /// Stockpile cycle whose next extra prize is being paid.
     pub stockpile_id: u64,
+    /// Ranked winner slot to pay for the selected extra prize.
+    pub rank: u8,
     /// Resolved stockpile winner that receives the extra prize.
     pub winner: Pubkey,
     /// Classic SPL mint being paid out.
@@ -38,6 +40,7 @@ impl InstructionsHelper {
         let PayoutStockpileExtraInstructionInputs {
             signer,
             stockpile_id,
+            rank,
             winner,
             extra_mint,
             extra_index,
@@ -46,6 +49,7 @@ impl InstructionsHelper {
             signer,
             config: PdaHelper::get_config_address(),
             stockpile: PdaHelper::get_stockpile_address(stockpile_id),
+            stockpile_winners: PdaHelper::get_stockpile_winners_address(stockpile_id),
             stockpile_extras: PdaHelper::get_stockpile_extras_address(),
             board: PdaHelper::get_board_address(),
             treasury: PdaHelper::get_treasury_address(),
@@ -62,6 +66,6 @@ impl InstructionsHelper {
             token_program: Pubkey::new_from_array(TOKEN_PROGRAM_ID.to_bytes()),
             system_program: PdaHelper::get_system_program_address(),
         }
-        .instruction(PayoutStockpileExtraInstructionArgs { extra_index })
+        .instruction(PayoutStockpileExtraInstructionArgs { extra_index, rank })
     }
 }

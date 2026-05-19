@@ -91,12 +91,16 @@ pub struct Config {
     pub blockhash_reveal_delay_slots: u64,
     /// Stockpile bricks required per whole ZINC, in `x10k` units.
     pub stockpile_bricks_per_zinc_x10k: u64,
+    /// Configured active Stockpile winner ranks.
+    pub stockpile_winner_count: u8,
+    /// Ranked Stockpile payout shares in basis points.
+    pub stockpile_winner_share_bps: [u64; 5],
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 371;
+    pub const LEN: usize = 412;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
