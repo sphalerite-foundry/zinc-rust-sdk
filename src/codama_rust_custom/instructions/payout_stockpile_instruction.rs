@@ -1,4 +1,4 @@
-use crate::codama_rust::instructions::PayoutStockpile;
+use crate::codama_rust::instructions::{PayoutStockpile, PayoutStockpileInstructionArgs};
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
@@ -27,6 +27,8 @@ pub struct PayoutStockpileInstructionInputs {
     pub signer: Pubkey,
     /// Stockpile cycle being paid out.
     pub stockpile_id: u64,
+    /// Ranked winner slot to pay.
+    pub rank: u8,
     /// Resolved stockpile winner that receives SOL and ZINC.
     pub winner: Pubkey,
     /// Protocol ZINC mint used to derive the winner ATA.
@@ -38,6 +40,7 @@ impl InstructionsHelper {
         let PayoutStockpileInstructionInputs {
             signer,
             stockpile_id,
+            rank,
             winner,
             zinc_mint,
         } = inputs;
@@ -45,6 +48,7 @@ impl InstructionsHelper {
             signer,
             config: PdaHelper::get_config_address(),
             stockpile: PdaHelper::get_stockpile_address(stockpile_id),
+            stockpile_winners: PdaHelper::get_stockpile_winners_address(stockpile_id),
             stockpile_extras: PdaHelper::get_stockpile_extras_address(),
             board: PdaHelper::get_board_address(),
             treasury: PdaHelper::get_treasury_address(),
@@ -59,6 +63,6 @@ impl InstructionsHelper {
             token_program: Pubkey::new_from_array(TOKEN_PROGRAM_ID.to_bytes()),
             system_program: PdaHelper::get_system_program_address(),
         }
-        .instruction()
+        .instruction(PayoutStockpileInstructionArgs { rank })
     }
 }

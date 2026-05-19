@@ -99,6 +99,15 @@ impl PdaHelper {
         .0
     }
 
+    /// Derives the ranked winners PDA for one stockpile cycle.
+    pub fn get_stockpile_winners_address(stockpile_id: u64) -> Pubkey {
+        Pubkey::find_program_address(
+            &[b"stockpile-winners", stockpile_id.to_le_bytes().as_ref()],
+            &ZINC_ID,
+        )
+        .0
+    }
+
     pub fn get_stockpile_extras_address() -> Pubkey {
         Pubkey::find_program_address(&[b"stockpile-extras"], &ZINC_ID).0
     }

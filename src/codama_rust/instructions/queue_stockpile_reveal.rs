@@ -23,6 +23,8 @@ pub struct QueueStockpileReveal {
     pub stockpile: solana_address::Address,
     /// Encrypted random value previously generated for this stockpile.
     pub stockpile_secret: solana_address::Address,
+    /// Ranked winner storage that will be populated by the reveal callback.
+    pub stockpile_winners: solana_address::Address,
     /// Arcium signer PDA reused across queued computations.
     pub sign_pda_account: solana_address::Address,
     /// MXE account backing the encrypted computations for this program.
@@ -61,7 +63,7 @@ impl QueueStockpileReveal {
         args: QueueStockpileRevealInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(16 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(17 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -73,6 +75,10 @@ impl QueueStockpileReveal {
         accounts.push(solana_instruction::AccountMeta::new(self.stockpile, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.stockpile_secret,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.stockpile_winners,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -177,17 +183,18 @@ impl QueueStockpileRevealInstructionArgs {
 ///   2. `[]` board
 ///   3. `[writable]` stockpile
 ///   4. `[]` stockpile_secret
-///   5. `[writable]` sign_pda_account
-///   6. `[]` mxe_account
-///   7. `[writable]` mempool_account
-///   8. `[writable]` executing_pool
-///   9. `[writable]` computation_account
-///   10. `[]` comp_def_account
-///   11. `[writable]` cluster_account
-///   12. `[writable, optional]` pool_account (default to `G2sRWJvi3xoyh5k2gY49eG9L8YhAEWQPtNb1zb1GXTtC`)
-///   13. `[writable, optional]` clock_account (default to `7EbMUTLo5DjdzbN7s8BXeZwXzEwNQb1hScfRvWg8a6ot`)
-///   14. `[optional]` system_program (default to `11111111111111111111111111111111`)
-///   15. `[optional]` arcium_program (default to `Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ`)
+///   5. `[]` stockpile_winners
+///   6. `[writable]` sign_pda_account
+///   7. `[]` mxe_account
+///   8. `[writable]` mempool_account
+///   9. `[writable]` executing_pool
+///   10. `[writable]` computation_account
+///   11. `[]` comp_def_account
+///   12. `[writable]` cluster_account
+///   13. `[writable, optional]` pool_account (default to `G2sRWJvi3xoyh5k2gY49eG9L8YhAEWQPtNb1zb1GXTtC`)
+///   14. `[writable, optional]` clock_account (default to `7EbMUTLo5DjdzbN7s8BXeZwXzEwNQb1hScfRvWg8a6ot`)
+///   15. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   16. `[optional]` arcium_program (default to `Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ`)
 #[derive(Clone, Debug, Default)]
 pub struct QueueStockpileRevealBuilder {
     signer: Option<solana_address::Address>,
@@ -195,6 +202,7 @@ pub struct QueueStockpileRevealBuilder {
     board: Option<solana_address::Address>,
     stockpile: Option<solana_address::Address>,
     stockpile_secret: Option<solana_address::Address>,
+    stockpile_winners: Option<solana_address::Address>,
     sign_pda_account: Option<solana_address::Address>,
     mxe_account: Option<solana_address::Address>,
     mempool_account: Option<solana_address::Address>,
@@ -242,6 +250,12 @@ impl QueueStockpileRevealBuilder {
     #[inline(always)]
     pub fn stockpile_secret(&mut self, stockpile_secret: solana_address::Address) -> &mut Self {
         self.stockpile_secret = Some(stockpile_secret);
+        self
+    }
+    /// Ranked winner storage that will be populated by the reveal callback.
+    #[inline(always)]
+    pub fn stockpile_winners(&mut self, stockpile_winners: solana_address::Address) -> &mut Self {
+        self.stockpile_winners = Some(stockpile_winners);
         self
     }
     /// Arcium signer PDA reused across queued computations.
@@ -340,6 +354,9 @@ impl QueueStockpileRevealBuilder {
             board: self.board.expect("board is not set"),
             stockpile: self.stockpile.expect("stockpile is not set"),
             stockpile_secret: self.stockpile_secret.expect("stockpile_secret is not set"),
+            stockpile_winners: self
+                .stockpile_winners
+                .expect("stockpile_winners is not set"),
             sign_pda_account: self.sign_pda_account.expect("sign_pda_account is not set"),
             mxe_account: self.mxe_account.expect("mxe_account is not set"),
             mempool_account: self.mempool_account.expect("mempool_account is not set"),
@@ -385,6 +402,8 @@ pub struct QueueStockpileRevealCpiAccounts<'a, 'b> {
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
     /// Encrypted random value previously generated for this stockpile.
     pub stockpile_secret: &'b solana_account_info::AccountInfo<'a>,
+    /// Ranked winner storage that will be populated by the reveal callback.
+    pub stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
     /// Arcium signer PDA reused across queued computations.
     pub sign_pda_account: &'b solana_account_info::AccountInfo<'a>,
     /// MXE account backing the encrypted computations for this program.
@@ -423,6 +442,8 @@ pub struct QueueStockpileRevealCpi<'a, 'b> {
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
     /// Encrypted random value previously generated for this stockpile.
     pub stockpile_secret: &'b solana_account_info::AccountInfo<'a>,
+    /// Ranked winner storage that will be populated by the reveal callback.
+    pub stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
     /// Arcium signer PDA reused across queued computations.
     pub sign_pda_account: &'b solana_account_info::AccountInfo<'a>,
     /// MXE account backing the encrypted computations for this program.
@@ -462,6 +483,7 @@ impl<'a, 'b> QueueStockpileRevealCpi<'a, 'b> {
             board: accounts.board,
             stockpile: accounts.stockpile,
             stockpile_secret: accounts.stockpile_secret,
+            stockpile_winners: accounts.stockpile_winners,
             sign_pda_account: accounts.sign_pda_account,
             mxe_account: accounts.mxe_account,
             mempool_account: accounts.mempool_account,
@@ -499,7 +521,7 @@ impl<'a, 'b> QueueStockpileRevealCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(16 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(17 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -515,6 +537,10 @@ impl<'a, 'b> QueueStockpileRevealCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.stockpile_secret.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.stockpile_winners.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -579,13 +605,14 @@ impl<'a, 'b> QueueStockpileRevealCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(17 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(18 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.board.clone());
         account_infos.push(self.stockpile.clone());
         account_infos.push(self.stockpile_secret.clone());
+        account_infos.push(self.stockpile_winners.clone());
         account_infos.push(self.sign_pda_account.clone());
         account_infos.push(self.mxe_account.clone());
         account_infos.push(self.mempool_account.clone());
@@ -618,17 +645,18 @@ impl<'a, 'b> QueueStockpileRevealCpi<'a, 'b> {
 ///   2. `[]` board
 ///   3. `[writable]` stockpile
 ///   4. `[]` stockpile_secret
-///   5. `[writable]` sign_pda_account
-///   6. `[]` mxe_account
-///   7. `[writable]` mempool_account
-///   8. `[writable]` executing_pool
-///   9. `[writable]` computation_account
-///   10. `[]` comp_def_account
-///   11. `[writable]` cluster_account
-///   12. `[writable]` pool_account
-///   13. `[writable]` clock_account
-///   14. `[]` system_program
-///   15. `[]` arcium_program
+///   5. `[]` stockpile_winners
+///   6. `[writable]` sign_pda_account
+///   7. `[]` mxe_account
+///   8. `[writable]` mempool_account
+///   9. `[writable]` executing_pool
+///   10. `[writable]` computation_account
+///   11. `[]` comp_def_account
+///   12. `[writable]` cluster_account
+///   13. `[writable]` pool_account
+///   14. `[writable]` clock_account
+///   15. `[]` system_program
+///   16. `[]` arcium_program
 #[derive(Clone, Debug)]
 pub struct QueueStockpileRevealCpiBuilder<'a, 'b> {
     instruction: Box<QueueStockpileRevealCpiBuilderInstruction<'a, 'b>>,
@@ -643,6 +671,7 @@ impl<'a, 'b> QueueStockpileRevealCpiBuilder<'a, 'b> {
             board: None,
             stockpile: None,
             stockpile_secret: None,
+            stockpile_winners: None,
             sign_pda_account: None,
             mxe_account: None,
             mempool_account: None,
@@ -690,6 +719,15 @@ impl<'a, 'b> QueueStockpileRevealCpiBuilder<'a, 'b> {
         stockpile_secret: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.stockpile_secret = Some(stockpile_secret);
+        self
+    }
+    /// Ranked winner storage that will be populated by the reveal callback.
+    #[inline(always)]
+    pub fn stockpile_winners(
+        &mut self,
+        stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.stockpile_winners = Some(stockpile_winners);
         self
     }
     /// Arcium signer PDA reused across queued computations.
@@ -848,6 +886,11 @@ impl<'a, 'b> QueueStockpileRevealCpiBuilder<'a, 'b> {
                 .stockpile_secret
                 .expect("stockpile_secret is not set"),
 
+            stockpile_winners: self
+                .instruction
+                .stockpile_winners
+                .expect("stockpile_winners is not set"),
+
             sign_pda_account: self
                 .instruction
                 .sign_pda_account
@@ -919,6 +962,7 @@ struct QueueStockpileRevealCpiBuilderInstruction<'a, 'b> {
     board: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_secret: Option<&'b solana_account_info::AccountInfo<'a>>,
+    stockpile_winners: Option<&'b solana_account_info::AccountInfo<'a>>,
     sign_pda_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     mxe_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     mempool_account: Option<&'b solana_account_info::AccountInfo<'a>>,

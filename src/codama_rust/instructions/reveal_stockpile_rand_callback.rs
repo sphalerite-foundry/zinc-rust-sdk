@@ -26,8 +26,12 @@ pub struct RevealStockpileRandCallback {
     pub cluster_account: solana_address::Address,
 
     pub instructions_sysvar: solana_address::Address,
+    /// Global config containing ranked Stockpile payout settings.
+    pub config: solana_address::Address,
     /// Stockpile being settled after Arcium reveals its random value.
     pub stockpile: solana_address::Address,
+    /// Ranked winner storage being populated from the revealed random value.
+    pub stockpile_winners: solana_address::Address,
 }
 
 impl RevealStockpileRandCallback {
@@ -44,7 +48,7 @@ impl RevealStockpileRandCallback {
         args: RevealStockpileRandCallbackInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.arcium_program,
             false,
@@ -69,7 +73,15 @@ impl RevealStockpileRandCallback {
             self.instructions_sysvar,
             false,
         ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.config,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new(self.stockpile, false));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.stockpile_winners,
+            false,
+        ));
         accounts.extend_from_slice(remaining_accounts);
         let mut data = RevealStockpileRandCallbackInstructionData::new()
             .try_to_vec()
@@ -129,7 +141,9 @@ impl RevealStockpileRandCallbackInstructionArgs {
 ///   3. `[]` computation_account
 ///   4. `[]` cluster_account
 ///   5. `[optional]` instructions_sysvar (default to `Sysvar1nstructions1111111111111111111111111`)
-///   6. `[writable]` stockpile
+///   6. `[]` config
+///   7. `[writable]` stockpile
+///   8. `[writable]` stockpile_winners
 #[derive(Clone, Debug, Default)]
 pub struct RevealStockpileRandCallbackBuilder {
     arcium_program: Option<solana_address::Address>,
@@ -138,7 +152,9 @@ pub struct RevealStockpileRandCallbackBuilder {
     computation_account: Option<solana_address::Address>,
     cluster_account: Option<solana_address::Address>,
     instructions_sysvar: Option<solana_address::Address>,
+    config: Option<solana_address::Address>,
     stockpile: Option<solana_address::Address>,
+    stockpile_winners: Option<solana_address::Address>,
     output: Option<SignedComputationOutputsRevealStockpileRandOutput>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
@@ -188,10 +204,22 @@ impl RevealStockpileRandCallbackBuilder {
         self.instructions_sysvar = Some(instructions_sysvar);
         self
     }
+    /// Global config containing ranked Stockpile payout settings.
+    #[inline(always)]
+    pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
+        self.config = Some(config);
+        self
+    }
     /// Stockpile being settled after Arcium reveals its random value.
     #[inline(always)]
     pub fn stockpile(&mut self, stockpile: solana_address::Address) -> &mut Self {
         self.stockpile = Some(stockpile);
+        self
+    }
+    /// Ranked winner storage being populated from the revealed random value.
+    #[inline(always)]
+    pub fn stockpile_winners(&mut self, stockpile_winners: solana_address::Address) -> &mut Self {
+        self.stockpile_winners = Some(stockpile_winners);
         self
     }
     #[inline(always)]
@@ -232,7 +260,11 @@ impl RevealStockpileRandCallbackBuilder {
             instructions_sysvar: self.instructions_sysvar.unwrap_or(solana_address::address!(
                 "Sysvar1nstructions1111111111111111111111111"
             )),
+            config: self.config.expect("config is not set"),
             stockpile: self.stockpile.expect("stockpile is not set"),
+            stockpile_winners: self
+                .stockpile_winners
+                .expect("stockpile_winners is not set"),
         };
         let args = RevealStockpileRandCallbackInstructionArgs {
             output: self.output.clone().expect("output is not set"),
@@ -255,8 +287,12 @@ pub struct RevealStockpileRandCallbackCpiAccounts<'a, 'b> {
     pub cluster_account: &'b solana_account_info::AccountInfo<'a>,
 
     pub instructions_sysvar: &'b solana_account_info::AccountInfo<'a>,
+    /// Global config containing ranked Stockpile payout settings.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Stockpile being settled after Arcium reveals its random value.
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
+    /// Ranked winner storage being populated from the revealed random value.
+    pub stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
 }
 
 /// `reveal_stockpile_rand_callback` CPI instruction.
@@ -275,8 +311,12 @@ pub struct RevealStockpileRandCallbackCpi<'a, 'b> {
     pub cluster_account: &'b solana_account_info::AccountInfo<'a>,
 
     pub instructions_sysvar: &'b solana_account_info::AccountInfo<'a>,
+    /// Global config containing ranked Stockpile payout settings.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Stockpile being settled after Arcium reveals its random value.
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
+    /// Ranked winner storage being populated from the revealed random value.
+    pub stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
     pub __args: RevealStockpileRandCallbackInstructionArgs,
 }
@@ -295,7 +335,9 @@ impl<'a, 'b> RevealStockpileRandCallbackCpi<'a, 'b> {
             computation_account: accounts.computation_account,
             cluster_account: accounts.cluster_account,
             instructions_sysvar: accounts.instructions_sysvar,
+            config: accounts.config,
             stockpile: accounts.stockpile,
+            stockpile_winners: accounts.stockpile_winners,
             __args: args,
         }
     }
@@ -322,7 +364,7 @@ impl<'a, 'b> RevealStockpileRandCallbackCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.arcium_program.key,
             false,
@@ -347,8 +389,16 @@ impl<'a, 'b> RevealStockpileRandCallbackCpi<'a, 'b> {
             *self.instructions_sysvar.key,
             false,
         ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.config.key,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.stockpile.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.stockpile_winners.key,
             false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
@@ -369,7 +419,7 @@ impl<'a, 'b> RevealStockpileRandCallbackCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(8 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(10 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.arcium_program.clone());
         account_infos.push(self.comp_def_account.clone());
@@ -377,7 +427,9 @@ impl<'a, 'b> RevealStockpileRandCallbackCpi<'a, 'b> {
         account_infos.push(self.computation_account.clone());
         account_infos.push(self.cluster_account.clone());
         account_infos.push(self.instructions_sysvar.clone());
+        account_infos.push(self.config.clone());
         account_infos.push(self.stockpile.clone());
+        account_infos.push(self.stockpile_winners.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -400,7 +452,9 @@ impl<'a, 'b> RevealStockpileRandCallbackCpi<'a, 'b> {
 ///   3. `[]` computation_account
 ///   4. `[]` cluster_account
 ///   5. `[]` instructions_sysvar
-///   6. `[writable]` stockpile
+///   6. `[]` config
+///   7. `[writable]` stockpile
+///   8. `[writable]` stockpile_winners
 #[derive(Clone, Debug)]
 pub struct RevealStockpileRandCallbackCpiBuilder<'a, 'b> {
     instruction: Box<RevealStockpileRandCallbackCpiBuilderInstruction<'a, 'b>>,
@@ -416,7 +470,9 @@ impl<'a, 'b> RevealStockpileRandCallbackCpiBuilder<'a, 'b> {
             computation_account: None,
             cluster_account: None,
             instructions_sysvar: None,
+            config: None,
             stockpile: None,
+            stockpile_winners: None,
             output: None,
             __remaining_accounts: Vec::new(),
         });
@@ -473,10 +529,25 @@ impl<'a, 'b> RevealStockpileRandCallbackCpiBuilder<'a, 'b> {
         self.instruction.instructions_sysvar = Some(instructions_sysvar);
         self
     }
+    /// Global config containing ranked Stockpile payout settings.
+    #[inline(always)]
+    pub fn config(&mut self, config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.config = Some(config);
+        self
+    }
     /// Stockpile being settled after Arcium reveals its random value.
     #[inline(always)]
     pub fn stockpile(&mut self, stockpile: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.stockpile = Some(stockpile);
+        self
+    }
+    /// Ranked winner storage being populated from the revealed random value.
+    #[inline(always)]
+    pub fn stockpile_winners(
+        &mut self,
+        stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.stockpile_winners = Some(stockpile_winners);
         self
     }
     #[inline(always)]
@@ -557,7 +628,14 @@ impl<'a, 'b> RevealStockpileRandCallbackCpiBuilder<'a, 'b> {
                 .instructions_sysvar
                 .expect("instructions_sysvar is not set"),
 
+            config: self.instruction.config.expect("config is not set"),
+
             stockpile: self.instruction.stockpile.expect("stockpile is not set"),
+
+            stockpile_winners: self
+                .instruction
+                .stockpile_winners
+                .expect("stockpile_winners is not set"),
             __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
@@ -576,7 +654,9 @@ struct RevealStockpileRandCallbackCpiBuilderInstruction<'a, 'b> {
     computation_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     cluster_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     instructions_sysvar: Option<&'b solana_account_info::AccountInfo<'a>>,
+    config: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
+    stockpile_winners: Option<&'b solana_account_info::AccountInfo<'a>>,
     output: Option<SignedComputationOutputsRevealStockpileRandOutput>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,

@@ -19,6 +19,8 @@ pub struct PayoutStockpile {
     pub config: solana_address::Address,
     /// Revealed stockpile whose payout is being transferred.
     pub stockpile: solana_address::Address,
+
+    pub stockpile_winners: solana_address::Address,
     /// Singleton pending-extras account tied to the unresolved stockpile cycle.
     pub stockpile_extras: solana_address::Address,
     /// Board used to enforce that only the unresolved stockpile can be paid.
@@ -44,22 +46,30 @@ pub struct PayoutStockpile {
 }
 
 impl PayoutStockpile {
-    pub fn instruction(&self) -> solana_instruction::Instruction {
-        self.instruction_with_remaining_accounts(&[])
+    pub fn instruction(
+        &self,
+        args: PayoutStockpileInstructionArgs,
+    ) -> solana_instruction::Instruction {
+        self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
+        args: PayoutStockpileInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(15 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.stockpile, false));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.stockpile_winners,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.stockpile_extras,
             false,
@@ -96,7 +106,9 @@ impl PayoutStockpile {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = PayoutStockpileInstructionData::new().try_to_vec().unwrap();
+        let mut data = PayoutStockpileInstructionData::new().try_to_vec().unwrap();
+        let mut args = args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
@@ -129,6 +141,17 @@ impl Default for PayoutStockpileInstructionData {
     }
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
+pub struct PayoutStockpileInstructionArgs {
+    pub rank: u8,
+}
+
+impl PayoutStockpileInstructionArgs {
+    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> {
+        borsh::to_vec(self)
+    }
+}
+
 /// Instruction builder for `PayoutStockpile`.
 ///
 /// ### Accounts:
@@ -136,22 +159,24 @@ impl Default for PayoutStockpileInstructionData {
 ///   0. `[writable, signer]` signer
 ///   1. `[]` config
 ///   2. `[writable]` stockpile
-///   3. `[]` stockpile_extras
-///   4. `[writable]` board
-///   5. `[writable]` treasury
-///   6. `[writable]` stockpile_sol_vault
-///   7. `[]` zinc_mint
-///   8. `[writable]` stockpile_token_account
-///   9. `[writable]` winner
-///   10. `[writable]` winner_zinc_token_account
-///   11. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
-///   12. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   13. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   3. `[writable]` stockpile_winners
+///   4. `[]` stockpile_extras
+///   5. `[writable]` board
+///   6. `[writable]` treasury
+///   7. `[writable]` stockpile_sol_vault
+///   8. `[]` zinc_mint
+///   9. `[writable]` stockpile_token_account
+///   10. `[writable]` winner
+///   11. `[writable]` winner_zinc_token_account
+///   12. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   13. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   14. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct PayoutStockpileBuilder {
     signer: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     stockpile: Option<solana_address::Address>,
+    stockpile_winners: Option<solana_address::Address>,
     stockpile_extras: Option<solana_address::Address>,
     board: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
@@ -163,6 +188,7 @@ pub struct PayoutStockpileBuilder {
     associated_token_program: Option<solana_address::Address>,
     token_program: Option<solana_address::Address>,
     system_program: Option<solana_address::Address>,
+    rank: Option<u8>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -186,6 +212,11 @@ impl PayoutStockpileBuilder {
     #[inline(always)]
     pub fn stockpile(&mut self, stockpile: solana_address::Address) -> &mut Self {
         self.stockpile = Some(stockpile);
+        self
+    }
+    #[inline(always)]
+    pub fn stockpile_winners(&mut self, stockpile_winners: solana_address::Address) -> &mut Self {
+        self.stockpile_winners = Some(stockpile_winners);
         self
     }
     /// Singleton pending-extras account tied to the unresolved stockpile cycle.
@@ -267,6 +298,11 @@ impl PayoutStockpileBuilder {
         self.system_program = Some(system_program);
         self
     }
+    #[inline(always)]
+    pub fn rank(&mut self, rank: u8) -> &mut Self {
+        self.rank = Some(rank);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -288,6 +324,9 @@ impl PayoutStockpileBuilder {
             signer: self.signer.expect("signer is not set"),
             config: self.config.expect("config is not set"),
             stockpile: self.stockpile.expect("stockpile is not set"),
+            stockpile_winners: self
+                .stockpile_winners
+                .expect("stockpile_winners is not set"),
             stockpile_extras: self.stockpile_extras.expect("stockpile_extras is not set"),
             board: self.board.expect("board is not set"),
             treasury: self.treasury.expect("treasury is not set"),
@@ -312,8 +351,11 @@ impl PayoutStockpileBuilder {
                 .system_program
                 .unwrap_or(solana_address::address!("11111111111111111111111111111111")),
         };
+        let args = PayoutStockpileInstructionArgs {
+            rank: self.rank.clone().expect("rank is not set"),
+        };
 
-        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
     }
 }
 
@@ -325,6 +367,8 @@ pub struct PayoutStockpileCpiAccounts<'a, 'b> {
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Revealed stockpile whose payout is being transferred.
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
+
+    pub stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
     /// Singleton pending-extras account tied to the unresolved stockpile cycle.
     pub stockpile_extras: &'b solana_account_info::AccountInfo<'a>,
     /// Board used to enforce that only the unresolved stockpile can be paid.
@@ -359,6 +403,8 @@ pub struct PayoutStockpileCpi<'a, 'b> {
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Revealed stockpile whose payout is being transferred.
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
+
+    pub stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
     /// Singleton pending-extras account tied to the unresolved stockpile cycle.
     pub stockpile_extras: &'b solana_account_info::AccountInfo<'a>,
     /// Board used to enforce that only the unresolved stockpile can be paid.
@@ -381,18 +427,22 @@ pub struct PayoutStockpileCpi<'a, 'b> {
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
     /// System Program used if the winner ATA needs to be created.
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
+    /// The arguments for the instruction.
+    pub __args: PayoutStockpileInstructionArgs,
 }
 
 impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
         accounts: PayoutStockpileCpiAccounts<'a, 'b>,
+        args: PayoutStockpileInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
             signer: accounts.signer,
             config: accounts.config,
             stockpile: accounts.stockpile,
+            stockpile_winners: accounts.stockpile_winners,
             stockpile_extras: accounts.stockpile_extras,
             board: accounts.board,
             treasury: accounts.treasury,
@@ -404,6 +454,7 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
             associated_token_program: accounts.associated_token_program,
             token_program: accounts.token_program,
             system_program: accounts.system_program,
+            __args: args,
         }
     }
     #[inline(always)]
@@ -429,7 +480,7 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(15 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -437,6 +488,10 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.stockpile.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.stockpile_winners.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -487,18 +542,21 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = PayoutStockpileInstructionData::new().try_to_vec().unwrap();
+        let mut data = PayoutStockpileInstructionData::new().try_to_vec().unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
+        data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(15 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(16 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.stockpile.clone());
+        account_infos.push(self.stockpile_winners.clone());
         account_infos.push(self.stockpile_extras.clone());
         account_infos.push(self.board.clone());
         account_infos.push(self.treasury.clone());
@@ -529,17 +587,18 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
 ///   0. `[writable, signer]` signer
 ///   1. `[]` config
 ///   2. `[writable]` stockpile
-///   3. `[]` stockpile_extras
-///   4. `[writable]` board
-///   5. `[writable]` treasury
-///   6. `[writable]` stockpile_sol_vault
-///   7. `[]` zinc_mint
-///   8. `[writable]` stockpile_token_account
-///   9. `[writable]` winner
-///   10. `[writable]` winner_zinc_token_account
-///   11. `[]` associated_token_program
-///   12. `[]` token_program
-///   13. `[]` system_program
+///   3. `[writable]` stockpile_winners
+///   4. `[]` stockpile_extras
+///   5. `[writable]` board
+///   6. `[writable]` treasury
+///   7. `[writable]` stockpile_sol_vault
+///   8. `[]` zinc_mint
+///   9. `[writable]` stockpile_token_account
+///   10. `[writable]` winner
+///   11. `[writable]` winner_zinc_token_account
+///   12. `[]` associated_token_program
+///   13. `[]` token_program
+///   14. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct PayoutStockpileCpiBuilder<'a, 'b> {
     instruction: Box<PayoutStockpileCpiBuilderInstruction<'a, 'b>>,
@@ -552,6 +611,7 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
             signer: None,
             config: None,
             stockpile: None,
+            stockpile_winners: None,
             stockpile_extras: None,
             board: None,
             treasury: None,
@@ -563,6 +623,7 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
             associated_token_program: None,
             token_program: None,
             system_program: None,
+            rank: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -583,6 +644,14 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn stockpile(&mut self, stockpile: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.stockpile = Some(stockpile);
+        self
+    }
+    #[inline(always)]
+    pub fn stockpile_winners(
+        &mut self,
+        stockpile_winners: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.stockpile_winners = Some(stockpile_winners);
         self
     }
     /// Singleton pending-extras account tied to the unresolved stockpile cycle.
@@ -670,6 +739,11 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
         self.instruction.system_program = Some(system_program);
         self
     }
+    #[inline(always)]
+    pub fn rank(&mut self, rank: u8) -> &mut Self {
+        self.instruction.rank = Some(rank);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -704,6 +778,9 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
+        let args = PayoutStockpileInstructionArgs {
+            rank: self.instruction.rank.clone().expect("rank is not set"),
+        };
         let instruction = PayoutStockpileCpi {
             __program: self.instruction.__program,
 
@@ -712,6 +789,11 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
             config: self.instruction.config.expect("config is not set"),
 
             stockpile: self.instruction.stockpile.expect("stockpile is not set"),
+
+            stockpile_winners: self
+                .instruction
+                .stockpile_winners
+                .expect("stockpile_winners is not set"),
 
             stockpile_extras: self
                 .instruction
@@ -755,6 +837,7 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
                 .instruction
                 .system_program
                 .expect("system_program is not set"),
+            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -769,6 +852,7 @@ struct PayoutStockpileCpiBuilderInstruction<'a, 'b> {
     signer: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
+    stockpile_winners: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_extras: Option<&'b solana_account_info::AccountInfo<'a>>,
     board: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
@@ -780,6 +864,7 @@ struct PayoutStockpileCpiBuilderInstruction<'a, 'b> {
     associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    rank: Option<u8>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

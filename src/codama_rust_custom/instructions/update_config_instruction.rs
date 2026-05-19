@@ -80,6 +80,10 @@ pub struct UpdateConfigInstructionInputs {
     pub round_randomness_mode: Option<RoundRandomnessMode>,
     /// Optional slot delay used before sampling SlotHashes in blockhash mode.
     pub blockhash_reveal_delay_slots: Option<u64>,
+    /// Optional number of ranked Stockpile winners to pay per cycle.
+    pub stockpile_winner_count: Option<u8>,
+    /// Optional ranked Stockpile winner share schedule in basis points.
+    pub stockpile_winner_share_bps: Option<[u64; 5]>,
 }
 
 impl InstructionsHelper {
@@ -122,6 +126,8 @@ impl InstructionsHelper {
             crank,
             round_randomness_mode,
             blockhash_reveal_delay_slots,
+            stockpile_winner_count,
+            stockpile_winner_share_bps,
         } = inputs;
         UpdateConfig {
             admin,
@@ -165,6 +171,8 @@ impl InstructionsHelper {
             arcium_reveal_cu_price_micro,
             round_randomness_mode,
             blockhash_reveal_delay_slots,
+            stockpile_winner_count,
+            stockpile_winner_share_bps,
         })
     }
 }
