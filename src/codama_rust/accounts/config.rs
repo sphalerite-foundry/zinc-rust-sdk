@@ -5,6 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+use crate::codama_rust::types::RoundRandomnessMode;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 use solana_address::Address;
@@ -84,12 +85,16 @@ pub struct Config {
     pub arcium_reveal_cu_price_micro: u64,
     /// Minimum refill size as a share of current stockpile entry bricks, in basis points.
     pub stockpile_refill_min_entry_bps: u64,
+    /// Live randomness reveal path for closed rounds.
+    pub round_randomness_mode: RoundRandomnessMode,
+    /// Number of slots after close used as the blockhash reveal sample delay.
+    pub blockhash_reveal_delay_slots: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 354;
+    pub const LEN: usize = 363;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {

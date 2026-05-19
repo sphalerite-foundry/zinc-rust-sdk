@@ -70,6 +70,10 @@ pub struct Round {
     pub wildcat_selection_complete: bool,
     /// True once the selected Wildcat payout has been paid or the draw needed no transfer.
     pub wildcat_claimed: bool,
+    /// Accumulator mixed from every deploy's public and encrypted trace.
+    pub blockhash_entropy_accumulator: [u8; 32],
+    /// Number of deploy entropy contributions mixed into the accumulator.
+    pub blockhash_entropy_contribution_count: u64,
     /// Weighted ticket ranges for settled winners eligible for Wildcat.
     pub wildcat_entries: Vec<RoundWildcatEntryRange>,
 }
