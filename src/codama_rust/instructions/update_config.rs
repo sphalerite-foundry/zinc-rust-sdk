@@ -113,6 +113,7 @@ pub struct UpdateConfigInstructionArgs {
     pub stockpile_refill_min_entry_bps: Option<u64>,
     pub round_randomness_mode: Option<RoundRandomnessMode>,
     pub blockhash_reveal_delay_slots: Option<u64>,
+    pub stockpile_bricks_per_zinc_x10k: Option<u64>,
 }
 
 impl UpdateConfigInstructionArgs {
@@ -168,6 +169,7 @@ pub struct UpdateConfigBuilder {
     stockpile_refill_min_entry_bps: Option<u64>,
     round_randomness_mode: Option<RoundRandomnessMode>,
     blockhash_reveal_delay_slots: Option<u64>,
+    stockpile_bricks_per_zinc_x10k: Option<u64>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -430,6 +432,15 @@ impl UpdateConfigBuilder {
         self.blockhash_reveal_delay_slots = Some(blockhash_reveal_delay_slots);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_bricks_per_zinc_x10k(
+        &mut self,
+        stockpile_bricks_per_zinc_x10k: u64,
+    ) -> &mut Self {
+        self.stockpile_bricks_per_zinc_x10k = Some(stockpile_bricks_per_zinc_x10k);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -494,6 +505,7 @@ impl UpdateConfigBuilder {
             stockpile_refill_min_entry_bps: self.stockpile_refill_min_entry_bps.clone(),
             round_randomness_mode: self.round_randomness_mode.clone(),
             blockhash_reveal_delay_slots: self.blockhash_reveal_delay_slots.clone(),
+            stockpile_bricks_per_zinc_x10k: self.stockpile_bricks_per_zinc_x10k.clone(),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -654,6 +666,7 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             stockpile_refill_min_entry_bps: None,
             round_randomness_mode: None,
             blockhash_reveal_delay_slots: None,
+            stockpile_bricks_per_zinc_x10k: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -917,6 +930,15 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
         self.instruction.blockhash_reveal_delay_slots = Some(blockhash_reveal_delay_slots);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn stockpile_bricks_per_zinc_x10k(
+        &mut self,
+        stockpile_bricks_per_zinc_x10k: u64,
+    ) -> &mut Self {
+        self.instruction.stockpile_bricks_per_zinc_x10k = Some(stockpile_bricks_per_zinc_x10k);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -1002,6 +1024,7 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             stockpile_refill_min_entry_bps: self.instruction.stockpile_refill_min_entry_bps.clone(),
             round_randomness_mode: self.instruction.round_randomness_mode.clone(),
             blockhash_reveal_delay_slots: self.instruction.blockhash_reveal_delay_slots.clone(),
+            stockpile_bricks_per_zinc_x10k: self.instruction.stockpile_bricks_per_zinc_x10k.clone(),
         };
         let instruction = UpdateConfigCpi {
             __program: self.instruction.__program,
@@ -1061,6 +1084,7 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     stockpile_refill_min_entry_bps: Option<u64>,
     round_randomness_mode: Option<RoundRandomnessMode>,
     blockhash_reveal_delay_slots: Option<u64>,
+    stockpile_bricks_per_zinc_x10k: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }
