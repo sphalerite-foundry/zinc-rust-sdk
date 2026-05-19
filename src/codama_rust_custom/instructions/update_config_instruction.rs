@@ -28,6 +28,8 @@ pub struct UpdateConfigInstructionInputs {
     pub round_claim_zinc_fee_bps: Option<u64>,
     /// Optional minimum ZINC fee required to enter one stockpile cycle, in mint base units.
     pub stockpile_entry_min_zinc_fee: Option<u64>,
+    /// Optional Stockpile bricks required per whole ZINC, in `x10k` units.
+    pub stockpile_bricks_per_zinc_x10k: Option<u64>,
     /// Optional stockpile entry fee as a share of the live stockpile ZINC pot, in basis points.
     pub stockpile_entry_pot_fee_bps: Option<u64>,
     /// Optional accepted-entry step multiplier for stockpile entry costs, in basis points.
@@ -94,6 +96,7 @@ impl InstructionsHelper {
             bonanza_hit_divisor,
             round_claim_zinc_fee_bps,
             stockpile_entry_min_zinc_fee,
+            stockpile_bricks_per_zinc_x10k,
             stockpile_entry_pot_fee_bps,
             stockpile_entry_step_bps,
             stockpile_refill_min_entry_bps,
@@ -153,6 +156,7 @@ impl InstructionsHelper {
             bonanza_hit_divisor,
             round_claim_zinc_fee_bps,
             stockpile_entry_min_zinc_fee,
+            stockpile_bricks_per_zinc_x10k,
             stockpile_entry_pot_fee_bps,
             stockpile_entry_step_bps,
             stockpile_refill_min_entry_bps,

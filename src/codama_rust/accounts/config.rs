@@ -69,7 +69,7 @@ pub struct Config {
     pub bonanza_hit_divisor: u64,
     /// ZINC fee skim for round winner claims, in basis points.
     pub round_claim_zinc_fee_bps: u64,
-    /// Minimum ZINC fee required to enter one stockpile cycle, in mint base units.
+    /// Legacy stockpile ZINC fee kept for serialized config compatibility.
     pub stockpile_entry_min_zinc_fee: u64,
     /// Stockpile entry fee as a share of the live stockpile ZINC pot, in basis points.
     pub stockpile_entry_pot_fee_bps: u64,
@@ -89,12 +89,14 @@ pub struct Config {
     pub round_randomness_mode: RoundRandomnessMode,
     /// Number of slots after close used as the blockhash reveal sample delay.
     pub blockhash_reveal_delay_slots: u64,
+    /// Stockpile bricks required per whole ZINC, in `x10k` units.
+    pub stockpile_bricks_per_zinc_x10k: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 363;
+    pub const LEN: usize = 371;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
