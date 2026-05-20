@@ -27,6 +27,7 @@ impl InstructionsHelper {
             board: PdaHelper::get_board_address(),
             stockpile: PdaHelper::get_stockpile_address(stockpile_id),
             stockpile_secret: PdaHelper::get_stockpile_secret_address(stockpile_id),
+            stockpile_winners: PdaHelper::get_stockpile_winners_address(stockpile_id),
         }
         .instruction()
     }
