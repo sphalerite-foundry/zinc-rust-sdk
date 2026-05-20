@@ -42,7 +42,6 @@ impl InstructionsHelper {
             zinc_mint,
             stockpile: PdaHelper::get_stockpile_address(stockpile_id),
             stockpile_secret: PdaHelper::get_stockpile_secret_address(stockpile_id),
-            stockpile_winners: PdaHelper::get_stockpile_winners_address(stockpile_id),
             stockpile_extras: PdaHelper::get_stockpile_extras_address(),
             sign_pda_account: PdaHelper::get_sign_pda_account_address(),
             mxe_account: PdaHelper::get_mxe_account_address(),
