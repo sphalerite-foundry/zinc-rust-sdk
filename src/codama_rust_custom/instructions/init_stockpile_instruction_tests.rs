@@ -15,13 +15,13 @@ fn init_stockpile_instruction_marks_stockpile_sol_vault_writable() {
             computation_offset: 99,
         });
 
-    assert_eq!(instruction.accounts.len(), 24);
+    assert_eq!(instruction.accounts.len(), 23);
     assert_eq!(
-        instruction.accounts[18].pubkey,
+        instruction.accounts[17].pubkey,
         PdaHelper::get_stockpile_sol_vault_address()
     );
-    assert!(instruction.accounts[18].is_writable);
-    assert!(!instruction.accounts[18].is_signer);
+    assert!(instruction.accounts[17].is_writable);
+    assert!(!instruction.accounts[17].is_signer);
 }
 
 /// Verifies init-stockpile can lazily create the stockpile token vault when it is absent.
@@ -38,16 +38,16 @@ fn init_stockpile_instruction_marks_stockpile_token_vault_writable() {
             computation_offset: 99,
         });
 
-    assert_eq!(instruction.accounts[19].pubkey, stockpile_token_account);
-    assert!(instruction.accounts[19].is_writable);
+    assert_eq!(instruction.accounts[18].pubkey, stockpile_token_account);
+    assert!(instruction.accounts[18].is_writable);
+    assert!(!instruction.accounts[18].is_signer);
+    assert_eq!(instruction.accounts[19].pubkey, PdaHelper::TOKEN_PROGRAM_ID);
+    assert!(!instruction.accounts[19].is_writable);
     assert!(!instruction.accounts[19].is_signer);
-    assert_eq!(instruction.accounts[20].pubkey, PdaHelper::TOKEN_PROGRAM_ID);
-    assert!(!instruction.accounts[20].is_writable);
-    assert!(!instruction.accounts[20].is_signer);
     assert_eq!(
-        instruction.accounts[23].pubkey,
+        instruction.accounts[22].pubkey,
         PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID
     );
-    assert!(!instruction.accounts[23].is_writable);
-    assert!(!instruction.accounts[23].is_signer);
+    assert!(!instruction.accounts[22].is_writable);
+    assert!(!instruction.accounts[22].is_signer);
 }

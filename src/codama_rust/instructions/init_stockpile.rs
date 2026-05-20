@@ -77,7 +77,7 @@ impl InitStockpile {
         args: InitStockpileInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(24 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(23 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.payer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -95,10 +95,6 @@ impl InitStockpile {
         accounts.push(solana_instruction::AccountMeta::new(self.stockpile, false));
         accounts.push(solana_instruction::AccountMeta::new(
             self.stockpile_secret,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new(
-            self.stockpile_winners,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
