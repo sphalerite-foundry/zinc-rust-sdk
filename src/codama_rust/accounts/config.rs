@@ -45,13 +45,13 @@ pub struct Config {
     pub no_winner_direct_winner_zinc_stockpile_share_bps: u64,
     /// Minimum gross lamports required to enter a round.
     pub min_deploy_lamports: u64,
-    /// Launch-time maximum mint for one round before ZINC factoring and support caps.
+    /// Launch-time maximum mint for one round before ZINC factoring.
     pub curve_max_round_mint: u64,
     /// SOL factoring lamports where the deploy curve reaches about `1 - e^-1` of `curve_max_round_mint`.
     pub curve_saturation_lamports: u64,
     /// ZINC factoring amount that halves scarcity emissions, in base units.
     pub curve_history_minted: u64,
-    /// Min target ZINC support lamports required for one emitted token.
+    /// Legacy min target ZINC support lamports retained for config compatibility.
     pub curve_target_support_lamports_per_zinc: u64,
     /// Maximum cumulative ZINC the close-round mint path may mint, in base units.
     pub curve_max_supply: u64,
