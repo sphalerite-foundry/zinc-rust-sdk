@@ -57,8 +57,6 @@ pub struct InitStockpile {
     pub system_program: solana_address::Address,
 
     pub arcium_program: solana_address::Address,
-    /// SPL Associated Token program used to recreate legacy treasury ATA custody.
-    pub associated_token_program: solana_address::Address,
 }
 
 impl InitStockpile {
@@ -75,7 +73,7 @@ impl InitStockpile {
         args: InitStockpileInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(23 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(22 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.payer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -155,10 +153,6 @@ impl InitStockpile {
             self.arcium_program,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.associated_token_program,
-            false,
-        ));
         accounts.extend_from_slice(remaining_accounts);
         let mut data = InitStockpileInstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
@@ -217,7 +211,7 @@ impl InitStockpileInstructionArgs {
 ///   4. `[]` zinc_mint
 ///   5. `[writable]` stockpile
 ///   6. `[writable]` stockpile_secret
-///   7. `[writable]` stockpile_extras
+///   7. `[]` stockpile_extras
 ///   8. `[writable]` sign_pda_account
 ///   9. `[]` mxe_account
 ///   10. `[writable]` mempool_account
@@ -232,7 +226,6 @@ impl InitStockpileInstructionArgs {
 ///   19. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 ///   20. `[optional]` system_program (default to `11111111111111111111111111111111`)
 ///   21. `[optional]` arcium_program (default to `Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ`)
-///   22. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
 #[derive(Clone, Debug, Default)]
 pub struct InitStockpileBuilder {
     payer: Option<solana_address::Address>,
@@ -257,7 +250,6 @@ pub struct InitStockpileBuilder {
     token_program: Option<solana_address::Address>,
     system_program: Option<solana_address::Address>,
     arcium_program: Option<solana_address::Address>,
-    associated_token_program: Option<solana_address::Address>,
     computation_offset: Option<u64>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
@@ -403,16 +395,6 @@ impl InitStockpileBuilder {
         self.arcium_program = Some(arcium_program);
         self
     }
-    /// `[optional account, default to 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL']`
-    /// SPL Associated Token program used to recreate legacy treasury ATA custody.
-    #[inline(always)]
-    pub fn associated_token_program(
-        &mut self,
-        associated_token_program: solana_address::Address,
-    ) -> &mut Self {
-        self.associated_token_program = Some(associated_token_program);
-        self
-    }
     #[inline(always)]
     pub fn computation_offset(&mut self, computation_offset: u64) -> &mut Self {
         self.computation_offset = Some(computation_offset);
@@ -474,9 +456,6 @@ impl InitStockpileBuilder {
             arcium_program: self.arcium_program.unwrap_or(solana_address::address!(
                 "Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ"
             )),
-            associated_token_program: self.associated_token_program.unwrap_or(
-                solana_address::address!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
-            ),
         };
         let args = InitStockpileInstructionArgs {
             computation_offset: self
@@ -535,8 +514,6 @@ pub struct InitStockpileCpiAccounts<'a, 'b> {
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 
     pub arcium_program: &'b solana_account_info::AccountInfo<'a>,
-    /// SPL Associated Token program used to recreate legacy treasury ATA custody.
-    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
 /// `init_stockpile` CPI instruction.
@@ -587,8 +564,6 @@ pub struct InitStockpileCpi<'a, 'b> {
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 
     pub arcium_program: &'b solana_account_info::AccountInfo<'a>,
-    /// SPL Associated Token program used to recreate legacy treasury ATA custody.
-    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
     pub __args: InitStockpileInstructionArgs,
 }
@@ -623,7 +598,6 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
             token_program: accounts.token_program,
             system_program: accounts.system_program,
             arcium_program: accounts.arcium_program,
-            associated_token_program: accounts.associated_token_program,
             __args: args,
         }
     }
@@ -650,7 +624,7 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(23 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(22 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.payer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -673,7 +647,7 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
             *self.stockpile_secret.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new(
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.stockpile_extras.key,
             false,
         ));
@@ -733,10 +707,6 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
             *self.arcium_program.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.associated_token_program.key,
-            false,
-        ));
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_instruction::AccountMeta {
                 pubkey: *remaining_account.0.key,
@@ -753,7 +723,7 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(24 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(23 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.payer.clone());
         account_infos.push(self.config.clone());
@@ -777,7 +747,6 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
         account_infos.push(self.token_program.clone());
         account_infos.push(self.system_program.clone());
         account_infos.push(self.arcium_program.clone());
-        account_infos.push(self.associated_token_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -801,7 +770,7 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
 ///   4. `[]` zinc_mint
 ///   5. `[writable]` stockpile
 ///   6. `[writable]` stockpile_secret
-///   7. `[writable]` stockpile_extras
+///   7. `[]` stockpile_extras
 ///   8. `[writable]` sign_pda_account
 ///   9. `[]` mxe_account
 ///   10. `[writable]` mempool_account
@@ -816,7 +785,6 @@ impl<'a, 'b> InitStockpileCpi<'a, 'b> {
 ///   19. `[]` token_program
 ///   20. `[]` system_program
 ///   21. `[]` arcium_program
-///   22. `[]` associated_token_program
 #[derive(Clone, Debug)]
 pub struct InitStockpileCpiBuilder<'a, 'b> {
     instruction: Box<InitStockpileCpiBuilderInstruction<'a, 'b>>,
@@ -848,7 +816,6 @@ impl<'a, 'b> InitStockpileCpiBuilder<'a, 'b> {
             token_program: None,
             system_program: None,
             arcium_program: None,
-            associated_token_program: None,
             computation_offset: None,
             __remaining_accounts: Vec::new(),
         });
@@ -1025,15 +992,6 @@ impl<'a, 'b> InitStockpileCpiBuilder<'a, 'b> {
         self.instruction.arcium_program = Some(arcium_program);
         self
     }
-    /// SPL Associated Token program used to recreate legacy treasury ATA custody.
-    #[inline(always)]
-    pub fn associated_token_program(
-        &mut self,
-        associated_token_program: &'b solana_account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.associated_token_program = Some(associated_token_program);
-        self
-    }
     #[inline(always)]
     pub fn computation_offset(&mut self, computation_offset: u64) -> &mut Self {
         self.instruction.computation_offset = Some(computation_offset);
@@ -1174,11 +1132,6 @@ impl<'a, 'b> InitStockpileCpiBuilder<'a, 'b> {
                 .instruction
                 .arcium_program
                 .expect("arcium_program is not set"),
-
-            associated_token_program: self
-                .instruction
-                .associated_token_program
-                .expect("associated_token_program is not set"),
             __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
@@ -1213,7 +1166,6 @@ struct InitStockpileCpiBuilderInstruction<'a, 'b> {
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     arcium_program: Option<&'b solana_account_info::AccountInfo<'a>>,
-    associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     computation_offset: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
