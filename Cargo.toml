@@ -19,9 +19,9 @@ anchor-idl-build = ["anchor", "anchor-lang/idl-build"]
 fetch = ["dep:solana-account", "dep:solana-rpc-client"]
 
 [dependencies]
-anchor-lang = { version = "0.32.1", features = ["init-if-needed"] }
+anchor-lang = { version = "1.0.2", features = ["init-if-needed"] }
 anyhow = { version = "1.0.102" }
-arcium-client = { version = "0.9.7", default-features = false }
+arcium-client = { version = "0.10.3", default-features = false }
 borsh = { version = "1.6.0", features = ["derive"] }
 num-derive = { version = "0.4.2" }
 num-traits = { version = "0.2.19" }

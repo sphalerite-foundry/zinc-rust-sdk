@@ -60,8 +60,21 @@ impl InstructionsHelper {
             token_program: PdaHelper::TOKEN_PROGRAM_ID,
             system_program: PdaHelper::get_system_program_address(),
             arcium_program: PdaHelper::ARCIUM_PROGRAM_ID,
-            associated_token_program: PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID,
         };
-        instruction.instruction(InitStockpileInstructionArgs { computation_offset })
+        let mut instruction = instruction.instruction_with_remaining_accounts(
+            InitStockpileInstructionArgs { computation_offset },
+            &[solana_instruction::AccountMeta::new_readonly(
+                PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID,
+                false,
+            )],
+        );
+        if let Some(account) = instruction
+            .accounts
+            .iter_mut()
+            .find(|account| account.pubkey == PdaHelper::get_stockpile_extras_address())
+        {
+            account.is_writable = true;
+        }
+        instruction
     }
 }
