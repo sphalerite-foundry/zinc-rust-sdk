@@ -7,8 +7,8 @@ use solana_pubkey::Pubkey;
 pub struct DeployRoundInstructionInputs {
     pub signer: Pubkey,
     pub round_id: u64,
-    /// Existing stockpile PDA seed to pass into the instruction.
-    pub stockpile_id: u64,
+    /// Active stockpile id to pass into the optional deploy account set.
+    pub stockpile_id: Option<u64>,
     pub total_amount: u64,
     /// Optional affiliate account to bind on the player's immutable first deploy.
     pub affiliate: Option<Pubkey>,
@@ -46,7 +46,8 @@ impl InstructionsHelper {
             treasury: PdaHelper::get_treasury_address(),
             stockpile_sol_vault: PdaHelper::get_stockpile_sol_vault_address(),
             buyback_sol_vault: PdaHelper::get_buyback_sol_vault_address(),
-            stockpile: PdaHelper::get_stockpile_address(stockpile_id),
+            stockpile: stockpile_id
+                .map(|stockpile_id| PdaHelper::get_stockpile_address(stockpile_id)),
             affiliate: effective_affiliate,
             affiliate_profile,
             system_program: PdaHelper::get_system_program_address(),

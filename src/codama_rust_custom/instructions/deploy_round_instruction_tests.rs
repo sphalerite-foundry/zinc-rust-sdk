@@ -9,7 +9,7 @@ fn deploy_instruction(
     InstructionsHelper::deploy_round_instruction(DeployRoundInstructionInputs {
         signer,
         round_id: 1,
-        stockpile_id: 1,
+        stockpile_id: Some(1),
         total_amount: 1,
         affiliate,
         mask_encryption_key: [0; 32],

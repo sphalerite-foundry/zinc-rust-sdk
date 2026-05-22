@@ -36,8 +36,8 @@ pub struct DeployRoundFromAutoSession {
     pub stockpile_sol_vault: solana_address::Address,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: solana_address::Address,
-    /// Current stockpile account required by deploy account wiring.
-    pub stockpile: solana_address::Address,
+    /// Active stockpile account, omitted when no cycle is currently joinable.
+    pub stockpile: Option<solana_address::Address>,
 
     pub affiliate: Option<solana_address::Address>,
 
@@ -90,10 +90,16 @@ impl DeployRoundFromAutoSession {
             self.buyback_sol_vault,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.stockpile,
-            false,
-        ));
+        if let Some(stockpile) = self.stockpile {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                stockpile, false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         if let Some(affiliate) = self.affiliate {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
                 affiliate, false,
@@ -185,7 +191,7 @@ impl DeployRoundFromAutoSessionInstructionArgs {
 ///   8. `[writable]` treasury
 ///   9. `[writable]` stockpile_sol_vault
 ///   10. `[writable]` buyback_sol_vault
-///   11. `[]` stockpile
+///   11. `[optional]` stockpile
 ///   12. `[optional]` affiliate
 ///   13. `[writable, optional]` affiliate_profile
 ///   14. `[optional]` system_program (default to `11111111111111111111111111111111`)
@@ -284,10 +290,11 @@ impl DeployRoundFromAutoSessionBuilder {
         self.buyback_sol_vault = Some(buyback_sol_vault);
         self
     }
-    /// Current stockpile account required by deploy account wiring.
+    /// `[optional account]`
+    /// Active stockpile account, omitted when no cycle is currently joinable.
     #[inline(always)]
-    pub fn stockpile(&mut self, stockpile: solana_address::Address) -> &mut Self {
-        self.stockpile = Some(stockpile);
+    pub fn stockpile(&mut self, stockpile: Option<solana_address::Address>) -> &mut Self {
+        self.stockpile = stockpile;
         self
     }
     /// `[optional account]`
@@ -362,7 +369,7 @@ impl DeployRoundFromAutoSessionBuilder {
             buyback_sol_vault: self
                 .buyback_sol_vault
                 .expect("buyback_sol_vault is not set"),
-            stockpile: self.stockpile.expect("stockpile is not set"),
+            stockpile: self.stockpile,
             affiliate: self.affiliate,
             affiliate_profile: self.affiliate_profile,
             system_program: self
@@ -409,8 +416,8 @@ pub struct DeployRoundFromAutoSessionCpiAccounts<'a, 'b> {
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: &'b solana_account_info::AccountInfo<'a>,
-    /// Current stockpile account required by deploy account wiring.
-    pub stockpile: &'b solana_account_info::AccountInfo<'a>,
+    /// Active stockpile account, omitted when no cycle is currently joinable.
+    pub stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
 
     pub affiliate: Option<&'b solana_account_info::AccountInfo<'a>>,
 
@@ -445,8 +452,8 @@ pub struct DeployRoundFromAutoSessionCpi<'a, 'b> {
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: &'b solana_account_info::AccountInfo<'a>,
-    /// Current stockpile account required by deploy account wiring.
-    pub stockpile: &'b solana_account_info::AccountInfo<'a>,
+    /// Active stockpile account, omitted when no cycle is currently joinable.
+    pub stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
 
     pub affiliate: Option<&'b solana_account_info::AccountInfo<'a>>,
 
@@ -542,10 +549,17 @@ impl<'a, 'b> DeployRoundFromAutoSessionCpi<'a, 'b> {
             *self.buyback_sol_vault.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.stockpile.key,
-            false,
-        ));
+        if let Some(stockpile) = self.stockpile {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                *stockpile.key,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         if let Some(affiliate) = self.affiliate {
             accounts.push(solana_instruction::AccountMeta::new_readonly(
                 *affiliate.key,
@@ -603,7 +617,9 @@ impl<'a, 'b> DeployRoundFromAutoSessionCpi<'a, 'b> {
         account_infos.push(self.treasury.clone());
         account_infos.push(self.stockpile_sol_vault.clone());
         account_infos.push(self.buyback_sol_vault.clone());
-        account_infos.push(self.stockpile.clone());
+        if let Some(stockpile) = self.stockpile {
+            account_infos.push(stockpile.clone());
+        }
         if let Some(affiliate) = self.affiliate {
             account_infos.push(affiliate.clone());
         }
@@ -638,7 +654,7 @@ impl<'a, 'b> DeployRoundFromAutoSessionCpi<'a, 'b> {
 ///   8. `[writable]` treasury
 ///   9. `[writable]` stockpile_sol_vault
 ///   10. `[writable]` buyback_sol_vault
-///   11. `[]` stockpile
+///   11. `[optional]` stockpile
 ///   12. `[optional]` affiliate
 ///   13. `[writable, optional]` affiliate_profile
 ///   14. `[]` system_program
@@ -750,10 +766,14 @@ impl<'a, 'b> DeployRoundFromAutoSessionCpiBuilder<'a, 'b> {
         self.instruction.buyback_sol_vault = Some(buyback_sol_vault);
         self
     }
-    /// Current stockpile account required by deploy account wiring.
+    /// `[optional account]`
+    /// Active stockpile account, omitted when no cycle is currently joinable.
     #[inline(always)]
-    pub fn stockpile(&mut self, stockpile: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.stockpile = Some(stockpile);
+    pub fn stockpile(
+        &mut self,
+        stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
+    ) -> &mut Self {
+        self.instruction.stockpile = stockpile;
         self
     }
     /// `[optional account]`
@@ -886,7 +906,7 @@ impl<'a, 'b> DeployRoundFromAutoSessionCpiBuilder<'a, 'b> {
                 .buyback_sol_vault
                 .expect("buyback_sol_vault is not set"),
 
-            stockpile: self.instruction.stockpile.expect("stockpile is not set"),
+            stockpile: self.instruction.stockpile,
 
             affiliate: self.instruction.affiliate,
 

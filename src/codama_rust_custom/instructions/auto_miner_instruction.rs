@@ -12,8 +12,8 @@ pub struct DeployRoundFromAutoSessionInstructionInputs {
     pub executor: Pubkey,
     /// Wallet that owns the session and receives the miner position.
     pub authority: Pubkey,
-    /// Stockpile id required by the deploy account set.
-    pub stockpile_id: u64,
+    /// Active stockpile id to pass into the optional deploy account set.
+    pub stockpile_id: Option<u64>,
     /// Round id receiving the auto deploy.
     pub round_id: u64,
     /// Optional affiliate wallet forwarded only for already-bound affiliate accrual.
@@ -62,7 +62,8 @@ impl InstructionsHelper {
             treasury: PdaHelper::get_treasury_address(),
             stockpile_sol_vault: PdaHelper::get_stockpile_sol_vault_address(),
             buyback_sol_vault: PdaHelper::get_buyback_sol_vault_address(),
-            stockpile: PdaHelper::get_stockpile_address(stockpile_id),
+            stockpile: stockpile_id
+                .map(|stockpile_id| PdaHelper::get_stockpile_address(stockpile_id)),
             affiliate,
             affiliate_profile,
             system_program: solana_system_interface::program::ID,
