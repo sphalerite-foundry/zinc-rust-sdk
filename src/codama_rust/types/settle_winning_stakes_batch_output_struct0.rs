@@ -10,6 +10,6 @@ use borsh::BorshSerialize;
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct SettleWinningStakesBatchOutputStruct0 {
-    pub field0: [u64; 8],
-    pub field1: [u128; 8],
+    pub field0: [u64; 4],
+    pub field1: [u128; 4],
 }
