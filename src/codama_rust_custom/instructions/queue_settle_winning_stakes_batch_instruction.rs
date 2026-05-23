@@ -7,7 +7,7 @@ use anyhow::anyhow;
 use solana_instruction::{AccountMeta, Instruction};
 use solana_pubkey::Pubkey;
 
-const SETTLE_WINNING_STAKES_BATCH_SIZE: usize = 8;
+const SETTLE_WINNING_STAKES_BATCH_SIZE: usize = 4;
 
 pub struct QueueSettleWinningStakesBatchInstructionInputs {
     pub signer: Pubkey,
