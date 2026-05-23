@@ -93,7 +93,7 @@ impl InitStockpile {
             self.stockpile_secret,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
+        accounts.push(solana_instruction::AccountMeta::new(
             self.stockpile_extras,
             false,
         ));
