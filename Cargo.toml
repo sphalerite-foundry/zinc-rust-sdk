@@ -2,7 +2,7 @@
 name = "zinc-rust-sdk"
 version = "1.124.0"
 edition = "2021"
-rust-version = "1.84.1"
+rust-version = "1.89.0"
 publish = true
 license-file = "LICENSE"
 description = "Rust SDK for the Zinc protocol"
