@@ -2,6 +2,7 @@ use crate::codama_rust::instructions::{
     DeployRoundFromAutoSession, DeployRoundFromAutoSessionInstructionArgs,
     ReloadAutoMinerSessionSol,
 };
+use crate::codama_rust::types::ZkMaskAttestationArgs;
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
@@ -24,6 +25,8 @@ pub struct DeployRoundFromAutoSessionInstructionInputs {
     pub mask_nonce: u128,
     /// Ciphertext limbs for the encrypted hidden tile mask payload.
     pub mask_ciphertext: [u8; 64],
+    /// Optional private-ZK deploy mask attestation.
+    pub zk_mask_attestation: Option<ZkMaskAttestationArgs>,
 }
 
 pub struct ReloadAutoMinerSessionSolInstructionInputs {
@@ -47,6 +50,7 @@ impl InstructionsHelper {
             mask_encryption_key,
             mask_nonce,
             mask_ciphertext,
+            zk_mask_attestation,
         } = inputs;
         let affiliate_profile =
             affiliate.map(|affiliate| PdaHelper::get_player_profile_address(&affiliate));
@@ -72,7 +76,7 @@ impl InstructionsHelper {
             mask_encryption_key,
             mask_nonce,
             mask_ciphertext,
-            zk_mask_attestation: None,
+            zk_mask_attestation,
         })
     }
 
