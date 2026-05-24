@@ -15,6 +15,7 @@ fn deploy_instruction(
         mask_encryption_key: [0; 32],
         mask_nonce: 0,
         mask_ciphertext: [0; 64],
+        zk_mask_attestation: None,
     })
 }
 

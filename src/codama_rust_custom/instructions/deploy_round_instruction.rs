@@ -1,4 +1,5 @@
 use crate::codama_rust::instructions::{DeployRound, DeployRoundInstructionArgs};
+use crate::codama_rust::types::ZkMaskAttestationArgs;
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
@@ -15,6 +16,8 @@ pub struct DeployRoundInstructionInputs {
     pub mask_encryption_key: [u8; 32],
     pub mask_nonce: u128,
     pub mask_ciphertext: [u8; 64],
+    /// Optional private-ZK deploy mask attestation.
+    pub zk_mask_attestation: Option<ZkMaskAttestationArgs>,
 }
 
 #[cfg(test)]
@@ -32,6 +35,7 @@ impl InstructionsHelper {
             mask_encryption_key,
             mask_nonce,
             mask_ciphertext,
+            zk_mask_attestation,
         } = inputs;
         let effective_affiliate = affiliate.filter(|candidate| *candidate != signer);
         let affiliate_profile =
@@ -57,7 +61,7 @@ impl InstructionsHelper {
             mask_encryption_key,
             mask_nonce,
             mask_ciphertext,
-            zk_mask_attestation: None,
+            zk_mask_attestation,
         })
     }
 }
