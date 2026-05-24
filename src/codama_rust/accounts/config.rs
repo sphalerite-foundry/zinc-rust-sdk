@@ -6,6 +6,7 @@
 //!
 
 use crate::codama_rust::types::RoundRandomnessMode;
+use crate::codama_rust::types::SettlementCapability;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 use solana_address::Address;
@@ -87,6 +88,8 @@ pub struct Config {
     pub stockpile_refill_min_entry_bps: u64,
     /// Live randomness reveal path for closed rounds.
     pub round_randomness_mode: RoundRandomnessMode,
+    /// Live settlement capability selected by the operator.
+    pub settlement_capability: SettlementCapability,
     /// Number of slots after close used as the blockhash reveal sample delay.
     pub blockhash_reveal_delay_slots: u64,
     /// Stockpile bricks required per whole ZINC, in `x10k` units.
@@ -95,12 +98,20 @@ pub struct Config {
     pub stockpile_winner_count: u8,
     /// Ranked Stockpile payout shares in basis points.
     pub stockpile_winner_share_bps: [u64; 5],
+    /// Server BabyJub public key X field element bytes accepted for ZK mask attestations.
+    pub zk_mask_server_babyjub_pubkey_x: [u8; 32],
+    /// Server BabyJub public key Y field element bytes accepted for ZK mask attestations.
+    pub zk_mask_server_babyjub_pubkey_y: [u8; 32],
+    /// Accepted server key version for ZK mask attestations.
+    pub zk_mask_server_key_version: u64,
+    /// Accepted circuit version for ZK mask attestations.
+    pub zk_mask_circuit_version: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 412;
+    pub const LEN: usize = 493;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {

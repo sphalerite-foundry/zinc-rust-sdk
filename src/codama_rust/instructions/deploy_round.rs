@@ -5,6 +5,7 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
+use crate::codama_rust::types::ZkMaskAttestationArgs;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
@@ -150,6 +151,7 @@ pub struct DeployRoundInstructionArgs {
     pub mask_encryption_key: [u8; 32],
     pub mask_nonce: u128,
     pub mask_ciphertext: [u8; 64],
+    pub zk_mask_attestation: Option<ZkMaskAttestationArgs>,
 }
 
 impl DeployRoundInstructionArgs {
@@ -194,6 +196,7 @@ pub struct DeployRoundBuilder {
     mask_encryption_key: Option<[u8; 32]>,
     mask_nonce: Option<u128>,
     mask_ciphertext: Option<[u8; 64]>,
+    zk_mask_attestation: Option<ZkMaskAttestationArgs>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -301,6 +304,12 @@ impl DeployRoundBuilder {
         self.mask_ciphertext = Some(mask_ciphertext);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_attestation(&mut self, zk_mask_attestation: ZkMaskAttestationArgs) -> &mut Self {
+        self.zk_mask_attestation = Some(zk_mask_attestation);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -350,6 +359,7 @@ impl DeployRoundBuilder {
                 .mask_ciphertext
                 .clone()
                 .expect("mask_ciphertext is not set"),
+            zk_mask_attestation: self.zk_mask_attestation.clone(),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -620,6 +630,7 @@ impl<'a, 'b> DeployRoundCpiBuilder<'a, 'b> {
             mask_encryption_key: None,
             mask_nonce: None,
             mask_ciphertext: None,
+            zk_mask_attestation: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -738,6 +749,12 @@ impl<'a, 'b> DeployRoundCpiBuilder<'a, 'b> {
         self.instruction.mask_ciphertext = Some(mask_ciphertext);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_attestation(&mut self, zk_mask_attestation: ZkMaskAttestationArgs) -> &mut Self {
+        self.instruction.zk_mask_attestation = Some(zk_mask_attestation);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -793,6 +810,7 @@ impl<'a, 'b> DeployRoundCpiBuilder<'a, 'b> {
                 .mask_ciphertext
                 .clone()
                 .expect("mask_ciphertext is not set"),
+            zk_mask_attestation: self.instruction.zk_mask_attestation.clone(),
         };
         let instruction = DeployRoundCpi {
             __program: self.instruction.__program,
@@ -863,6 +881,7 @@ struct DeployRoundCpiBuilderInstruction<'a, 'b> {
     mask_encryption_key: Option<[u8; 32]>,
     mask_nonce: Option<u128>,
     mask_ciphertext: Option<[u8; 64]>,
+    zk_mask_attestation: Option<ZkMaskAttestationArgs>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

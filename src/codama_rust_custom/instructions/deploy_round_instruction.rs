@@ -57,6 +57,7 @@ impl InstructionsHelper {
             mask_encryption_key,
             mask_nonce,
             mask_ciphertext,
+            zk_mask_attestation: None,
         })
     }
 }

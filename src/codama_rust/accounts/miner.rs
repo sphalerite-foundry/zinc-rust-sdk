@@ -39,6 +39,20 @@ pub struct Miner {
     pub hidden_bonus_bricks_x10k: u64,
     /// Auto-miner session PDA that created this miner, or `None` for manual and legacy miners.
     pub auto_miner_session: Option<Address>,
+    /// True once a ZK mask attestation has been verified for this miner.
+    pub zk_mask_attested: bool,
+    /// Circuit nonce field element bytes for the private mask attestation.
+    pub zk_mask_nonce: [u8; 32],
+    /// Circuit ciphertext field element bytes for the private mask attestation.
+    pub zk_mask_ciphertext: [u8; 32],
+    /// Circuit auth-tag field element bytes for the private mask attestation.
+    pub zk_mask_auth_tag: [u8; 32],
+    /// Public context hash submitted to the mask-attestation verifier.
+    pub zk_mask_context_hash: [u8; 32],
+    /// Public commitment to the packed hidden tile mask.
+    pub zk_mask_commitment: [u8; 32],
+    /// Hash of the accepted proof bytes retained as a compact receipt.
+    pub zk_mask_proof_hash: [u8; 32],
 }
 
 pub const MINER_DISCRIMINATOR: [u8; 8] = [223, 113, 15, 54, 123, 122, 140, 100];
