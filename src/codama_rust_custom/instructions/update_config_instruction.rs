@@ -1,5 +1,5 @@
 use crate::codama_rust::instructions::{UpdateConfig, UpdateConfigInstructionArgs};
-use crate::codama_rust::types::RoundRandomnessMode;
+use crate::codama_rust::types::{RoundRandomnessMode, SettlementCapability};
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
@@ -78,12 +78,22 @@ pub struct UpdateConfigInstructionInputs {
     pub crank: Option<Pubkey>,
     /// Optional live randomness reveal path for closed rounds.
     pub round_randomness_mode: Option<RoundRandomnessMode>,
+    /// Optional live settlement capability selected by the operator.
+    pub settlement_capability: Option<SettlementCapability>,
     /// Optional slot delay used before sampling SlotHashes in blockhash mode.
     pub blockhash_reveal_delay_slots: Option<u64>,
     /// Optional number of ranked Stockpile winners to pay per cycle.
     pub stockpile_winner_count: Option<u8>,
     /// Optional ranked Stockpile winner share schedule in basis points.
     pub stockpile_winner_share_bps: Option<[u64; 5]>,
+    /// Optional server BabyJub public key X field element bytes for ZK mask attestations.
+    pub zk_mask_server_babyjub_pubkey_x: Option<[u8; 32]>,
+    /// Optional server BabyJub public key Y field element bytes for ZK mask attestations.
+    pub zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
+    /// Optional accepted server key version for ZK mask attestations.
+    pub zk_mask_server_key_version: Option<u64>,
+    /// Optional accepted circuit version for ZK mask attestations.
+    pub zk_mask_circuit_version: Option<u64>,
 }
 
 impl InstructionsHelper {
@@ -125,9 +135,14 @@ impl InstructionsHelper {
             curve_max_supply,
             crank,
             round_randomness_mode,
+            settlement_capability,
             blockhash_reveal_delay_slots,
             stockpile_winner_count,
             stockpile_winner_share_bps,
+            zk_mask_server_babyjub_pubkey_x,
+            zk_mask_server_babyjub_pubkey_y,
+            zk_mask_server_key_version,
+            zk_mask_circuit_version,
         } = inputs;
         UpdateConfig {
             admin,
@@ -170,9 +185,14 @@ impl InstructionsHelper {
             staking_reward_vesting_slots,
             arcium_reveal_cu_price_micro,
             round_randomness_mode,
+            settlement_capability,
             blockhash_reveal_delay_slots,
             stockpile_winner_count,
             stockpile_winner_share_bps,
+            zk_mask_server_babyjub_pubkey_x,
+            zk_mask_server_babyjub_pubkey_y,
+            zk_mask_server_key_version,
+            zk_mask_circuit_version,
         })
     }
 }

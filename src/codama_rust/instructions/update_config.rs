@@ -6,6 +6,7 @@
 //!
 
 use crate::codama_rust::types::RoundRandomnessMode;
+use crate::codama_rust::types::SettlementCapability;
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 use solana_address::Address;
@@ -112,10 +113,15 @@ pub struct UpdateConfigInstructionArgs {
     pub arcium_reveal_cu_price_micro: Option<u64>,
     pub stockpile_refill_min_entry_bps: Option<u64>,
     pub round_randomness_mode: Option<RoundRandomnessMode>,
+    pub settlement_capability: Option<SettlementCapability>,
     pub blockhash_reveal_delay_slots: Option<u64>,
     pub stockpile_bricks_per_zinc_x10k: Option<u64>,
     pub stockpile_winner_count: Option<u8>,
     pub stockpile_winner_share_bps: Option<[u64; 5]>,
+    pub zk_mask_server_babyjub_pubkey_x: Option<[u8; 32]>,
+    pub zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
+    pub zk_mask_server_key_version: Option<u64>,
+    pub zk_mask_circuit_version: Option<u64>,
 }
 
 impl UpdateConfigInstructionArgs {
@@ -170,10 +176,15 @@ pub struct UpdateConfigBuilder {
     arcium_reveal_cu_price_micro: Option<u64>,
     stockpile_refill_min_entry_bps: Option<u64>,
     round_randomness_mode: Option<RoundRandomnessMode>,
+    settlement_capability: Option<SettlementCapability>,
     blockhash_reveal_delay_slots: Option<u64>,
     stockpile_bricks_per_zinc_x10k: Option<u64>,
     stockpile_winner_count: Option<u8>,
     stockpile_winner_share_bps: Option<[u64; 5]>,
+    zk_mask_server_babyjub_pubkey_x: Option<[u8; 32]>,
+    zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
+    zk_mask_server_key_version: Option<u64>,
+    zk_mask_circuit_version: Option<u64>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -432,6 +443,15 @@ impl UpdateConfigBuilder {
     }
     /// `[optional argument]`
     #[inline(always)]
+    pub fn settlement_capability(
+        &mut self,
+        settlement_capability: SettlementCapability,
+    ) -> &mut Self {
+        self.settlement_capability = Some(settlement_capability);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
     pub fn blockhash_reveal_delay_slots(&mut self, blockhash_reveal_delay_slots: u64) -> &mut Self {
         self.blockhash_reveal_delay_slots = Some(blockhash_reveal_delay_slots);
         self
@@ -458,6 +478,36 @@ impl UpdateConfigBuilder {
         stockpile_winner_share_bps: [u64; 5],
     ) -> &mut Self {
         self.stockpile_winner_share_bps = Some(stockpile_winner_share_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_server_babyjub_pubkey_x(
+        &mut self,
+        zk_mask_server_babyjub_pubkey_x: [u8; 32],
+    ) -> &mut Self {
+        self.zk_mask_server_babyjub_pubkey_x = Some(zk_mask_server_babyjub_pubkey_x);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_server_babyjub_pubkey_y(
+        &mut self,
+        zk_mask_server_babyjub_pubkey_y: [u8; 32],
+    ) -> &mut Self {
+        self.zk_mask_server_babyjub_pubkey_y = Some(zk_mask_server_babyjub_pubkey_y);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_server_key_version(&mut self, zk_mask_server_key_version: u64) -> &mut Self {
+        self.zk_mask_server_key_version = Some(zk_mask_server_key_version);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_circuit_version(&mut self, zk_mask_circuit_version: u64) -> &mut Self {
+        self.zk_mask_circuit_version = Some(zk_mask_circuit_version);
         self
     }
     /// Add an additional account to the instruction.
@@ -523,10 +573,15 @@ impl UpdateConfigBuilder {
             arcium_reveal_cu_price_micro: self.arcium_reveal_cu_price_micro.clone(),
             stockpile_refill_min_entry_bps: self.stockpile_refill_min_entry_bps.clone(),
             round_randomness_mode: self.round_randomness_mode.clone(),
+            settlement_capability: self.settlement_capability.clone(),
             blockhash_reveal_delay_slots: self.blockhash_reveal_delay_slots.clone(),
             stockpile_bricks_per_zinc_x10k: self.stockpile_bricks_per_zinc_x10k.clone(),
             stockpile_winner_count: self.stockpile_winner_count.clone(),
             stockpile_winner_share_bps: self.stockpile_winner_share_bps.clone(),
+            zk_mask_server_babyjub_pubkey_x: self.zk_mask_server_babyjub_pubkey_x.clone(),
+            zk_mask_server_babyjub_pubkey_y: self.zk_mask_server_babyjub_pubkey_y.clone(),
+            zk_mask_server_key_version: self.zk_mask_server_key_version.clone(),
+            zk_mask_circuit_version: self.zk_mask_circuit_version.clone(),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -686,10 +741,15 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             arcium_reveal_cu_price_micro: None,
             stockpile_refill_min_entry_bps: None,
             round_randomness_mode: None,
+            settlement_capability: None,
             blockhash_reveal_delay_slots: None,
             stockpile_bricks_per_zinc_x10k: None,
             stockpile_winner_count: None,
             stockpile_winner_share_bps: None,
+            zk_mask_server_babyjub_pubkey_x: None,
+            zk_mask_server_babyjub_pubkey_y: None,
+            zk_mask_server_key_version: None,
+            zk_mask_circuit_version: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -949,6 +1009,15 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
     }
     /// `[optional argument]`
     #[inline(always)]
+    pub fn settlement_capability(
+        &mut self,
+        settlement_capability: SettlementCapability,
+    ) -> &mut Self {
+        self.instruction.settlement_capability = Some(settlement_capability);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
     pub fn blockhash_reveal_delay_slots(&mut self, blockhash_reveal_delay_slots: u64) -> &mut Self {
         self.instruction.blockhash_reveal_delay_slots = Some(blockhash_reveal_delay_slots);
         self
@@ -975,6 +1044,36 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
         stockpile_winner_share_bps: [u64; 5],
     ) -> &mut Self {
         self.instruction.stockpile_winner_share_bps = Some(stockpile_winner_share_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_server_babyjub_pubkey_x(
+        &mut self,
+        zk_mask_server_babyjub_pubkey_x: [u8; 32],
+    ) -> &mut Self {
+        self.instruction.zk_mask_server_babyjub_pubkey_x = Some(zk_mask_server_babyjub_pubkey_x);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_server_babyjub_pubkey_y(
+        &mut self,
+        zk_mask_server_babyjub_pubkey_y: [u8; 32],
+    ) -> &mut Self {
+        self.instruction.zk_mask_server_babyjub_pubkey_y = Some(zk_mask_server_babyjub_pubkey_y);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_server_key_version(&mut self, zk_mask_server_key_version: u64) -> &mut Self {
+        self.instruction.zk_mask_server_key_version = Some(zk_mask_server_key_version);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn zk_mask_circuit_version(&mut self, zk_mask_circuit_version: u64) -> &mut Self {
+        self.instruction.zk_mask_circuit_version = Some(zk_mask_circuit_version);
         self
     }
     /// Add an additional account to the instruction.
@@ -1061,10 +1160,21 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             arcium_reveal_cu_price_micro: self.instruction.arcium_reveal_cu_price_micro.clone(),
             stockpile_refill_min_entry_bps: self.instruction.stockpile_refill_min_entry_bps.clone(),
             round_randomness_mode: self.instruction.round_randomness_mode.clone(),
+            settlement_capability: self.instruction.settlement_capability.clone(),
             blockhash_reveal_delay_slots: self.instruction.blockhash_reveal_delay_slots.clone(),
             stockpile_bricks_per_zinc_x10k: self.instruction.stockpile_bricks_per_zinc_x10k.clone(),
             stockpile_winner_count: self.instruction.stockpile_winner_count.clone(),
             stockpile_winner_share_bps: self.instruction.stockpile_winner_share_bps.clone(),
+            zk_mask_server_babyjub_pubkey_x: self
+                .instruction
+                .zk_mask_server_babyjub_pubkey_x
+                .clone(),
+            zk_mask_server_babyjub_pubkey_y: self
+                .instruction
+                .zk_mask_server_babyjub_pubkey_y
+                .clone(),
+            zk_mask_server_key_version: self.instruction.zk_mask_server_key_version.clone(),
+            zk_mask_circuit_version: self.instruction.zk_mask_circuit_version.clone(),
         };
         let instruction = UpdateConfigCpi {
             __program: self.instruction.__program,
@@ -1123,10 +1233,15 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     arcium_reveal_cu_price_micro: Option<u64>,
     stockpile_refill_min_entry_bps: Option<u64>,
     round_randomness_mode: Option<RoundRandomnessMode>,
+    settlement_capability: Option<SettlementCapability>,
     blockhash_reveal_delay_slots: Option<u64>,
     stockpile_bricks_per_zinc_x10k: Option<u64>,
     stockpile_winner_count: Option<u8>,
     stockpile_winner_share_bps: Option<[u64; 5]>,
+    zk_mask_server_babyjub_pubkey_x: Option<[u8; 32]>,
+    zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
+    zk_mask_server_key_version: Option<u64>,
+    zk_mask_circuit_version: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

@@ -23,9 +23,9 @@ pub struct InitStockpile {
     pub treasury: solana_address::Address,
 
     pub zinc_mint: solana_address::Address,
-    /// Newly allocated stockpile account awaiting encrypted entropy.
+
     pub stockpile: solana_address::Address,
-    /// Secret storage for the encrypted random value tied to this stockpile.
+
     pub stockpile_secret: solana_address::Address,
 
     pub stockpile_extras: solana_address::Address,
@@ -93,7 +93,7 @@ impl InitStockpile {
             self.stockpile_secret,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new(
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.stockpile_extras,
             false,
         ));
@@ -287,13 +287,11 @@ impl InitStockpileBuilder {
         self.zinc_mint = Some(zinc_mint);
         self
     }
-    /// Newly allocated stockpile account awaiting encrypted entropy.
     #[inline(always)]
     pub fn stockpile(&mut self, stockpile: solana_address::Address) -> &mut Self {
         self.stockpile = Some(stockpile);
         self
     }
-    /// Secret storage for the encrypted random value tied to this stockpile.
     #[inline(always)]
     pub fn stockpile_secret(&mut self, stockpile_secret: solana_address::Address) -> &mut Self {
         self.stockpile_secret = Some(stockpile_secret);
@@ -480,9 +478,9 @@ pub struct InitStockpileCpiAccounts<'a, 'b> {
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
 
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
-    /// Newly allocated stockpile account awaiting encrypted entropy.
+
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
-    /// Secret storage for the encrypted random value tied to this stockpile.
+
     pub stockpile_secret: &'b solana_account_info::AccountInfo<'a>,
 
     pub stockpile_extras: &'b solana_account_info::AccountInfo<'a>,
@@ -530,9 +528,9 @@ pub struct InitStockpileCpi<'a, 'b> {
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
 
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
-    /// Newly allocated stockpile account awaiting encrypted entropy.
+
     pub stockpile: &'b solana_account_info::AccountInfo<'a>,
-    /// Secret storage for the encrypted random value tied to this stockpile.
+
     pub stockpile_secret: &'b solana_account_info::AccountInfo<'a>,
 
     pub stockpile_extras: &'b solana_account_info::AccountInfo<'a>,
@@ -850,13 +848,11 @@ impl<'a, 'b> InitStockpileCpiBuilder<'a, 'b> {
         self.instruction.zinc_mint = Some(zinc_mint);
         self
     }
-    /// Newly allocated stockpile account awaiting encrypted entropy.
     #[inline(always)]
     pub fn stockpile(&mut self, stockpile: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.stockpile = Some(stockpile);
         self
     }
-    /// Secret storage for the encrypted random value tied to this stockpile.
     #[inline(always)]
     pub fn stockpile_secret(
         &mut self,
