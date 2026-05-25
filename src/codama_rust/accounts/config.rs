@@ -88,8 +88,6 @@ pub struct Config {
     pub stockpile_refill_min_entry_bps: u64,
     /// Live randomness reveal path for closed rounds.
     pub round_randomness_mode: RoundRandomnessMode,
-    /// Live settlement capability selected by the operator.
-    pub settlement_capability: SettlementCapability,
     /// Number of slots after close used as the blockhash reveal sample delay.
     pub blockhash_reveal_delay_slots: u64,
     /// Stockpile bricks required per whole ZINC, in `x10k` units.
@@ -98,6 +96,8 @@ pub struct Config {
     pub stockpile_winner_count: u8,
     /// Ranked Stockpile payout shares in basis points.
     pub stockpile_winner_share_bps: [u64; 5],
+    /// Live settlement capability selected by the operator.
+    pub settlement_capability: SettlementCapability,
     /// Server BabyJub public key X field element bytes accepted for ZK mask attestations.
     pub zk_mask_server_babyjub_pubkey_x: [u8; 32],
     /// Server BabyJub public key Y field element bytes accepted for ZK mask attestations.
