@@ -24,6 +24,7 @@ pub mod init_stockpile_instruction;
 pub mod init_stockpile_rand_comp_def_instruction;
 pub mod init_stockpile_winners_instruction;
 pub mod migrate_instruction;
+pub mod mint_zinc_instruction;
 pub mod payout_stockpile_extra_instruction;
 pub mod payout_stockpile_instruction;
 pub mod queue_round_settlement_instruction;
