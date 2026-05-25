@@ -1,6 +1,7 @@
 use crate::codama_rust::instructions::{
     Buyback, BuybackInstructionArgs, CreateBuybackPool, CreateBuybackPoolInstructionArgs,
-    WrapBuybackSol, WrapBuybackSolInstructionArgs,
+    RemoveBuybackLiquidity, RemoveBuybackLiquidityInstructionArgs, WrapBuybackSol,
+    WrapBuybackSolInstructionArgs,
 };
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
@@ -69,6 +70,34 @@ pub struct ClaimBuybackPoolFeesInstructionInputs {
     pub signer: Pubkey,
     /// Protocol ZINC mint persisted on the treasury account.
     pub zinc_mint: Pubkey,
+    /// Stored Meteora pool authority PDA.
+    pub pool_authority: Pubkey,
+    /// Stored Meteora pool account.
+    pub pool: Pubkey,
+    /// Stored Meteora initial position account.
+    pub position: Pubkey,
+    /// Stored Token-2022 account holding the position NFT.
+    pub position_nft_account: Pubkey,
+    /// Stored Meteora token A vault.
+    pub token_a_vault: Pubkey,
+    /// Stored Meteora token B vault.
+    pub token_b_vault: Pubkey,
+    /// Stored Meteora event authority PDA.
+    pub event_authority: Pubkey,
+}
+
+/// Inputs needed to remove unlocked protocol buyback LP liquidity.
+pub struct RemoveBuybackLiquidityInstructionInputs {
+    /// Admin signer submitting the LP removal transaction.
+    pub admin: Pubkey,
+    /// Protocol ZINC mint persisted on the treasury account.
+    pub zinc_mint: Pubkey,
+    /// Liquidity amount to remove from the stored Meteora position.
+    pub liquidity_delta: u128,
+    /// Minimum token A amount accepted by the caller.
+    pub token_a_amount_threshold: u64,
+    /// Minimum token B amount accepted by the caller.
+    pub token_b_amount_threshold: u64,
     /// Stored Meteora pool authority PDA.
     pub pool_authority: Pubkey,
     /// Stored Meteora pool account.
@@ -207,7 +236,7 @@ impl InstructionsHelper {
         })
     }
 
-    /// Builds the instruction that claims fees from the locked protocol Meteora position.
+    /// Builds the instruction that claims fees from the protocol Meteora position.
     pub fn claim_buyback_pool_fees_instruction(
         inputs: ClaimBuybackPoolFeesInstructionInputs,
     ) -> Instruction {
@@ -252,6 +281,51 @@ impl InstructionsHelper {
             ],
             data: CLAIM_BUYBACK_POOL_FEES_DISCRIMINATOR.to_vec(),
         }
+    }
+
+    /// Builds the instruction that removes unlocked protocol buyback LP principal.
+    pub fn remove_buyback_liquidity_instruction(
+        inputs: RemoveBuybackLiquidityInstructionInputs,
+    ) -> Instruction {
+        let RemoveBuybackLiquidityInstructionInputs {
+            admin,
+            zinc_mint,
+            liquidity_delta,
+            token_a_amount_threshold,
+            token_b_amount_threshold,
+            pool_authority,
+            pool,
+            position,
+            position_nft_account,
+            token_a_vault,
+            token_b_vault,
+            event_authority,
+        } = inputs;
+        RemoveBuybackLiquidity {
+            admin,
+            config: PdaHelper::get_config_address(),
+            treasury: PdaHelper::get_treasury_address(),
+            buyback_pool: PdaHelper::get_buyback_pool_address(),
+            wsol_mint: PdaHelper::WSOL_MINT_ID,
+            zinc_mint,
+            buyback_lp_zinc_token_account: PdaHelper::get_buyback_lp_zinc_token_account_address(),
+            buyback_lp_wsol_token_account: PdaHelper::get_buyback_lp_wsol_token_account_address(),
+            pool_authority,
+            pool,
+            position,
+            position_nft_account,
+            token_a_vault,
+            token_b_vault,
+            event_authority,
+            meteora_program: PdaHelper::METEORA_DAMM_V2_PROGRAM_ID,
+            token_program: PdaHelper::TOKEN_PROGRAM_ID,
+            system_program: PdaHelper::get_system_program_address(),
+        }
+        .instruction(RemoveBuybackLiquidityInstructionArgs {
+            liquidity_delta,
+            token_a_amount_threshold,
+            token_b_amount_threshold,
+        })
     }
 }
 

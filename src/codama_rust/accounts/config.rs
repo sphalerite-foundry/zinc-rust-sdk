@@ -106,12 +106,14 @@ pub struct Config {
     pub zk_mask_server_key_version: u64,
     /// Accepted circuit version for ZK mask attestations.
     pub zk_mask_circuit_version: u64,
+    /// Emergency switch that skips the init-round Arcium CPI for blockhash private-ZK rounds.
+    pub skip_arcium_init_cpi: bool,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 493;
+    pub const LEN: usize = 494;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {

@@ -556,6 +556,9 @@ pub enum ZincError {
     /// 6181 - Missing ZK mask attestation
     #[error("Missing ZK mask attestation")]
     MissingZkMaskAttestation = 0x1825,
+    /// 6182 - Arcium init CPI skip requires blockhash randomness and private-ZK single settlement
+    #[error("Arcium init CPI skip requires blockhash randomness and private-ZK single settlement")]
+    InvalidArciumInitSkipConfig = 0x1826,
 }
 
 impl From<ZincError> for solana_program_error::ProgramError {

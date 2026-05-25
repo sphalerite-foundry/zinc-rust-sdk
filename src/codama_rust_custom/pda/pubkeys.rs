@@ -204,6 +204,16 @@ impl PdaHelper {
         Pubkey::find_program_address(&[b"treasury", b"buyback-fee-wsol-token-account"], &ZINC_ID).0
     }
 
+    /// Derives the treasury-owned ZINC account that receives removed buyback LP principal.
+    pub fn get_buyback_lp_zinc_token_account_address() -> Pubkey {
+        Pubkey::find_program_address(&[b"treasury", b"buyback-lp-zinc-token-account"], &ZINC_ID).0
+    }
+
+    /// Derives the treasury-owned WSOL account that receives removed buyback LP principal.
+    pub fn get_buyback_lp_wsol_token_account_address() -> Pubkey {
+        Pubkey::find_program_address(&[b"treasury", b"buyback-lp-wsol-token-account"], &ZINC_ID).0
+    }
+
     /// Derives a classic Associated Token Account address for one owner and mint.
     pub fn get_classic_ata(owner: &Pubkey, mint: &Pubkey) -> Pubkey {
         Pubkey::find_program_address(
