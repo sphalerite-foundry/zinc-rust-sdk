@@ -122,6 +122,7 @@ pub struct UpdateConfigInstructionArgs {
     pub zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
     pub zk_mask_server_key_version: Option<u64>,
     pub zk_mask_circuit_version: Option<u64>,
+    pub skip_arcium_init_cpi: Option<bool>,
 }
 
 impl UpdateConfigInstructionArgs {
@@ -185,6 +186,7 @@ pub struct UpdateConfigBuilder {
     zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
     zk_mask_server_key_version: Option<u64>,
     zk_mask_circuit_version: Option<u64>,
+    skip_arcium_init_cpi: Option<bool>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -510,6 +512,12 @@ impl UpdateConfigBuilder {
         self.zk_mask_circuit_version = Some(zk_mask_circuit_version);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn skip_arcium_init_cpi(&mut self, skip_arcium_init_cpi: bool) -> &mut Self {
+        self.skip_arcium_init_cpi = Some(skip_arcium_init_cpi);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
@@ -582,6 +590,7 @@ impl UpdateConfigBuilder {
             zk_mask_server_babyjub_pubkey_y: self.zk_mask_server_babyjub_pubkey_y.clone(),
             zk_mask_server_key_version: self.zk_mask_server_key_version.clone(),
             zk_mask_circuit_version: self.zk_mask_circuit_version.clone(),
+            skip_arcium_init_cpi: self.skip_arcium_init_cpi.clone(),
         };
 
         accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
@@ -750,6 +759,7 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             zk_mask_server_babyjub_pubkey_y: None,
             zk_mask_server_key_version: None,
             zk_mask_circuit_version: None,
+            skip_arcium_init_cpi: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
@@ -1076,6 +1086,12 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
         self.instruction.zk_mask_circuit_version = Some(zk_mask_circuit_version);
         self
     }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn skip_arcium_init_cpi(&mut self, skip_arcium_init_cpi: bool) -> &mut Self {
+        self.instruction.skip_arcium_init_cpi = Some(skip_arcium_init_cpi);
+        self
+    }
     /// Add an additional account to the instruction.
     #[inline(always)]
     pub fn add_remaining_account(
@@ -1175,6 +1191,7 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
                 .clone(),
             zk_mask_server_key_version: self.instruction.zk_mask_server_key_version.clone(),
             zk_mask_circuit_version: self.instruction.zk_mask_circuit_version.clone(),
+            skip_arcium_init_cpi: self.instruction.skip_arcium_init_cpi.clone(),
         };
         let instruction = UpdateConfigCpi {
             __program: self.instruction.__program,
@@ -1242,6 +1259,7 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
     zk_mask_server_key_version: Option<u64>,
     zk_mask_circuit_version: Option<u64>,
+    skip_arcium_init_cpi: Option<bool>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

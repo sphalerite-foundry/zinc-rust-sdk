@@ -1,6 +1,7 @@
 use super::{
     BuybackInstructionInputs, ClaimBuybackPoolFeesInstructionInputs,
     CreateBuybackPoolInstructionInputs, InstructionsHelper,
+    RemoveBuybackLiquidityInstructionInputs,
 };
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_pubkey::Pubkey;
@@ -165,6 +166,63 @@ fn claim_buyback_pool_fees_instruction_uses_fee_custody_accounts() {
     assert_eq!(
         instruction.accounts[7].pubkey,
         PdaHelper::get_buyback_fee_wsol_token_account_address()
+    );
+    assert!(instruction.accounts[7].is_writable);
+    assert_eq!(instruction.accounts[8].pubkey, pool_authority);
+    assert_eq!(instruction.accounts[9].pubkey, pool);
+    assert_eq!(instruction.accounts[10].pubkey, position);
+    assert!(instruction.accounts[10].is_writable);
+    assert_eq!(instruction.accounts[11].pubkey, position_nft_account);
+    assert_eq!(instruction.accounts[12].pubkey, token_a_vault);
+    assert_eq!(instruction.accounts[13].pubkey, token_b_vault);
+    assert_eq!(instruction.accounts[14].pubkey, event_authority);
+}
+
+/// Verifies LP removal uses dedicated principal custody accounts.
+#[test]
+fn remove_buyback_liquidity_instruction_uses_lp_custody_accounts() {
+    let admin = Pubkey::new_unique();
+    let zinc_mint = Pubkey::new_unique();
+    let pool_authority = Pubkey::new_unique();
+    let pool = Pubkey::new_unique();
+    let position = Pubkey::new_unique();
+    let position_nft_account = Pubkey::new_unique();
+    let token_a_vault = Pubkey::new_unique();
+    let token_b_vault = Pubkey::new_unique();
+    let event_authority = Pubkey::new_unique();
+
+    let instruction = InstructionsHelper::remove_buyback_liquidity_instruction(
+        RemoveBuybackLiquidityInstructionInputs {
+            admin,
+            zinc_mint,
+            liquidity_delta: 42,
+            token_a_amount_threshold: 7,
+            token_b_amount_threshold: 9,
+            pool_authority,
+            pool,
+            position,
+            position_nft_account,
+            token_a_vault,
+            token_b_vault,
+            event_authority,
+        },
+    );
+
+    assert_eq!(
+        &instruction.data[..8],
+        &[162, 33, 230, 119, 49, 191, 203, 163]
+    );
+    assert_eq!(instruction.accounts[0].pubkey, admin);
+    assert!(instruction.accounts[0].is_signer);
+    assert_eq!(instruction.accounts[5].pubkey, zinc_mint);
+    assert_eq!(
+        instruction.accounts[6].pubkey,
+        PdaHelper::get_buyback_lp_zinc_token_account_address()
+    );
+    assert!(instruction.accounts[6].is_writable);
+    assert_eq!(
+        instruction.accounts[7].pubkey,
+        PdaHelper::get_buyback_lp_wsol_token_account_address()
     );
     assert!(instruction.accounts[7].is_writable);
     assert_eq!(instruction.accounts[8].pubkey, pool_authority);

@@ -94,6 +94,8 @@ pub struct UpdateConfigInstructionInputs {
     pub zk_mask_server_key_version: Option<u64>,
     /// Optional accepted circuit version for ZK mask attestations.
     pub zk_mask_circuit_version: Option<u64>,
+    /// Optional emergency switch for skipping init-round Arcium CPI.
+    pub skip_arcium_init_cpi: Option<bool>,
 }
 
 impl InstructionsHelper {
@@ -143,6 +145,7 @@ impl InstructionsHelper {
             zk_mask_server_babyjub_pubkey_y,
             zk_mask_server_key_version,
             zk_mask_circuit_version,
+            skip_arcium_init_cpi,
         } = inputs;
         UpdateConfig {
             admin,
@@ -193,6 +196,7 @@ impl InstructionsHelper {
             zk_mask_server_babyjub_pubkey_y,
             zk_mask_server_key_version,
             zk_mask_circuit_version,
+            skip_arcium_init_cpi,
         })
     }
 }
