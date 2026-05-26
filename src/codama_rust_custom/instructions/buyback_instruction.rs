@@ -1,7 +1,7 @@
 use crate::codama_rust::instructions::{
     Buyback, BuybackInstructionArgs, CreateBuybackPool, CreateBuybackPoolInstructionArgs,
-    RemoveBuybackLiquidity, RemoveBuybackLiquidityInstructionArgs, WrapBuybackSol,
-    WrapBuybackSolInstructionArgs,
+    LockBuybackLiquidity, LockBuybackLiquidityInstructionArgs, RemoveBuybackLiquidity,
+    RemoveBuybackLiquidityInstructionArgs, WrapBuybackSol, WrapBuybackSolInstructionArgs,
 };
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
@@ -82,6 +82,22 @@ pub struct ClaimBuybackPoolFeesInstructionInputs {
     pub token_a_vault: Pubkey,
     /// Stored Meteora token B vault.
     pub token_b_vault: Pubkey,
+    /// Stored Meteora event authority PDA.
+    pub event_authority: Pubkey,
+}
+
+/// Inputs needed to permanently lock protocol buyback LP liquidity.
+pub struct LockBuybackLiquidityInstructionInputs {
+    /// Admin signer submitting the LP lock transaction.
+    pub admin: Pubkey,
+    /// Liquidity amount to permanently lock from the stored Meteora position.
+    pub liquidity_delta: u128,
+    /// Stored Meteora pool account.
+    pub pool: Pubkey,
+    /// Stored Meteora initial position account.
+    pub position: Pubkey,
+    /// Stored Token-2022 account holding the position NFT.
+    pub position_nft_account: Pubkey,
     /// Stored Meteora event authority PDA.
     pub event_authority: Pubkey,
 }
@@ -281,6 +297,32 @@ impl InstructionsHelper {
             ],
             data: CLAIM_BUYBACK_POOL_FEES_DISCRIMINATOR.to_vec(),
         }
+    }
+
+    /// Builds the instruction that permanently locks protocol buyback LP principal.
+    pub fn lock_buyback_liquidity_instruction(
+        inputs: LockBuybackLiquidityInstructionInputs,
+    ) -> Instruction {
+        let LockBuybackLiquidityInstructionInputs {
+            admin,
+            liquidity_delta,
+            pool,
+            position,
+            position_nft_account,
+            event_authority,
+        } = inputs;
+        LockBuybackLiquidity {
+            admin,
+            config: PdaHelper::get_config_address(),
+            treasury: PdaHelper::get_treasury_address(),
+            buyback_pool: PdaHelper::get_buyback_pool_address(),
+            pool,
+            position,
+            position_nft_account,
+            event_authority,
+            meteora_program: PdaHelper::METEORA_DAMM_V2_PROGRAM_ID,
+        }
+        .instruction(LockBuybackLiquidityInstructionArgs { liquidity_delta })
     }
 
     /// Builds the instruction that removes unlocked protocol buyback LP principal.

@@ -1,6 +1,6 @@
 use super::{
     BuybackInstructionInputs, ClaimBuybackPoolFeesInstructionInputs,
-    CreateBuybackPoolInstructionInputs, InstructionsHelper,
+    CreateBuybackPoolInstructionInputs, InstructionsHelper, LockBuybackLiquidityInstructionInputs,
     RemoveBuybackLiquidityInstructionInputs,
 };
 use crate::codama_rust_custom::pda::PdaHelper;
@@ -176,6 +176,46 @@ fn claim_buyback_pool_fees_instruction_uses_fee_custody_accounts() {
     assert_eq!(instruction.accounts[12].pubkey, token_a_vault);
     assert_eq!(instruction.accounts[13].pubkey, token_b_vault);
     assert_eq!(instruction.accounts[14].pubkey, event_authority);
+}
+
+/// Verifies LP locking uses the stored protocol-owned Meteora position.
+#[test]
+fn lock_buyback_liquidity_instruction_uses_stored_position_accounts() {
+    let admin = Pubkey::new_unique();
+    let pool = Pubkey::new_unique();
+    let position = Pubkey::new_unique();
+    let position_nft_account = Pubkey::new_unique();
+    let event_authority = Pubkey::new_unique();
+
+    let instruction = InstructionsHelper::lock_buyback_liquidity_instruction(
+        LockBuybackLiquidityInstructionInputs {
+            admin,
+            liquidity_delta: 42,
+            pool,
+            position,
+            position_nft_account,
+            event_authority,
+        },
+    );
+
+    assert_eq!(
+        &instruction.data[..8],
+        &[232, 167, 111, 218, 205, 250, 130, 93]
+    );
+    assert_eq!(instruction.accounts[0].pubkey, admin);
+    assert!(instruction.accounts[0].is_signer);
+    assert_eq!(instruction.accounts[4].pubkey, pool);
+    assert!(instruction.accounts[4].is_writable);
+    assert_eq!(instruction.accounts[5].pubkey, position);
+    assert!(instruction.accounts[5].is_writable);
+    assert_eq!(instruction.accounts[6].pubkey, position_nft_account);
+    assert!(!instruction.accounts[6].is_writable);
+    assert_eq!(instruction.accounts[7].pubkey, event_authority);
+    assert!(!instruction.accounts[7].is_writable);
+    assert_eq!(
+        instruction.accounts[8].pubkey,
+        PdaHelper::METEORA_DAMM_V2_PROGRAM_ID
+    );
 }
 
 /// Verifies LP removal uses dedicated principal custody accounts.
