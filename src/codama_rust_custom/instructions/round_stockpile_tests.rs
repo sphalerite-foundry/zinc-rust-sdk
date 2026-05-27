@@ -6,13 +6,13 @@ fn resolves_active_stockpile_first() {
 }
 
 #[test]
-fn resolves_unresolved_stockpile_when_no_active_stockpile_exists() {
-    assert_eq!(resolve_round_stockpile_id(None, Some(8), 9), Some(8));
+fn omits_unresolved_stockpile_when_no_active_stockpile_exists() {
+    assert_eq!(resolve_round_stockpile_id(None, Some(8), 9), None);
 }
 
 #[test]
-fn falls_back_to_latest_initialized_stockpile_between_cycles() {
-    assert_eq!(resolve_round_stockpile_id(None, None, 9), Some(8));
+fn omits_latest_initialized_stockpile_between_cycles() {
+    assert_eq!(resolve_round_stockpile_id(None, None, 9), None);
 }
 
 #[test]

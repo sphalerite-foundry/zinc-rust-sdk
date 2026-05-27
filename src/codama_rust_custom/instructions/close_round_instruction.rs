@@ -13,8 +13,8 @@ pub struct CloseRoundInstructionInputs {
     pub signer: Pubkey,
     /// Round that should move into settlement.
     pub round_id: u64,
-    /// Existing stockpile PDA seed to pass into the instruction.
-    pub stockpile_id: u64,
+    /// Active stockpile PDA seed to pass into the instruction, when one is joinable.
+    pub stockpile_id: Option<u64>,
     /// Protocol ZINC mint persisted on the treasury account.
     pub zinc_mint: Pubkey,
     /// Curve-admin token account that receives skimmed ZINC.
@@ -52,7 +52,7 @@ impl InstructionsHelper {
             bonanza_token_account,
             round_zinc_payout_token_account,
             stockpile_token_account,
-            stockpile: PdaHelper::get_stockpile_address(stockpile_id),
+            stockpile: stockpile_id.map(PdaHelper::get_stockpile_address),
             token_program,
             system_program: PdaHelper::get_system_program_address(),
         }

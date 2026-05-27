@@ -33,8 +33,8 @@ pub struct CloseRound {
     pub round_zinc_payout_token_account: solana_address::Address,
     /// Dedicated stockpile token account that receives stockpile ZINC accrual.
     pub stockpile_token_account: solana_address::Address,
-    /// Current stockpile account that stays initialized across normal protocol operation.
-    pub stockpile: solana_address::Address,
+    /// Active stockpile account, omitted when no cycle is currently joinable.
+    pub stockpile: Option<solana_address::Address>,
     /// SPL Token program used for minting the Bonanza accrual.
     pub token_program: solana_address::Address,
     /// System Program used to create the round-owned ZINC vault.
@@ -77,10 +77,16 @@ impl CloseRound {
             self.stockpile_token_account,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.stockpile,
-            false,
-        ));
+        if let Some(stockpile) = self.stockpile {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                stockpile, false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.token_program,
             false,
@@ -137,7 +143,7 @@ impl Default for CloseRoundInstructionData {
 ///   7. `[writable]` bonanza_token_account
 ///   8. `[writable]` round_zinc_payout_token_account
 ///   9. `[writable]` stockpile_token_account
-///   10. `[]` stockpile
+///   10. `[optional]` stockpile
 ///   11. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 ///   12. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
@@ -234,10 +240,11 @@ impl CloseRoundBuilder {
         self.stockpile_token_account = Some(stockpile_token_account);
         self
     }
-    /// Current stockpile account that stays initialized across normal protocol operation.
+    /// `[optional account]`
+    /// Active stockpile account, omitted when no cycle is currently joinable.
     #[inline(always)]
-    pub fn stockpile(&mut self, stockpile: solana_address::Address) -> &mut Self {
-        self.stockpile = Some(stockpile);
+    pub fn stockpile(&mut self, stockpile: Option<solana_address::Address>) -> &mut Self {
+        self.stockpile = stockpile;
         self
     }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
@@ -290,7 +297,7 @@ impl CloseRoundBuilder {
             stockpile_token_account: self
                 .stockpile_token_account
                 .expect("stockpile_token_account is not set"),
-            stockpile: self.stockpile.expect("stockpile is not set"),
+            stockpile: self.stockpile,
             token_program: self.token_program.unwrap_or(solana_address::address!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
@@ -325,8 +332,8 @@ pub struct CloseRoundCpiAccounts<'a, 'b> {
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated stockpile token account that receives stockpile ZINC accrual.
     pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Current stockpile account that stays initialized across normal protocol operation.
-    pub stockpile: &'b solana_account_info::AccountInfo<'a>,
+    /// Active stockpile account, omitted when no cycle is currently joinable.
+    pub stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// SPL Token program used for minting the Bonanza accrual.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
     /// System Program used to create the round-owned ZINC vault.
@@ -357,8 +364,8 @@ pub struct CloseRoundCpi<'a, 'b> {
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated stockpile token account that receives stockpile ZINC accrual.
     pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Current stockpile account that stays initialized across normal protocol operation.
-    pub stockpile: &'b solana_account_info::AccountInfo<'a>,
+    /// Active stockpile account, omitted when no cycle is currently joinable.
+    pub stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// SPL Token program used for minting the Bonanza accrual.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
     /// System Program used to create the round-owned ZINC vault.
@@ -442,10 +449,17 @@ impl<'a, 'b> CloseRoundCpi<'a, 'b> {
             *self.stockpile_token_account.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.stockpile.key,
-            false,
-        ));
+        if let Some(stockpile) = self.stockpile {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                *stockpile.key,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.token_program.key,
             false,
@@ -480,7 +494,9 @@ impl<'a, 'b> CloseRoundCpi<'a, 'b> {
         account_infos.push(self.bonanza_token_account.clone());
         account_infos.push(self.round_zinc_payout_token_account.clone());
         account_infos.push(self.stockpile_token_account.clone());
-        account_infos.push(self.stockpile.clone());
+        if let Some(stockpile) = self.stockpile {
+            account_infos.push(stockpile.clone());
+        }
         account_infos.push(self.token_program.clone());
         account_infos.push(self.system_program.clone());
         remaining_accounts
@@ -509,7 +525,7 @@ impl<'a, 'b> CloseRoundCpi<'a, 'b> {
 ///   7. `[writable]` bonanza_token_account
 ///   8. `[writable]` round_zinc_payout_token_account
 ///   9. `[writable]` stockpile_token_account
-///   10. `[]` stockpile
+///   10. `[optional]` stockpile
 ///   11. `[]` token_program
 ///   12. `[]` system_program
 #[derive(Clone, Debug)]
@@ -610,10 +626,14 @@ impl<'a, 'b> CloseRoundCpiBuilder<'a, 'b> {
         self.instruction.stockpile_token_account = Some(stockpile_token_account);
         self
     }
-    /// Current stockpile account that stays initialized across normal protocol operation.
+    /// `[optional account]`
+    /// Active stockpile account, omitted when no cycle is currently joinable.
     #[inline(always)]
-    pub fn stockpile(&mut self, stockpile: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.stockpile = Some(stockpile);
+    pub fn stockpile(
+        &mut self,
+        stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
+    ) -> &mut Self {
+        self.instruction.stockpile = stockpile;
         self
     }
     /// SPL Token program used for minting the Bonanza accrual.
@@ -703,7 +723,7 @@ impl<'a, 'b> CloseRoundCpiBuilder<'a, 'b> {
                 .stockpile_token_account
                 .expect("stockpile_token_account is not set"),
 
-            stockpile: self.instruction.stockpile.expect("stockpile is not set"),
+            stockpile: self.instruction.stockpile,
 
             token_program: self
                 .instruction
