@@ -16,6 +16,8 @@ pub const INIT_AUTO_MINER_SESSION_DISCRIMINATOR: [u8; 8] = [242, 248, 89, 30, 18
 pub struct InitAutoMinerSession {
     /// Wallet that owns and funds the auto-miner session.
     pub authority: solana_address::Address,
+    /// Global config that defines the only accepted auto-miner executor.
+    pub config: solana_address::Address,
     /// Player-owned auto-miner session PDA.
     pub auto_miner_session: solana_address::Address,
     /// Lifetime deploy profile for the auto-miner authority.
@@ -38,8 +40,12 @@ impl InitAutoMinerSession {
         args: InitAutoMinerSessionInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.authority, true));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.config,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new(
             self.auto_miner_session,
             false,
@@ -115,12 +121,14 @@ impl InitAutoMinerSessionInstructionArgs {
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` authority
-///   1. `[writable]` auto_miner_session
-///   2. `[writable]` player_profile
-///   3. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   1. `[]` config
+///   2. `[writable]` auto_miner_session
+///   3. `[writable]` player_profile
+///   4. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct InitAutoMinerSessionBuilder {
     authority: Option<solana_address::Address>,
+    config: Option<solana_address::Address>,
     auto_miner_session: Option<solana_address::Address>,
     player_profile: Option<solana_address::Address>,
     system_program: Option<solana_address::Address>,
@@ -145,6 +153,12 @@ impl InitAutoMinerSessionBuilder {
     #[inline(always)]
     pub fn authority(&mut self, authority: solana_address::Address) -> &mut Self {
         self.authority = Some(authority);
+        self
+    }
+    /// Global config that defines the only accepted auto-miner executor.
+    #[inline(always)]
+    pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
+        self.config = Some(config);
         self
     }
     /// Player-owned auto-miner session PDA.
@@ -236,6 +250,7 @@ impl InitAutoMinerSessionBuilder {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         let accounts = InitAutoMinerSession {
             authority: self.authority.expect("authority is not set"),
+            config: self.config.expect("config is not set"),
             auto_miner_session: self
                 .auto_miner_session
                 .expect("auto_miner_session is not set"),
@@ -289,6 +304,8 @@ impl InitAutoMinerSessionBuilder {
 pub struct InitAutoMinerSessionCpiAccounts<'a, 'b> {
     /// Wallet that owns and funds the auto-miner session.
     pub authority: &'b solana_account_info::AccountInfo<'a>,
+    /// Global config that defines the only accepted auto-miner executor.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Player-owned auto-miner session PDA.
     pub auto_miner_session: &'b solana_account_info::AccountInfo<'a>,
     /// Lifetime deploy profile for the auto-miner authority.
@@ -303,6 +320,8 @@ pub struct InitAutoMinerSessionCpi<'a, 'b> {
     pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// Wallet that owns and funds the auto-miner session.
     pub authority: &'b solana_account_info::AccountInfo<'a>,
+    /// Global config that defines the only accepted auto-miner executor.
+    pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Player-owned auto-miner session PDA.
     pub auto_miner_session: &'b solana_account_info::AccountInfo<'a>,
     /// Lifetime deploy profile for the auto-miner authority.
@@ -322,6 +341,7 @@ impl<'a, 'b> InitAutoMinerSessionCpi<'a, 'b> {
         Self {
             __program: program,
             authority: accounts.authority,
+            config: accounts.config,
             auto_miner_session: accounts.auto_miner_session,
             player_profile: accounts.player_profile,
             system_program: accounts.system_program,
@@ -351,10 +371,14 @@ impl<'a, 'b> InitAutoMinerSessionCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(
             *self.authority.key,
             true,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.config.key,
+            false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.auto_miner_session.key,
@@ -386,9 +410,10 @@ impl<'a, 'b> InitAutoMinerSessionCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(6 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.authority.clone());
+        account_infos.push(self.config.clone());
         account_infos.push(self.auto_miner_session.clone());
         account_infos.push(self.player_profile.clone());
         account_infos.push(self.system_program.clone());
@@ -409,9 +434,10 @@ impl<'a, 'b> InitAutoMinerSessionCpi<'a, 'b> {
 /// ### Accounts:
 ///
 ///   0. `[writable, signer]` authority
-///   1. `[writable]` auto_miner_session
-///   2. `[writable]` player_profile
-///   3. `[]` system_program
+///   1. `[]` config
+///   2. `[writable]` auto_miner_session
+///   3. `[writable]` player_profile
+///   4. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct InitAutoMinerSessionCpiBuilder<'a, 'b> {
     instruction: Box<InitAutoMinerSessionCpiBuilderInstruction<'a, 'b>>,
@@ -422,6 +448,7 @@ impl<'a, 'b> InitAutoMinerSessionCpiBuilder<'a, 'b> {
         let instruction = Box::new(InitAutoMinerSessionCpiBuilderInstruction {
             __program: program,
             authority: None,
+            config: None,
             auto_miner_session: None,
             player_profile: None,
             system_program: None,
@@ -443,6 +470,12 @@ impl<'a, 'b> InitAutoMinerSessionCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn authority(&mut self, authority: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.authority = Some(authority);
+        self
+    }
+    /// Global config that defines the only accepted auto-miner executor.
+    #[inline(always)]
+    pub fn config(&mut self, config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.config = Some(config);
         self
     }
     /// Player-owned auto-miner session PDA.
@@ -610,6 +643,8 @@ impl<'a, 'b> InitAutoMinerSessionCpiBuilder<'a, 'b> {
 
             authority: self.instruction.authority.expect("authority is not set"),
 
+            config: self.instruction.config.expect("config is not set"),
+
             auto_miner_session: self
                 .instruction
                 .auto_miner_session
@@ -637,6 +672,7 @@ impl<'a, 'b> InitAutoMinerSessionCpiBuilder<'a, 'b> {
 struct InitAutoMinerSessionCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     authority: Option<&'b solana_account_info::AccountInfo<'a>>,
+    config: Option<&'b solana_account_info::AccountInfo<'a>>,
     auto_miner_session: Option<&'b solana_account_info::AccountInfo<'a>>,
     player_profile: Option<&'b solana_account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
