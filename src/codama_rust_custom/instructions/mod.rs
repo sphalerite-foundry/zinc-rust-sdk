@@ -30,6 +30,7 @@ pub mod payout_stockpile_instruction;
 pub mod queue_round_settlement_instruction;
 pub mod queue_settle_winning_stakes_batch_instruction;
 pub mod queue_stockpile_reveal_instruction;
+pub mod retry_init_stockpile_rand_instruction;
 pub mod reveal_round_blockhash_instruction;
 pub mod round_stockpile;
 pub mod update_config_instruction;
