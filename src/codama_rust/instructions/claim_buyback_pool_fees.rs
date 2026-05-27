@@ -13,8 +13,8 @@ pub const CLAIM_BUYBACK_POOL_FEES_DISCRIMINATOR: [u8; 8] = [124, 86, 221, 109, 2
 /// Accounts.
 #[derive(Debug)]
 pub struct ClaimBuybackPoolFees {
-    /// Admin or crank signer requesting the protocol LP fee claim.
-    pub signer: solana_address::Address,
+    /// Configured admin requesting the protocol LP fee claim.
+    pub admin: solana_address::Address,
     /// Global config containing the admin, crank, and treasury settings.
     pub config: solana_address::Address,
     /// Treasury PDA that owns the Meteora position NFT and claimed fee accounts.
@@ -29,6 +29,10 @@ pub struct ClaimBuybackPoolFees {
     pub buyback_fee_zinc_token_account: solana_address::Address,
     /// Dedicated treasury-owned token account that receives claimed WSOL LP fees.
     pub buyback_fee_wsol_token_account: solana_address::Address,
+    /// Admin ATA that receives the full claimed ZINC fee custody balance.
+    pub admin_zinc_token_account: solana_address::Address,
+    /// Admin ATA that receives the full claimed WSOL fee custody balance.
+    pub admin_wsol_token_account: solana_address::Address,
 
     pub pool_authority: solana_address::Address,
 
@@ -45,6 +49,8 @@ pub struct ClaimBuybackPoolFees {
     pub event_authority: solana_address::Address,
 
     pub meteora_program: solana_address::Address,
+    /// Associated Token Program used to create admin ATAs when missing.
+    pub associated_token_program: solana_address::Address,
     /// SPL Token Program for both pool mints and fee receiver accounts.
     pub token_program: solana_address::Address,
     /// System Program used to initialize fee receiver accounts when missing.
@@ -61,8 +67,8 @@ impl ClaimBuybackPoolFees {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(18 + remaining_accounts.len());
-        accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
+        let mut accounts = Vec::with_capacity(21 + remaining_accounts.len());
+        accounts.push(solana_instruction::AccountMeta::new(self.admin, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -91,6 +97,14 @@ impl ClaimBuybackPoolFees {
             self.buyback_fee_wsol_token_account,
             false,
         ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.admin_zinc_token_account,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.admin_wsol_token_account,
+            false,
+        ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.pool_authority,
             false,
@@ -117,6 +131,10 @@ impl ClaimBuybackPoolFees {
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.meteora_program,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.associated_token_program,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -167,7 +185,7 @@ impl Default for ClaimBuybackPoolFeesInstructionData {
 ///
 /// ### Accounts:
 ///
-///   0. `[writable, signer]` signer
+///   0. `[writable, signer]` admin
 ///   1. `[]` config
 ///   2. `[]` treasury
 ///   3. `[]` buyback_pool
@@ -175,19 +193,22 @@ impl Default for ClaimBuybackPoolFeesInstructionData {
 ///   5. `[]` zinc_mint
 ///   6. `[writable]` buyback_fee_zinc_token_account
 ///   7. `[writable]` buyback_fee_wsol_token_account
-///   8. `[]` pool_authority
-///   9. `[]` pool
-///   10. `[writable]` position
-///   11. `[]` position_nft_account
-///   12. `[writable]` token_a_vault
-///   13. `[writable]` token_b_vault
-///   14. `[]` event_authority
-///   15. `[optional]` meteora_program (default to `cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG`)
-///   16. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   17. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   8. `[writable]` admin_zinc_token_account
+///   9. `[writable]` admin_wsol_token_account
+///   10. `[]` pool_authority
+///   11. `[]` pool
+///   12. `[writable]` position
+///   13. `[]` position_nft_account
+///   14. `[writable]` token_a_vault
+///   15. `[writable]` token_b_vault
+///   16. `[]` event_authority
+///   17. `[optional]` meteora_program (default to `cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG`)
+///   18. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   19. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   20. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct ClaimBuybackPoolFeesBuilder {
-    signer: Option<solana_address::Address>,
+    admin: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
     buyback_pool: Option<solana_address::Address>,
@@ -195,6 +216,8 @@ pub struct ClaimBuybackPoolFeesBuilder {
     zinc_mint: Option<solana_address::Address>,
     buyback_fee_zinc_token_account: Option<solana_address::Address>,
     buyback_fee_wsol_token_account: Option<solana_address::Address>,
+    admin_zinc_token_account: Option<solana_address::Address>,
+    admin_wsol_token_account: Option<solana_address::Address>,
     pool_authority: Option<solana_address::Address>,
     pool: Option<solana_address::Address>,
     position: Option<solana_address::Address>,
@@ -203,6 +226,7 @@ pub struct ClaimBuybackPoolFeesBuilder {
     token_b_vault: Option<solana_address::Address>,
     event_authority: Option<solana_address::Address>,
     meteora_program: Option<solana_address::Address>,
+    associated_token_program: Option<solana_address::Address>,
     token_program: Option<solana_address::Address>,
     system_program: Option<solana_address::Address>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
@@ -212,10 +236,10 @@ impl ClaimBuybackPoolFeesBuilder {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Admin or crank signer requesting the protocol LP fee claim.
+    /// Configured admin requesting the protocol LP fee claim.
     #[inline(always)]
-    pub fn signer(&mut self, signer: solana_address::Address) -> &mut Self {
-        self.signer = Some(signer);
+    pub fn admin(&mut self, admin: solana_address::Address) -> &mut Self {
+        self.admin = Some(admin);
         self
     }
     /// Global config containing the admin, crank, and treasury settings.
@@ -267,6 +291,24 @@ impl ClaimBuybackPoolFeesBuilder {
         self.buyback_fee_wsol_token_account = Some(buyback_fee_wsol_token_account);
         self
     }
+    /// Admin ATA that receives the full claimed ZINC fee custody balance.
+    #[inline(always)]
+    pub fn admin_zinc_token_account(
+        &mut self,
+        admin_zinc_token_account: solana_address::Address,
+    ) -> &mut Self {
+        self.admin_zinc_token_account = Some(admin_zinc_token_account);
+        self
+    }
+    /// Admin ATA that receives the full claimed WSOL fee custody balance.
+    #[inline(always)]
+    pub fn admin_wsol_token_account(
+        &mut self,
+        admin_wsol_token_account: solana_address::Address,
+    ) -> &mut Self {
+        self.admin_wsol_token_account = Some(admin_wsol_token_account);
+        self
+    }
     #[inline(always)]
     pub fn pool_authority(&mut self, pool_authority: solana_address::Address) -> &mut Self {
         self.pool_authority = Some(pool_authority);
@@ -311,6 +353,16 @@ impl ClaimBuybackPoolFeesBuilder {
         self.meteora_program = Some(meteora_program);
         self
     }
+    /// `[optional account, default to 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL']`
+    /// Associated Token Program used to create admin ATAs when missing.
+    #[inline(always)]
+    pub fn associated_token_program(
+        &mut self,
+        associated_token_program: solana_address::Address,
+    ) -> &mut Self {
+        self.associated_token_program = Some(associated_token_program);
+        self
+    }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
     /// SPL Token Program for both pool mints and fee receiver accounts.
     #[inline(always)]
@@ -343,7 +395,7 @@ impl ClaimBuybackPoolFeesBuilder {
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
         let accounts = ClaimBuybackPoolFees {
-            signer: self.signer.expect("signer is not set"),
+            admin: self.admin.expect("admin is not set"),
             config: self.config.expect("config is not set"),
             treasury: self.treasury.expect("treasury is not set"),
             buyback_pool: self.buyback_pool.expect("buyback_pool is not set"),
@@ -357,6 +409,12 @@ impl ClaimBuybackPoolFeesBuilder {
             buyback_fee_wsol_token_account: self
                 .buyback_fee_wsol_token_account
                 .expect("buyback_fee_wsol_token_account is not set"),
+            admin_zinc_token_account: self
+                .admin_zinc_token_account
+                .expect("admin_zinc_token_account is not set"),
+            admin_wsol_token_account: self
+                .admin_wsol_token_account
+                .expect("admin_wsol_token_account is not set"),
             pool_authority: self.pool_authority.expect("pool_authority is not set"),
             pool: self.pool.expect("pool is not set"),
             position: self.position.expect("position is not set"),
@@ -369,6 +427,9 @@ impl ClaimBuybackPoolFeesBuilder {
             meteora_program: self.meteora_program.unwrap_or(solana_address::address!(
                 "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"
             )),
+            associated_token_program: self.associated_token_program.unwrap_or(
+                solana_address::address!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
+            ),
             token_program: self.token_program.unwrap_or(solana_address::address!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
@@ -383,8 +444,8 @@ impl ClaimBuybackPoolFeesBuilder {
 
 /// `claim_buyback_pool_fees` CPI accounts.
 pub struct ClaimBuybackPoolFeesCpiAccounts<'a, 'b> {
-    /// Admin or crank signer requesting the protocol LP fee claim.
-    pub signer: &'b solana_account_info::AccountInfo<'a>,
+    /// Configured admin requesting the protocol LP fee claim.
+    pub admin: &'b solana_account_info::AccountInfo<'a>,
     /// Global config containing the admin, crank, and treasury settings.
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that owns the Meteora position NFT and claimed fee accounts.
@@ -399,6 +460,10 @@ pub struct ClaimBuybackPoolFeesCpiAccounts<'a, 'b> {
     pub buyback_fee_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated treasury-owned token account that receives claimed WSOL LP fees.
     pub buyback_fee_wsol_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Admin ATA that receives the full claimed ZINC fee custody balance.
+    pub admin_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Admin ATA that receives the full claimed WSOL fee custody balance.
+    pub admin_wsol_token_account: &'b solana_account_info::AccountInfo<'a>,
 
     pub pool_authority: &'b solana_account_info::AccountInfo<'a>,
 
@@ -415,6 +480,8 @@ pub struct ClaimBuybackPoolFeesCpiAccounts<'a, 'b> {
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub meteora_program: &'b solana_account_info::AccountInfo<'a>,
+    /// Associated Token Program used to create admin ATAs when missing.
+    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
     /// SPL Token Program for both pool mints and fee receiver accounts.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
     /// System Program used to initialize fee receiver accounts when missing.
@@ -425,8 +492,8 @@ pub struct ClaimBuybackPoolFeesCpiAccounts<'a, 'b> {
 pub struct ClaimBuybackPoolFeesCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
-    /// Admin or crank signer requesting the protocol LP fee claim.
-    pub signer: &'b solana_account_info::AccountInfo<'a>,
+    /// Configured admin requesting the protocol LP fee claim.
+    pub admin: &'b solana_account_info::AccountInfo<'a>,
     /// Global config containing the admin, crank, and treasury settings.
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that owns the Meteora position NFT and claimed fee accounts.
@@ -441,6 +508,10 @@ pub struct ClaimBuybackPoolFeesCpi<'a, 'b> {
     pub buyback_fee_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated treasury-owned token account that receives claimed WSOL LP fees.
     pub buyback_fee_wsol_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Admin ATA that receives the full claimed ZINC fee custody balance.
+    pub admin_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Admin ATA that receives the full claimed WSOL fee custody balance.
+    pub admin_wsol_token_account: &'b solana_account_info::AccountInfo<'a>,
 
     pub pool_authority: &'b solana_account_info::AccountInfo<'a>,
 
@@ -457,6 +528,8 @@ pub struct ClaimBuybackPoolFeesCpi<'a, 'b> {
     pub event_authority: &'b solana_account_info::AccountInfo<'a>,
 
     pub meteora_program: &'b solana_account_info::AccountInfo<'a>,
+    /// Associated Token Program used to create admin ATAs when missing.
+    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
     /// SPL Token Program for both pool mints and fee receiver accounts.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
     /// System Program used to initialize fee receiver accounts when missing.
@@ -470,7 +543,7 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
     ) -> Self {
         Self {
             __program: program,
-            signer: accounts.signer,
+            admin: accounts.admin,
             config: accounts.config,
             treasury: accounts.treasury,
             buyback_pool: accounts.buyback_pool,
@@ -478,6 +551,8 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
             zinc_mint: accounts.zinc_mint,
             buyback_fee_zinc_token_account: accounts.buyback_fee_zinc_token_account,
             buyback_fee_wsol_token_account: accounts.buyback_fee_wsol_token_account,
+            admin_zinc_token_account: accounts.admin_zinc_token_account,
+            admin_wsol_token_account: accounts.admin_wsol_token_account,
             pool_authority: accounts.pool_authority,
             pool: accounts.pool,
             position: accounts.position,
@@ -486,6 +561,7 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
             token_b_vault: accounts.token_b_vault,
             event_authority: accounts.event_authority,
             meteora_program: accounts.meteora_program,
+            associated_token_program: accounts.associated_token_program,
             token_program: accounts.token_program,
             system_program: accounts.system_program,
         }
@@ -513,8 +589,8 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(18 + remaining_accounts.len());
-        accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
+        let mut accounts = Vec::with_capacity(21 + remaining_accounts.len());
+        accounts.push(solana_instruction::AccountMeta::new(*self.admin.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -541,6 +617,14 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.buyback_fee_wsol_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.admin_zinc_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.admin_wsol_token_account.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -576,6 +660,10 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.associated_token_program.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.token_program.key,
             false,
         ));
@@ -599,9 +687,9 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(19 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(22 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
-        account_infos.push(self.signer.clone());
+        account_infos.push(self.admin.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.treasury.clone());
         account_infos.push(self.buyback_pool.clone());
@@ -609,6 +697,8 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
         account_infos.push(self.zinc_mint.clone());
         account_infos.push(self.buyback_fee_zinc_token_account.clone());
         account_infos.push(self.buyback_fee_wsol_token_account.clone());
+        account_infos.push(self.admin_zinc_token_account.clone());
+        account_infos.push(self.admin_wsol_token_account.clone());
         account_infos.push(self.pool_authority.clone());
         account_infos.push(self.pool.clone());
         account_infos.push(self.position.clone());
@@ -617,6 +707,7 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
         account_infos.push(self.token_b_vault.clone());
         account_infos.push(self.event_authority.clone());
         account_infos.push(self.meteora_program.clone());
+        account_infos.push(self.associated_token_program.clone());
         account_infos.push(self.token_program.clone());
         account_infos.push(self.system_program.clone());
         remaining_accounts
@@ -635,7 +726,7 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
 ///
 /// ### Accounts:
 ///
-///   0. `[writable, signer]` signer
+///   0. `[writable, signer]` admin
 ///   1. `[]` config
 ///   2. `[]` treasury
 ///   3. `[]` buyback_pool
@@ -643,16 +734,19 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpi<'a, 'b> {
 ///   5. `[]` zinc_mint
 ///   6. `[writable]` buyback_fee_zinc_token_account
 ///   7. `[writable]` buyback_fee_wsol_token_account
-///   8. `[]` pool_authority
-///   9. `[]` pool
-///   10. `[writable]` position
-///   11. `[]` position_nft_account
-///   12. `[writable]` token_a_vault
-///   13. `[writable]` token_b_vault
-///   14. `[]` event_authority
-///   15. `[]` meteora_program
-///   16. `[]` token_program
-///   17. `[]` system_program
+///   8. `[writable]` admin_zinc_token_account
+///   9. `[writable]` admin_wsol_token_account
+///   10. `[]` pool_authority
+///   11. `[]` pool
+///   12. `[writable]` position
+///   13. `[]` position_nft_account
+///   14. `[writable]` token_a_vault
+///   15. `[writable]` token_b_vault
+///   16. `[]` event_authority
+///   17. `[]` meteora_program
+///   18. `[]` associated_token_program
+///   19. `[]` token_program
+///   20. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
     instruction: Box<ClaimBuybackPoolFeesCpiBuilderInstruction<'a, 'b>>,
@@ -662,7 +756,7 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
         let instruction = Box::new(ClaimBuybackPoolFeesCpiBuilderInstruction {
             __program: program,
-            signer: None,
+            admin: None,
             config: None,
             treasury: None,
             buyback_pool: None,
@@ -670,6 +764,8 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
             zinc_mint: None,
             buyback_fee_zinc_token_account: None,
             buyback_fee_wsol_token_account: None,
+            admin_zinc_token_account: None,
+            admin_wsol_token_account: None,
             pool_authority: None,
             pool: None,
             position: None,
@@ -678,16 +774,17 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
             token_b_vault: None,
             event_authority: None,
             meteora_program: None,
+            associated_token_program: None,
             token_program: None,
             system_program: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
     }
-    /// Admin or crank signer requesting the protocol LP fee claim.
+    /// Configured admin requesting the protocol LP fee claim.
     #[inline(always)]
-    pub fn signer(&mut self, signer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.signer = Some(signer);
+    pub fn admin(&mut self, admin: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.admin = Some(admin);
         self
     }
     /// Global config containing the admin, crank, and treasury settings.
@@ -739,6 +836,24 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
         buyback_fee_wsol_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.buyback_fee_wsol_token_account = Some(buyback_fee_wsol_token_account);
+        self
+    }
+    /// Admin ATA that receives the full claimed ZINC fee custody balance.
+    #[inline(always)]
+    pub fn admin_zinc_token_account(
+        &mut self,
+        admin_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.admin_zinc_token_account = Some(admin_zinc_token_account);
+        self
+    }
+    /// Admin ATA that receives the full claimed WSOL fee custody balance.
+    #[inline(always)]
+    pub fn admin_wsol_token_account(
+        &mut self,
+        admin_wsol_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.admin_wsol_token_account = Some(admin_wsol_token_account);
         self
     }
     #[inline(always)]
@@ -799,6 +914,15 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
         self.instruction.meteora_program = Some(meteora_program);
         self
     }
+    /// Associated Token Program used to create admin ATAs when missing.
+    #[inline(always)]
+    pub fn associated_token_program(
+        &mut self,
+        associated_token_program: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.associated_token_program = Some(associated_token_program);
+        self
+    }
     /// SPL Token Program for both pool mints and fee receiver accounts.
     #[inline(always)]
     pub fn token_program(
@@ -854,7 +978,7 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
         let instruction = ClaimBuybackPoolFeesCpi {
             __program: self.instruction.__program,
 
-            signer: self.instruction.signer.expect("signer is not set"),
+            admin: self.instruction.admin.expect("admin is not set"),
 
             config: self.instruction.config.expect("config is not set"),
 
@@ -878,6 +1002,16 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
                 .instruction
                 .buyback_fee_wsol_token_account
                 .expect("buyback_fee_wsol_token_account is not set"),
+
+            admin_zinc_token_account: self
+                .instruction
+                .admin_zinc_token_account
+                .expect("admin_zinc_token_account is not set"),
+
+            admin_wsol_token_account: self
+                .instruction
+                .admin_wsol_token_account
+                .expect("admin_wsol_token_account is not set"),
 
             pool_authority: self
                 .instruction
@@ -913,6 +1047,11 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
                 .meteora_program
                 .expect("meteora_program is not set"),
 
+            associated_token_program: self
+                .instruction
+                .associated_token_program
+                .expect("associated_token_program is not set"),
+
             token_program: self
                 .instruction
                 .token_program
@@ -933,7 +1072,7 @@ impl<'a, 'b> ClaimBuybackPoolFeesCpiBuilder<'a, 'b> {
 #[derive(Clone, Debug)]
 struct ClaimBuybackPoolFeesCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
-    signer: Option<&'b solana_account_info::AccountInfo<'a>>,
+    admin: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
     buyback_pool: Option<&'b solana_account_info::AccountInfo<'a>>,
@@ -941,6 +1080,8 @@ struct ClaimBuybackPoolFeesCpiBuilderInstruction<'a, 'b> {
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
     buyback_fee_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     buyback_fee_wsol_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    admin_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    admin_wsol_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     pool_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     pool: Option<&'b solana_account_info::AccountInfo<'a>>,
     position: Option<&'b solana_account_info::AccountInfo<'a>>,
@@ -949,6 +1090,7 @@ struct ClaimBuybackPoolFeesCpiBuilderInstruction<'a, 'b> {
     token_b_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
     event_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     meteora_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.

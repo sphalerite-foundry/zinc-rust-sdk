@@ -66,8 +66,8 @@ pub struct CreateBuybackPoolInstructionInputs {
 
 /// Inputs needed to build the protocol buyback pool fee-claim instruction.
 pub struct ClaimBuybackPoolFeesInstructionInputs {
-    /// Admin or crank signer submitting the claim transaction.
-    pub signer: Pubkey,
+    /// Configured admin signer submitting the claim transaction.
+    pub admin: Pubkey,
     /// Protocol ZINC mint persisted on the treasury account.
     pub zinc_mint: Pubkey,
     /// Stored Meteora pool authority PDA.
@@ -257,7 +257,7 @@ impl InstructionsHelper {
         inputs: ClaimBuybackPoolFeesInstructionInputs,
     ) -> Instruction {
         let ClaimBuybackPoolFeesInstructionInputs {
-            signer,
+            admin,
             zinc_mint,
             pool_authority,
             pool,
@@ -270,7 +270,7 @@ impl InstructionsHelper {
         Instruction {
             program_id: crate::codama_rust::ZINC_ID,
             accounts: vec![
-                AccountMeta::new(signer, true),
+                AccountMeta::new(admin, true),
                 AccountMeta::new_readonly(PdaHelper::get_config_address(), false),
                 AccountMeta::new_readonly(PdaHelper::get_treasury_address(), false),
                 AccountMeta::new_readonly(PdaHelper::get_buyback_pool_address(), false),
@@ -284,6 +284,11 @@ impl InstructionsHelper {
                     PdaHelper::get_buyback_fee_wsol_token_account_address(),
                     false,
                 ),
+                AccountMeta::new(PdaHelper::get_classic_ata(&admin, &zinc_mint), false),
+                AccountMeta::new(
+                    PdaHelper::get_classic_ata(&admin, &PdaHelper::WSOL_MINT_ID),
+                    false,
+                ),
                 AccountMeta::new_readonly(pool_authority, false),
                 AccountMeta::new_readonly(pool, false),
                 AccountMeta::new(position, false),
@@ -292,6 +297,7 @@ impl InstructionsHelper {
                 AccountMeta::new(token_b_vault, false),
                 AccountMeta::new_readonly(event_authority, false),
                 AccountMeta::new_readonly(PdaHelper::METEORA_DAMM_V2_PROGRAM_ID, false),
+                AccountMeta::new_readonly(PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID, false),
                 AccountMeta::new_readonly(PdaHelper::TOKEN_PROGRAM_ID, false),
                 AccountMeta::new_readonly(PdaHelper::get_system_program_address(), false),
             ],
