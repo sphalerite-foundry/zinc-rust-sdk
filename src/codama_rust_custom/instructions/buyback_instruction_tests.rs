@@ -128,7 +128,7 @@ fn create_buyback_pool_instruction_uses_canonical_meteora_accounts() {
 /// Verifies fee claims use dedicated treasury-controlled custody accounts.
 #[test]
 fn claim_buyback_pool_fees_instruction_uses_fee_custody_accounts() {
-    let signer = Pubkey::new_unique();
+    let admin = Pubkey::new_unique();
     let zinc_mint = Pubkey::new_unique();
     let pool_authority = Pubkey::new_unique();
     let pool = Pubkey::new_unique();
@@ -140,7 +140,7 @@ fn claim_buyback_pool_fees_instruction_uses_fee_custody_accounts() {
 
     let instruction = InstructionsHelper::claim_buyback_pool_fees_instruction(
         ClaimBuybackPoolFeesInstructionInputs {
-            signer,
+            admin,
             zinc_mint,
             pool_authority,
             pool,
@@ -156,7 +156,7 @@ fn claim_buyback_pool_fees_instruction_uses_fee_custody_accounts() {
         &instruction.data[..8],
         &[124, 86, 221, 109, 203, 99, 227, 187]
     );
-    assert_eq!(instruction.accounts[0].pubkey, signer);
+    assert_eq!(instruction.accounts[0].pubkey, admin);
     assert!(instruction.accounts[0].is_signer);
     assert_eq!(
         instruction.accounts[6].pubkey,
@@ -168,14 +168,28 @@ fn claim_buyback_pool_fees_instruction_uses_fee_custody_accounts() {
         PdaHelper::get_buyback_fee_wsol_token_account_address()
     );
     assert!(instruction.accounts[7].is_writable);
-    assert_eq!(instruction.accounts[8].pubkey, pool_authority);
-    assert_eq!(instruction.accounts[9].pubkey, pool);
-    assert_eq!(instruction.accounts[10].pubkey, position);
-    assert!(instruction.accounts[10].is_writable);
-    assert_eq!(instruction.accounts[11].pubkey, position_nft_account);
-    assert_eq!(instruction.accounts[12].pubkey, token_a_vault);
-    assert_eq!(instruction.accounts[13].pubkey, token_b_vault);
-    assert_eq!(instruction.accounts[14].pubkey, event_authority);
+    assert_eq!(
+        instruction.accounts[8].pubkey,
+        PdaHelper::get_classic_ata(&admin, &zinc_mint)
+    );
+    assert!(instruction.accounts[8].is_writable);
+    assert_eq!(
+        instruction.accounts[9].pubkey,
+        PdaHelper::get_classic_ata(&admin, &PdaHelper::WSOL_MINT_ID)
+    );
+    assert!(instruction.accounts[9].is_writable);
+    assert_eq!(instruction.accounts[10].pubkey, pool_authority);
+    assert_eq!(instruction.accounts[11].pubkey, pool);
+    assert_eq!(instruction.accounts[12].pubkey, position);
+    assert!(instruction.accounts[12].is_writable);
+    assert_eq!(instruction.accounts[13].pubkey, position_nft_account);
+    assert_eq!(instruction.accounts[14].pubkey, token_a_vault);
+    assert_eq!(instruction.accounts[15].pubkey, token_b_vault);
+    assert_eq!(instruction.accounts[16].pubkey, event_authority);
+    assert_eq!(
+        instruction.accounts[18].pubkey,
+        PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID
+    );
 }
 
 /// Verifies LP locking uses the stored protocol-owned Meteora position.
