@@ -562,6 +562,21 @@ pub enum ZincError {
     /// 6183 - Arcium init CPI skip requires blockhash randomness and private-ZK single settlement
     #[error("Arcium init CPI skip requires blockhash randomness and private-ZK single settlement")]
     InvalidArciumInitSkipConfig = 0x1827,
+    /// 6184 - Deploy encrypted mask payload is invalid
+    #[error("Deploy encrypted mask payload is invalid")]
+    InvalidDeployMask = 0x1828,
+    /// 6185 - Settlement encrypted mask payload is invalid
+    #[error("Settlement encrypted mask payload is invalid")]
+    InvalidSettlementMask = 0x1829,
+    /// 6186 - Recovery evidence hash is invalid
+    #[error("Recovery evidence hash is invalid")]
+    InvalidRecoveryEvidenceHash = 0x182A,
+    /// 6187 - Recovery selected tile count is invalid
+    #[error("Recovery selected tile count is invalid")]
+    InvalidRecoverySelectedCount = 0x182B,
+    /// 6188 - Recovery winning stake does not match the selected tile count
+    #[error("Recovery winning stake does not match the selected tile count")]
+    InvalidRecoveryWinningStake = 0x182C,
 }
 
 impl From<ZincError> for solana_program_error::ProgramError {
