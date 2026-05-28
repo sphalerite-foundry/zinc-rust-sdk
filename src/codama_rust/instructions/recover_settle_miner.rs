@@ -19,7 +19,7 @@ pub struct RecoverSettleMiner {
     pub config: solana_address::Address,
     /// Revealed round currently waiting on per-miner settlement.
     pub round: solana_address::Address,
-    /// Invalid-mask miner whose settlement result is recovered from off-chain evidence.
+    /// Miner whose settlement result is recovered from admin-reviewed evidence.
     pub miner: solana_address::Address,
     /// Player profile that receives the same hidden-bonus bricks as normal settlement.
     pub player_profile: solana_address::Address,
@@ -153,7 +153,7 @@ impl RecoverSettleMinerBuilder {
         self.round = Some(round);
         self
     }
-    /// Invalid-mask miner whose settlement result is recovered from off-chain evidence.
+    /// Miner whose settlement result is recovered from admin-reviewed evidence.
     #[inline(always)]
     pub fn miner(&mut self, miner: solana_address::Address) -> &mut Self {
         self.miner = Some(miner);
@@ -244,7 +244,7 @@ pub struct RecoverSettleMinerCpiAccounts<'a, 'b> {
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Revealed round currently waiting on per-miner settlement.
     pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Invalid-mask miner whose settlement result is recovered from off-chain evidence.
+    /// Miner whose settlement result is recovered from admin-reviewed evidence.
     pub miner: &'b solana_account_info::AccountInfo<'a>,
     /// Player profile that receives the same hidden-bonus bricks as normal settlement.
     pub player_profile: &'b solana_account_info::AccountInfo<'a>,
@@ -262,7 +262,7 @@ pub struct RecoverSettleMinerCpi<'a, 'b> {
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Revealed round currently waiting on per-miner settlement.
     pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Invalid-mask miner whose settlement result is recovered from off-chain evidence.
+    /// Miner whose settlement result is recovered from admin-reviewed evidence.
     pub miner: &'b solana_account_info::AccountInfo<'a>,
     /// Player profile that receives the same hidden-bonus bricks as normal settlement.
     pub player_profile: &'b solana_account_info::AccountInfo<'a>,
@@ -417,7 +417,7 @@ impl<'a, 'b> RecoverSettleMinerCpiBuilder<'a, 'b> {
         self.instruction.round = Some(round);
         self
     }
-    /// Invalid-mask miner whose settlement result is recovered from off-chain evidence.
+    /// Miner whose settlement result is recovered from admin-reviewed evidence.
     #[inline(always)]
     pub fn miner(&mut self, miner: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.miner = Some(miner);
