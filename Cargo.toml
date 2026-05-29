@@ -1,6 +1,6 @@
 [package]
 name = "zinc-rust-sdk"
-version = "1.143.0"
+version = "0.144.0"
 edition = "2021"
 rust-version = "1.89.0"
 publish = true
