@@ -66,10 +66,6 @@ pub struct Config {
     pub wildcat_round_frequency: u64,
     /// Direct-winner ZINC share reserved for Wildcat winners, in ppm.
     pub wildcat_winner_zinc_share_ppm: u64,
-    /// Max Wildcat candidate ranges stored in each new sidecar PDA.
-    pub wildcat_entry_capacity: u32,
-    /// Whether new Wildcat candidate ranges are written to the sidecar PDA.
-    pub wildcat_sidecar_enabled: bool,
     /// Bonanza roll modulo divisor; `1` makes every winner-positive round eligible.
     pub bonanza_hit_divisor: u64,
     /// ZINC fee skim for round winner claims, in basis points.
@@ -112,6 +108,10 @@ pub struct Config {
     pub zk_mask_circuit_version: u64,
     /// Emergency switch that skips the init-round Arcium CPI for blockhash private-ZK rounds.
     pub skip_arcium_init_cpi: bool,
+    /// Max Wildcat candidate ranges stored in each new sidecar PDA.
+    pub wildcat_entry_capacity: u32,
+    /// Whether new Wildcat candidate ranges are written to the sidecar PDA.
+    pub wildcat_sidecar_enabled: bool,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
