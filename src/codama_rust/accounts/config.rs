@@ -112,13 +112,13 @@ pub struct Config {
     pub wildcat_entry_capacity: u32,
     /// Whether new Wildcat candidate ranges are written to the sidecar PDA.
     pub wildcat_sidecar_enabled: bool,
+    /// First round id that must use sidecar storage when sidecar mode is enabled.
+    pub wildcat_sidecar_activation_round_id: Option<u64>,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
 
 impl Config {
-    pub const LEN: usize = 499;
-
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {
         let mut data = data;
