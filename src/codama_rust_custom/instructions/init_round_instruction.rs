@@ -1,7 +1,7 @@
 use crate::codama_rust::instructions::{InitRound, InitRoundInstructionArgs};
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
-use solana_instruction::Instruction;
+use solana_instruction::{AccountMeta, Instruction};
 use solana_pubkey::Pubkey;
 
 pub struct InitRoundInstructionInputs {
@@ -19,7 +19,7 @@ impl InstructionsHelper {
             cluster_offset,
             computation_offset,
         } = inputs;
-        InitRound {
+        let mut instruction = InitRound {
             payer,
             config: PdaHelper::get_config_address(),
             board: PdaHelper::get_board_address(),
@@ -44,6 +44,11 @@ impl InstructionsHelper {
         .instruction(InitRoundInstructionArgs {
             round_id,
             computation_offset,
-        })
+        });
+        instruction.accounts.push(AccountMeta::new(
+            PdaHelper::get_round_wildcat_entries_address(round_id),
+            false,
+        ));
+        instruction
     }
 }

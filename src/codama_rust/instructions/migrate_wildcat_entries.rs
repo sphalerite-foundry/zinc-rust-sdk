@@ -8,22 +8,24 @@
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
-pub const SELECT_WILDCAT_WINNER_DISCRIMINATOR: [u8; 8] = [210, 209, 137, 205, 217, 146, 10, 237];
+pub const MIGRATE_WILDCAT_ENTRIES_DISCRIMINATOR: [u8; 8] = [129, 138, 87, 200, 45, 17, 129, 106];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct SelectWildcatWinner {
-    /// Crank signer authorized to resolve Wildcat selection.
-    pub signer: solana_address::Address,
-    /// Global config containing Wildcat settings and crank authority.
+pub struct MigrateWildcatEntries {
+    /// Admin signer that pays for the sidecar and authorizes the migration.
+    pub admin: solana_address::Address,
+    /// Global config containing sidecar capacity and admin authority.
     pub config: solana_address::Address,
-    /// Settled round whose Wildcat draw is being scanned.
+    /// Round whose legacy Wildcat entries are being copied.
     pub round: solana_address::Address,
-    /// Optional Wildcat sidecar used by sidecar-mode rounds.
-    pub round_wildcat_entries: Option<solana_address::Address>,
+    /// Destination Wildcat sidecar for this round.
+    pub round_wildcat_entries: solana_address::Address,
+    /// System program used to allocate the sidecar PDA.
+    pub system_program: solana_address::Address,
 }
 
-impl SelectWildcatWinner {
+impl MigrateWildcatEntries {
     pub fn instruction(&self) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(&[])
     }
@@ -33,26 +35,23 @@ impl SelectWildcatWinner {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
-        accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        accounts.push(solana_instruction::AccountMeta::new(self.admin, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.round, false));
-        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                round_wildcat_entries,
-                false,
-            ));
-        } else {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::ZINC_ID,
-                false,
-            ));
-        }
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.round_wildcat_entries,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            self.system_program,
+            false,
+        ));
         accounts.extend_from_slice(remaining_accounts);
-        let data = SelectWildcatWinnerInstructionData::new()
+        let data = MigrateWildcatEntriesInstructionData::new()
             .try_to_vec()
             .unwrap();
 
@@ -65,14 +64,14 @@ impl SelectWildcatWinner {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct SelectWildcatWinnerInstructionData {
+pub struct MigrateWildcatEntriesInstructionData {
     discriminator: [u8; 8],
 }
 
-impl SelectWildcatWinnerInstructionData {
+impl MigrateWildcatEntriesInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [210, 209, 137, 205, 217, 146, 10, 237],
+            discriminator: [129, 138, 87, 200, 45, 17, 129, 106],
         }
     }
 
@@ -81,59 +80,67 @@ impl SelectWildcatWinnerInstructionData {
     }
 }
 
-impl Default for SelectWildcatWinnerInstructionData {
+impl Default for MigrateWildcatEntriesInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-/// Instruction builder for `SelectWildcatWinner`.
+/// Instruction builder for `MigrateWildcatEntries`.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable, signer]` signer
+///   0. `[writable, signer]` admin
 ///   1. `[]` config
 ///   2. `[writable]` round
-///   3. `[optional]` round_wildcat_entries
+///   3. `[writable]` round_wildcat_entries
+///   4. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
-pub struct SelectWildcatWinnerBuilder {
-    signer: Option<solana_address::Address>,
+pub struct MigrateWildcatEntriesBuilder {
+    admin: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     round: Option<solana_address::Address>,
     round_wildcat_entries: Option<solana_address::Address>,
+    system_program: Option<solana_address::Address>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl SelectWildcatWinnerBuilder {
+impl MigrateWildcatEntriesBuilder {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Crank signer authorized to resolve Wildcat selection.
+    /// Admin signer that pays for the sidecar and authorizes the migration.
     #[inline(always)]
-    pub fn signer(&mut self, signer: solana_address::Address) -> &mut Self {
-        self.signer = Some(signer);
+    pub fn admin(&mut self, admin: solana_address::Address) -> &mut Self {
+        self.admin = Some(admin);
         self
     }
-    /// Global config containing Wildcat settings and crank authority.
+    /// Global config containing sidecar capacity and admin authority.
     #[inline(always)]
     pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
         self.config = Some(config);
         self
     }
-    /// Settled round whose Wildcat draw is being scanned.
+    /// Round whose legacy Wildcat entries are being copied.
     #[inline(always)]
     pub fn round(&mut self, round: solana_address::Address) -> &mut Self {
         self.round = Some(round);
         self
     }
-    /// `[optional account]`
-    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    /// Destination Wildcat sidecar for this round.
     #[inline(always)]
     pub fn round_wildcat_entries(
         &mut self,
-        round_wildcat_entries: Option<solana_address::Address>,
+        round_wildcat_entries: solana_address::Address,
     ) -> &mut Self {
-        self.round_wildcat_entries = round_wildcat_entries;
+        self.round_wildcat_entries = Some(round_wildcat_entries);
+        self
+    }
+    /// `[optional account, default to '11111111111111111111111111111111']`
+    /// System program used to allocate the sidecar PDA.
+    #[inline(always)]
+    pub fn system_program(&mut self, system_program: solana_address::Address) -> &mut Self {
+        self.system_program = Some(system_program);
         self
     }
     /// Add an additional account to the instruction.
@@ -153,54 +160,64 @@ impl SelectWildcatWinnerBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = SelectWildcatWinner {
-            signer: self.signer.expect("signer is not set"),
+        let accounts = MigrateWildcatEntries {
+            admin: self.admin.expect("admin is not set"),
             config: self.config.expect("config is not set"),
             round: self.round.expect("round is not set"),
-            round_wildcat_entries: self.round_wildcat_entries,
+            round_wildcat_entries: self
+                .round_wildcat_entries
+                .expect("round_wildcat_entries is not set"),
+            system_program: self
+                .system_program
+                .unwrap_or(solana_address::address!("11111111111111111111111111111111")),
         };
 
         accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
     }
 }
 
-/// `select_wildcat_winner` CPI accounts.
-pub struct SelectWildcatWinnerCpiAccounts<'a, 'b> {
-    /// Crank signer authorized to resolve Wildcat selection.
-    pub signer: &'b solana_account_info::AccountInfo<'a>,
-    /// Global config containing Wildcat settings and crank authority.
+/// `migrate_wildcat_entries` CPI accounts.
+pub struct MigrateWildcatEntriesCpiAccounts<'a, 'b> {
+    /// Admin signer that pays for the sidecar and authorizes the migration.
+    pub admin: &'b solana_account_info::AccountInfo<'a>,
+    /// Global config containing sidecar capacity and admin authority.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Settled round whose Wildcat draw is being scanned.
+    /// Round whose legacy Wildcat entries are being copied.
     pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Optional Wildcat sidecar used by sidecar-mode rounds.
-    pub round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
+    /// Destination Wildcat sidecar for this round.
+    pub round_wildcat_entries: &'b solana_account_info::AccountInfo<'a>,
+    /// System program used to allocate the sidecar PDA.
+    pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `select_wildcat_winner` CPI instruction.
-pub struct SelectWildcatWinnerCpi<'a, 'b> {
+/// `migrate_wildcat_entries` CPI instruction.
+pub struct MigrateWildcatEntriesCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
-    /// Crank signer authorized to resolve Wildcat selection.
-    pub signer: &'b solana_account_info::AccountInfo<'a>,
-    /// Global config containing Wildcat settings and crank authority.
+    /// Admin signer that pays for the sidecar and authorizes the migration.
+    pub admin: &'b solana_account_info::AccountInfo<'a>,
+    /// Global config containing sidecar capacity and admin authority.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Settled round whose Wildcat draw is being scanned.
+    /// Round whose legacy Wildcat entries are being copied.
     pub round: &'b solana_account_info::AccountInfo<'a>,
-    /// Optional Wildcat sidecar used by sidecar-mode rounds.
-    pub round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
+    /// Destination Wildcat sidecar for this round.
+    pub round_wildcat_entries: &'b solana_account_info::AccountInfo<'a>,
+    /// System program used to allocate the sidecar PDA.
+    pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-impl<'a, 'b> SelectWildcatWinnerCpi<'a, 'b> {
+impl<'a, 'b> MigrateWildcatEntriesCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: SelectWildcatWinnerCpiAccounts<'a, 'b>,
+        accounts: MigrateWildcatEntriesCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
-            signer: accounts.signer,
+            admin: accounts.admin,
             config: accounts.config,
             round: accounts.round,
             round_wildcat_entries: accounts.round_wildcat_entries,
+            system_program: accounts.system_program,
         }
     }
     #[inline(always)]
@@ -226,24 +243,21 @@ impl<'a, 'b> SelectWildcatWinnerCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
-        accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
+        let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
+        accounts.push(solana_instruction::AccountMeta::new(*self.admin.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
-        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                *round_wildcat_entries.key,
-                false,
-            ));
-        } else {
-            accounts.push(solana_instruction::AccountMeta::new_readonly(
-                crate::ZINC_ID,
-                false,
-            ));
-        }
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.round_wildcat_entries.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
+            *self.system_program.key,
+            false,
+        ));
         remaining_accounts.iter().for_each(|remaining_account| {
             accounts.push(solana_instruction::AccountMeta {
                 pubkey: *remaining_account.0.key,
@@ -251,7 +265,7 @@ impl<'a, 'b> SelectWildcatWinnerCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = SelectWildcatWinnerInstructionData::new()
+        let data = MigrateWildcatEntriesInstructionData::new()
             .try_to_vec()
             .unwrap();
 
@@ -260,14 +274,13 @@ impl<'a, 'b> SelectWildcatWinnerCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(5 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(6 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
-        account_infos.push(self.signer.clone());
+        account_infos.push(self.admin.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.round.clone());
-        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
-            account_infos.push(round_wildcat_entries.clone());
-        }
+        account_infos.push(self.round_wildcat_entries.clone());
+        account_infos.push(self.system_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -280,57 +293,67 @@ impl<'a, 'b> SelectWildcatWinnerCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `SelectWildcatWinner` via CPI.
+/// Instruction builder for `MigrateWildcatEntries` via CPI.
 ///
 /// ### Accounts:
 ///
-///   0. `[writable, signer]` signer
+///   0. `[writable, signer]` admin
 ///   1. `[]` config
 ///   2. `[writable]` round
-///   3. `[optional]` round_wildcat_entries
+///   3. `[writable]` round_wildcat_entries
+///   4. `[]` system_program
 #[derive(Clone, Debug)]
-pub struct SelectWildcatWinnerCpiBuilder<'a, 'b> {
-    instruction: Box<SelectWildcatWinnerCpiBuilderInstruction<'a, 'b>>,
+pub struct MigrateWildcatEntriesCpiBuilder<'a, 'b> {
+    instruction: Box<MigrateWildcatEntriesCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> SelectWildcatWinnerCpiBuilder<'a, 'b> {
+impl<'a, 'b> MigrateWildcatEntriesCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(SelectWildcatWinnerCpiBuilderInstruction {
+        let instruction = Box::new(MigrateWildcatEntriesCpiBuilderInstruction {
             __program: program,
-            signer: None,
+            admin: None,
             config: None,
             round: None,
             round_wildcat_entries: None,
+            system_program: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
     }
-    /// Crank signer authorized to resolve Wildcat selection.
+    /// Admin signer that pays for the sidecar and authorizes the migration.
     #[inline(always)]
-    pub fn signer(&mut self, signer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.signer = Some(signer);
+    pub fn admin(&mut self, admin: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
+        self.instruction.admin = Some(admin);
         self
     }
-    /// Global config containing Wildcat settings and crank authority.
+    /// Global config containing sidecar capacity and admin authority.
     #[inline(always)]
     pub fn config(&mut self, config: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.config = Some(config);
         self
     }
-    /// Settled round whose Wildcat draw is being scanned.
+    /// Round whose legacy Wildcat entries are being copied.
     #[inline(always)]
     pub fn round(&mut self, round: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.round = Some(round);
         self
     }
-    /// `[optional account]`
-    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    /// Destination Wildcat sidecar for this round.
     #[inline(always)]
     pub fn round_wildcat_entries(
         &mut self,
-        round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
+        round_wildcat_entries: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.round_wildcat_entries = round_wildcat_entries;
+        self.instruction.round_wildcat_entries = Some(round_wildcat_entries);
+        self
+    }
+    /// System program used to allocate the sidecar PDA.
+    #[inline(always)]
+    pub fn system_program(
+        &mut self,
+        system_program: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.system_program = Some(system_program);
         self
     }
     /// Add an additional account to the instruction.
@@ -367,16 +390,24 @@ impl<'a, 'b> SelectWildcatWinnerCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let instruction = SelectWildcatWinnerCpi {
+        let instruction = MigrateWildcatEntriesCpi {
             __program: self.instruction.__program,
 
-            signer: self.instruction.signer.expect("signer is not set"),
+            admin: self.instruction.admin.expect("admin is not set"),
 
             config: self.instruction.config.expect("config is not set"),
 
             round: self.instruction.round.expect("round is not set"),
 
-            round_wildcat_entries: self.instruction.round_wildcat_entries,
+            round_wildcat_entries: self
+                .instruction
+                .round_wildcat_entries
+                .expect("round_wildcat_entries is not set"),
+
+            system_program: self
+                .instruction
+                .system_program
+                .expect("system_program is not set"),
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -386,12 +417,13 @@ impl<'a, 'b> SelectWildcatWinnerCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct SelectWildcatWinnerCpiBuilderInstruction<'a, 'b> {
+struct MigrateWildcatEntriesCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
-    signer: Option<&'b solana_account_info::AccountInfo<'a>>,
+    admin: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
     round: Option<&'b solana_account_info::AccountInfo<'a>>,
     round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
+    system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

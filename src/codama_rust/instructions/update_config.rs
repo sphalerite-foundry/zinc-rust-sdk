@@ -103,6 +103,8 @@ pub struct UpdateConfigInstructionArgs {
     pub deploy_affiliate_bonus_bricks_x10k: Option<u64>,
     pub wildcat_round_frequency: Option<u64>,
     pub wildcat_winner_zinc_share_ppm: Option<u64>,
+    pub wildcat_entry_capacity: Option<u32>,
+    pub wildcat_sidecar_enabled: Option<bool>,
     pub bonanza_hit_divisor: Option<u64>,
     pub round_claim_zinc_fee_bps: Option<u64>,
     pub stockpile_entry_min_zinc_fee: Option<u64>,
@@ -167,6 +169,8 @@ pub struct UpdateConfigBuilder {
     deploy_affiliate_bonus_bricks_x10k: Option<u64>,
     wildcat_round_frequency: Option<u64>,
     wildcat_winner_zinc_share_ppm: Option<u64>,
+    wildcat_entry_capacity: Option<u32>,
+    wildcat_sidecar_enabled: Option<bool>,
     bonanza_hit_divisor: Option<u64>,
     round_claim_zinc_fee_bps: Option<u64>,
     stockpile_entry_min_zinc_fee: Option<u64>,
@@ -379,6 +383,18 @@ impl UpdateConfigBuilder {
     }
     /// `[optional argument]`
     #[inline(always)]
+    pub fn wildcat_entry_capacity(&mut self, wildcat_entry_capacity: u32) -> &mut Self {
+        self.wildcat_entry_capacity = Some(wildcat_entry_capacity);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn wildcat_sidecar_enabled(&mut self, wildcat_sidecar_enabled: bool) -> &mut Self {
+        self.wildcat_sidecar_enabled = Some(wildcat_sidecar_enabled);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
     pub fn bonanza_hit_divisor(&mut self, bonanza_hit_divisor: u64) -> &mut Self {
         self.bonanza_hit_divisor = Some(bonanza_hit_divisor);
         self
@@ -571,6 +587,8 @@ impl UpdateConfigBuilder {
             deploy_affiliate_bonus_bricks_x10k: self.deploy_affiliate_bonus_bricks_x10k.clone(),
             wildcat_round_frequency: self.wildcat_round_frequency.clone(),
             wildcat_winner_zinc_share_ppm: self.wildcat_winner_zinc_share_ppm.clone(),
+            wildcat_entry_capacity: self.wildcat_entry_capacity.clone(),
+            wildcat_sidecar_enabled: self.wildcat_sidecar_enabled.clone(),
             bonanza_hit_divisor: self.bonanza_hit_divisor.clone(),
             round_claim_zinc_fee_bps: self.round_claim_zinc_fee_bps.clone(),
             stockpile_entry_min_zinc_fee: self.stockpile_entry_min_zinc_fee.clone(),
@@ -740,6 +758,8 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             deploy_affiliate_bonus_bricks_x10k: None,
             wildcat_round_frequency: None,
             wildcat_winner_zinc_share_ppm: None,
+            wildcat_entry_capacity: None,
+            wildcat_sidecar_enabled: None,
             bonanza_hit_divisor: None,
             round_claim_zinc_fee_bps: None,
             stockpile_entry_min_zinc_fee: None,
@@ -949,6 +969,18 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
         wildcat_winner_zinc_share_ppm: u64,
     ) -> &mut Self {
         self.instruction.wildcat_winner_zinc_share_ppm = Some(wildcat_winner_zinc_share_ppm);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn wildcat_entry_capacity(&mut self, wildcat_entry_capacity: u32) -> &mut Self {
+        self.instruction.wildcat_entry_capacity = Some(wildcat_entry_capacity);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn wildcat_sidecar_enabled(&mut self, wildcat_sidecar_enabled: bool) -> &mut Self {
+        self.instruction.wildcat_sidecar_enabled = Some(wildcat_sidecar_enabled);
         self
     }
     /// `[optional argument]`
@@ -1166,6 +1198,8 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
                 .clone(),
             wildcat_round_frequency: self.instruction.wildcat_round_frequency.clone(),
             wildcat_winner_zinc_share_ppm: self.instruction.wildcat_winner_zinc_share_ppm.clone(),
+            wildcat_entry_capacity: self.instruction.wildcat_entry_capacity.clone(),
+            wildcat_sidecar_enabled: self.instruction.wildcat_sidecar_enabled.clone(),
             bonanza_hit_divisor: self.instruction.bonanza_hit_divisor.clone(),
             round_claim_zinc_fee_bps: self.instruction.round_claim_zinc_fee_bps.clone(),
             stockpile_entry_min_zinc_fee: self.instruction.stockpile_entry_min_zinc_fee.clone(),
@@ -1240,6 +1274,8 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     deploy_affiliate_bonus_bricks_x10k: Option<u64>,
     wildcat_round_frequency: Option<u64>,
     wildcat_winner_zinc_share_ppm: Option<u64>,
+    wildcat_entry_capacity: Option<u32>,
+    wildcat_sidecar_enabled: Option<bool>,
     bonanza_hit_divisor: Option<u64>,
     round_claim_zinc_fee_bps: Option<u64>,
     stockpile_entry_min_zinc_fee: Option<u64>,

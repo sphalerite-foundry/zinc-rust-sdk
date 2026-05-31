@@ -526,57 +526,69 @@ pub enum ZincError {
     /// 6171 - Wildcat entry capacity is exhausted
     #[error("Wildcat entry capacity is exhausted")]
     WildcatEntryCapacityExceeded = 0x181B,
-    /// 6172 - Wildcat winner ZINC share exceeds one million ppm
+    /// 6172 - Wrong Wildcat entries sidecar
+    #[error("Wrong Wildcat entries sidecar")]
+    WrongWildcatEntries = 0x181C,
+    /// 6173 - Wildcat entries sidecar is missing
+    #[error("Wildcat entries sidecar is missing")]
+    WildcatEntriesMissing = 0x181D,
+    /// 6174 - Wildcat entry capacity is invalid
+    #[error("Wildcat entry capacity is invalid")]
+    InvalidWildcatEntryCapacity = 0x181E,
+    /// 6175 - Wildcat entries have already been migrated
+    #[error("Wildcat entries have already been migrated")]
+    WildcatEntriesAlreadyMigrated = 0x181F,
+    /// 6176 - Wildcat winner ZINC share exceeds one million ppm
     #[error("Wildcat winner ZINC share exceeds one million ppm")]
-    InvalidWildcatWinnerZincSharePpm = 0x181C,
-    /// 6173 - Board cannot be closed with close_pda
+    InvalidWildcatWinnerZincSharePpm = 0x1820,
+    /// 6177 - Board cannot be closed with close_pda
     #[error("Board cannot be closed with close_pda")]
-    ClosePdaCannotCloseBoard = 0x181D,
-    /// 6174 - Treasury cannot be closed with close_pda
+    ClosePdaCannotCloseBoard = 0x1821,
+    /// 6178 - Treasury cannot be closed with close_pda
     #[error("Treasury cannot be closed with close_pda")]
-    ClosePdaCannotCloseTreasury = 0x181E,
-    /// 6175 - Ready round is not the next sequential round
+    ClosePdaCannotCloseTreasury = 0x1822,
+    /// 6179 - Ready round is not the next sequential round
     #[error("Ready round is not the next sequential round")]
-    RoundNotNextSequential = 0x181F,
-    /// 6176 - Groth16 proof A point could not be deserialized
+    RoundNotNextSequential = 0x1823,
+    /// 6180 - Groth16 proof A point could not be deserialized
     #[error("Groth16 proof A point could not be deserialized")]
-    Groth16DeserializeProofA = 0x1820,
-    /// 6177 - Groth16 proof A point could not be serialized
+    Groth16DeserializeProofA = 0x1824,
+    /// 6181 - Groth16 proof A point could not be serialized
     #[error("Groth16 proof A point could not be serialized")]
-    Groth16SerializeProofA = 0x1821,
-    /// 6178 - Groth16 proof A bytes could not be extracted
+    Groth16SerializeProofA = 0x1825,
+    /// 6182 - Groth16 proof A bytes could not be extracted
     #[error("Groth16 proof A bytes could not be extracted")]
-    Groth16ExtractProofA = 0x1822,
-    /// 6179 - Groth16 verifier could not be created
+    Groth16ExtractProofA = 0x1826,
+    /// 6183 - Groth16 verifier could not be created
     #[error("Groth16 verifier could not be created")]
-    Groth16CreateFailed = 0x1823,
-    /// 6180 - Groth16 proof verification failed
+    Groth16CreateFailed = 0x1827,
+    /// 6184 - Groth16 proof verification failed
     #[error("Groth16 proof verification failed")]
-    Groth16VerifyFailed = 0x1824,
-    /// 6181 - Groth16 public inputs do not match the expected context
+    Groth16VerifyFailed = 0x1828,
+    /// 6185 - Groth16 public inputs do not match the expected context
     #[error("Groth16 public inputs do not match the expected context")]
-    Groth16PublicInputMismatch = 0x1825,
-    /// 6182 - Missing ZK mask attestation
+    Groth16PublicInputMismatch = 0x1829,
+    /// 6186 - Missing ZK mask attestation
     #[error("Missing ZK mask attestation")]
-    MissingZkMaskAttestation = 0x1826,
-    /// 6183 - Arcium init CPI skip requires blockhash randomness and private-ZK single settlement
+    MissingZkMaskAttestation = 0x182A,
+    /// 6187 - Arcium init CPI skip requires blockhash randomness and private-ZK single settlement
     #[error("Arcium init CPI skip requires blockhash randomness and private-ZK single settlement")]
-    InvalidArciumInitSkipConfig = 0x1827,
-    /// 6184 - Deploy encrypted mask payload is invalid
+    InvalidArciumInitSkipConfig = 0x182B,
+    /// 6188 - Deploy encrypted mask payload is invalid
     #[error("Deploy encrypted mask payload is invalid")]
-    InvalidDeployMask = 0x1828,
-    /// 6185 - Settlement encrypted mask payload is invalid
+    InvalidDeployMask = 0x182C,
+    /// 6189 - Settlement encrypted mask payload is invalid
     #[error("Settlement encrypted mask payload is invalid")]
-    InvalidSettlementMask = 0x1829,
-    /// 6186 - Recovery evidence hash is invalid
+    InvalidSettlementMask = 0x182D,
+    /// 6190 - Recovery evidence hash is invalid
     #[error("Recovery evidence hash is invalid")]
-    InvalidRecoveryEvidenceHash = 0x182A,
-    /// 6187 - Recovery selected tile count is invalid
+    InvalidRecoveryEvidenceHash = 0x182E,
+    /// 6191 - Recovery selected tile count is invalid
     #[error("Recovery selected tile count is invalid")]
-    InvalidRecoverySelectedCount = 0x182B,
-    /// 6188 - Recovery winning stake does not match the selected tile count
+    InvalidRecoverySelectedCount = 0x182F,
+    /// 6192 - Recovery winning stake does not match the selected tile count
     #[error("Recovery winning stake does not match the selected tile count")]
-    InvalidRecoveryWinningStake = 0x182C,
+    InvalidRecoveryWinningStake = 0x1830,
 }
 
 impl From<ZincError> for solana_program_error::ProgramError {

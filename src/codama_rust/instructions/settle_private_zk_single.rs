@@ -21,6 +21,8 @@ pub struct SettlePrivateZkSingle {
     pub board: solana_address::Address,
     /// Revealed round currently waiting on per-miner settlement.
     pub round: solana_address::Address,
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    pub round_wildcat_entries: Option<solana_address::Address>,
     /// Miner whose private mask is being settled.
     pub miner: solana_address::Address,
     /// Player profile that receives the hidden-bonus bricks.
@@ -43,7 +45,7 @@ impl SettlePrivateZkSingle {
         args: SettlePrivateZkSingleInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -53,6 +55,17 @@ impl SettlePrivateZkSingle {
             self.board, false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.round, false));
+        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
+            accounts.push(solana_instruction::AccountMeta::new(
+                round_wildcat_entries,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         accounts.push(solana_instruction::AccountMeta::new(self.miner, false));
         accounts.push(solana_instruction::AccountMeta::new(
             self.player_profile,
@@ -118,15 +131,17 @@ impl SettlePrivateZkSingleInstructionArgs {
 ///   1. `[]` config
 ///   2. `[]` board
 ///   3. `[writable]` round
-///   4. `[writable]` miner
-///   5. `[writable]` player_profile
-///   6. `[writable]` treasury
+///   4. `[writable, optional]` round_wildcat_entries
+///   5. `[writable]` miner
+///   6. `[writable]` player_profile
+///   7. `[writable]` treasury
 #[derive(Clone, Debug, Default)]
 pub struct SettlePrivateZkSingleBuilder {
     signer: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     board: Option<solana_address::Address>,
     round: Option<solana_address::Address>,
+    round_wildcat_entries: Option<solana_address::Address>,
     miner: Option<solana_address::Address>,
     player_profile: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
@@ -162,6 +177,16 @@ impl SettlePrivateZkSingleBuilder {
     #[inline(always)]
     pub fn round(&mut self, round: solana_address::Address) -> &mut Self {
         self.round = Some(round);
+        self
+    }
+    /// `[optional account]`
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    #[inline(always)]
+    pub fn round_wildcat_entries(
+        &mut self,
+        round_wildcat_entries: Option<solana_address::Address>,
+    ) -> &mut Self {
+        self.round_wildcat_entries = round_wildcat_entries;
         self
     }
     /// Miner whose private mask is being settled.
@@ -219,6 +244,7 @@ impl SettlePrivateZkSingleBuilder {
             config: self.config.expect("config is not set"),
             board: self.board.expect("board is not set"),
             round: self.round.expect("round is not set"),
+            round_wildcat_entries: self.round_wildcat_entries,
             miner: self.miner.expect("miner is not set"),
             player_profile: self.player_profile.expect("player_profile is not set"),
             treasury: self.treasury.expect("treasury is not set"),
@@ -249,6 +275,8 @@ pub struct SettlePrivateZkSingleCpiAccounts<'a, 'b> {
     pub board: &'b solana_account_info::AccountInfo<'a>,
     /// Revealed round currently waiting on per-miner settlement.
     pub round: &'b solana_account_info::AccountInfo<'a>,
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    pub round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Miner whose private mask is being settled.
     pub miner: &'b solana_account_info::AccountInfo<'a>,
     /// Player profile that receives the hidden-bonus bricks.
@@ -269,6 +297,8 @@ pub struct SettlePrivateZkSingleCpi<'a, 'b> {
     pub board: &'b solana_account_info::AccountInfo<'a>,
     /// Revealed round currently waiting on per-miner settlement.
     pub round: &'b solana_account_info::AccountInfo<'a>,
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    pub round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Miner whose private mask is being settled.
     pub miner: &'b solana_account_info::AccountInfo<'a>,
     /// Player profile that receives the hidden-bonus bricks.
@@ -291,6 +321,7 @@ impl<'a, 'b> SettlePrivateZkSingleCpi<'a, 'b> {
             config: accounts.config,
             board: accounts.board,
             round: accounts.round,
+            round_wildcat_entries: accounts.round_wildcat_entries,
             miner: accounts.miner,
             player_profile: accounts.player_profile,
             treasury: accounts.treasury,
@@ -320,7 +351,7 @@ impl<'a, 'b> SettlePrivateZkSingleCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -331,6 +362,17 @@ impl<'a, 'b> SettlePrivateZkSingleCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
+        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
+            accounts.push(solana_instruction::AccountMeta::new(
+                *round_wildcat_entries.key,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         accounts.push(solana_instruction::AccountMeta::new(*self.miner.key, false));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.player_profile.key,
@@ -358,12 +400,15 @@ impl<'a, 'b> SettlePrivateZkSingleCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(8 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(9 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.board.clone());
         account_infos.push(self.round.clone());
+        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
+            account_infos.push(round_wildcat_entries.clone());
+        }
         account_infos.push(self.miner.clone());
         account_infos.push(self.player_profile.clone());
         account_infos.push(self.treasury.clone());
@@ -387,9 +432,10 @@ impl<'a, 'b> SettlePrivateZkSingleCpi<'a, 'b> {
 ///   1. `[]` config
 ///   2. `[]` board
 ///   3. `[writable]` round
-///   4. `[writable]` miner
-///   5. `[writable]` player_profile
-///   6. `[writable]` treasury
+///   4. `[writable, optional]` round_wildcat_entries
+///   5. `[writable]` miner
+///   6. `[writable]` player_profile
+///   7. `[writable]` treasury
 #[derive(Clone, Debug)]
 pub struct SettlePrivateZkSingleCpiBuilder<'a, 'b> {
     instruction: Box<SettlePrivateZkSingleCpiBuilderInstruction<'a, 'b>>,
@@ -403,6 +449,7 @@ impl<'a, 'b> SettlePrivateZkSingleCpiBuilder<'a, 'b> {
             config: None,
             board: None,
             round: None,
+            round_wildcat_entries: None,
             miner: None,
             player_profile: None,
             treasury: None,
@@ -435,6 +482,16 @@ impl<'a, 'b> SettlePrivateZkSingleCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn round(&mut self, round: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.round = Some(round);
+        self
+    }
+    /// `[optional account]`
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    #[inline(always)]
+    pub fn round_wildcat_entries(
+        &mut self,
+        round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
+    ) -> &mut Self {
+        self.instruction.round_wildcat_entries = round_wildcat_entries;
         self
     }
     /// Miner whose private mask is being settled.
@@ -531,6 +588,8 @@ impl<'a, 'b> SettlePrivateZkSingleCpiBuilder<'a, 'b> {
 
             round: self.instruction.round.expect("round is not set"),
 
+            round_wildcat_entries: self.instruction.round_wildcat_entries,
+
             miner: self.instruction.miner.expect("miner is not set"),
 
             player_profile: self
@@ -555,6 +614,7 @@ struct SettlePrivateZkSingleCpiBuilderInstruction<'a, 'b> {
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
     board: Option<&'b solana_account_info::AccountInfo<'a>>,
     round: Option<&'b solana_account_info::AccountInfo<'a>>,
+    round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
     miner: Option<&'b solana_account_info::AccountInfo<'a>>,
     player_profile: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
