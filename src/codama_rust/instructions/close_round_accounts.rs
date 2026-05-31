@@ -21,6 +21,8 @@ pub struct CloseRoundAccounts {
     pub board: solana_address::Address,
     /// Fully cleaned round account being closed to the crank signer.
     pub round: solana_address::Address,
+    /// Optional Wildcat sidecar being closed with the round when present.
+    pub round_wildcat_entries: Option<solana_address::Address>,
     /// Matching round-secret account being closed to the crank signer.
     pub round_secret: solana_address::Address,
     /// Canonical treasury PDA used to validate the payout sweep destination.
@@ -45,7 +47,7 @@ impl CloseRoundAccounts {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -55,6 +57,17 @@ impl CloseRoundAccounts {
             self.board, false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.round, false));
+        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
+            accounts.push(solana_instruction::AccountMeta::new(
+                round_wildcat_entries,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         accounts.push(solana_instruction::AccountMeta::new(
             self.round_secret,
             false,
@@ -120,18 +133,20 @@ impl Default for CloseRoundAccountsInstructionData {
 ///   1. `[]` config
 ///   2. `[]` board
 ///   3. `[writable]` round
-///   4. `[writable]` round_secret
-///   5. `[writable]` treasury
-///   6. `[]` zinc_mint
-///   7. `[writable]` round_zinc_payout_token_account
-///   8. `[writable]` curve_admin_token_account
-///   9. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   4. `[writable, optional]` round_wildcat_entries
+///   5. `[writable]` round_secret
+///   6. `[writable]` treasury
+///   7. `[]` zinc_mint
+///   8. `[writable]` round_zinc_payout_token_account
+///   9. `[writable]` curve_admin_token_account
+///   10. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
 pub struct CloseRoundAccountsBuilder {
     signer: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     board: Option<solana_address::Address>,
     round: Option<solana_address::Address>,
+    round_wildcat_entries: Option<solana_address::Address>,
     round_secret: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
     zinc_mint: Option<solana_address::Address>,
@@ -167,6 +182,16 @@ impl CloseRoundAccountsBuilder {
     #[inline(always)]
     pub fn round(&mut self, round: solana_address::Address) -> &mut Self {
         self.round = Some(round);
+        self
+    }
+    /// `[optional account]`
+    /// Optional Wildcat sidecar being closed with the round when present.
+    #[inline(always)]
+    pub fn round_wildcat_entries(
+        &mut self,
+        round_wildcat_entries: Option<solana_address::Address>,
+    ) -> &mut Self {
+        self.round_wildcat_entries = round_wildcat_entries;
         self
     }
     /// Matching round-secret account being closed to the crank signer.
@@ -234,6 +259,7 @@ impl CloseRoundAccountsBuilder {
             config: self.config.expect("config is not set"),
             board: self.board.expect("board is not set"),
             round: self.round.expect("round is not set"),
+            round_wildcat_entries: self.round_wildcat_entries,
             round_secret: self.round_secret.expect("round_secret is not set"),
             treasury: self.treasury.expect("treasury is not set"),
             zinc_mint: self.zinc_mint.expect("zinc_mint is not set"),
@@ -262,6 +288,8 @@ pub struct CloseRoundAccountsCpiAccounts<'a, 'b> {
     pub board: &'b solana_account_info::AccountInfo<'a>,
     /// Fully cleaned round account being closed to the crank signer.
     pub round: &'b solana_account_info::AccountInfo<'a>,
+    /// Optional Wildcat sidecar being closed with the round when present.
+    pub round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Matching round-secret account being closed to the crank signer.
     pub round_secret: &'b solana_account_info::AccountInfo<'a>,
     /// Canonical treasury PDA used to validate the payout sweep destination.
@@ -288,6 +316,8 @@ pub struct CloseRoundAccountsCpi<'a, 'b> {
     pub board: &'b solana_account_info::AccountInfo<'a>,
     /// Fully cleaned round account being closed to the crank signer.
     pub round: &'b solana_account_info::AccountInfo<'a>,
+    /// Optional Wildcat sidecar being closed with the round when present.
+    pub round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Matching round-secret account being closed to the crank signer.
     pub round_secret: &'b solana_account_info::AccountInfo<'a>,
     /// Canonical treasury PDA used to validate the payout sweep destination.
@@ -313,6 +343,7 @@ impl<'a, 'b> CloseRoundAccountsCpi<'a, 'b> {
             config: accounts.config,
             board: accounts.board,
             round: accounts.round,
+            round_wildcat_entries: accounts.round_wildcat_entries,
             round_secret: accounts.round_secret,
             treasury: accounts.treasury,
             zinc_mint: accounts.zinc_mint,
@@ -344,7 +375,7 @@ impl<'a, 'b> CloseRoundAccountsCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -355,6 +386,17 @@ impl<'a, 'b> CloseRoundAccountsCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
+        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
+            accounts.push(solana_instruction::AccountMeta::new(
+                *round_wildcat_entries.key,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         accounts.push(solana_instruction::AccountMeta::new(
             *self.round_secret.key,
             false,
@@ -395,12 +437,15 @@ impl<'a, 'b> CloseRoundAccountsCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(12 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.board.clone());
         account_infos.push(self.round.clone());
+        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
+            account_infos.push(round_wildcat_entries.clone());
+        }
         account_infos.push(self.round_secret.clone());
         account_infos.push(self.treasury.clone());
         account_infos.push(self.zinc_mint.clone());
@@ -427,12 +472,13 @@ impl<'a, 'b> CloseRoundAccountsCpi<'a, 'b> {
 ///   1. `[]` config
 ///   2. `[]` board
 ///   3. `[writable]` round
-///   4. `[writable]` round_secret
-///   5. `[writable]` treasury
-///   6. `[]` zinc_mint
-///   7. `[writable]` round_zinc_payout_token_account
-///   8. `[writable]` curve_admin_token_account
-///   9. `[]` token_program
+///   4. `[writable, optional]` round_wildcat_entries
+///   5. `[writable]` round_secret
+///   6. `[writable]` treasury
+///   7. `[]` zinc_mint
+///   8. `[writable]` round_zinc_payout_token_account
+///   9. `[writable]` curve_admin_token_account
+///   10. `[]` token_program
 #[derive(Clone, Debug)]
 pub struct CloseRoundAccountsCpiBuilder<'a, 'b> {
     instruction: Box<CloseRoundAccountsCpiBuilderInstruction<'a, 'b>>,
@@ -446,6 +492,7 @@ impl<'a, 'b> CloseRoundAccountsCpiBuilder<'a, 'b> {
             config: None,
             board: None,
             round: None,
+            round_wildcat_entries: None,
             round_secret: None,
             treasury: None,
             zinc_mint: None,
@@ -478,6 +525,16 @@ impl<'a, 'b> CloseRoundAccountsCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn round(&mut self, round: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.round = Some(round);
+        self
+    }
+    /// `[optional account]`
+    /// Optional Wildcat sidecar being closed with the round when present.
+    #[inline(always)]
+    pub fn round_wildcat_entries(
+        &mut self,
+        round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
+    ) -> &mut Self {
+        self.instruction.round_wildcat_entries = round_wildcat_entries;
         self
     }
     /// Matching round-secret account being closed to the crank signer.
@@ -573,6 +630,8 @@ impl<'a, 'b> CloseRoundAccountsCpiBuilder<'a, 'b> {
 
             round: self.instruction.round.expect("round is not set"),
 
+            round_wildcat_entries: self.instruction.round_wildcat_entries,
+
             round_secret: self
                 .instruction
                 .round_secret
@@ -611,6 +670,7 @@ struct CloseRoundAccountsCpiBuilderInstruction<'a, 'b> {
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
     board: Option<&'b solana_account_info::AccountInfo<'a>>,
     round: Option<&'b solana_account_info::AccountInfo<'a>>,
+    round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
     round_secret: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,

@@ -75,6 +75,14 @@ impl PdaHelper {
         Pubkey::find_program_address(&[b"round", round_id.to_le_bytes().as_ref()], &ZINC_ID).0
     }
 
+    pub fn get_round_wildcat_entries_address(round_id: u64) -> Pubkey {
+        Pubkey::find_program_address(
+            &[b"round-wildcat", round_id.to_le_bytes().as_ref()],
+            &ZINC_ID,
+        )
+        .0
+    }
+
     pub fn get_round_secret_address(round_id: u64) -> Pubkey {
         Pubkey::find_program_address(
             &[b"round-secret", round_id.to_le_bytes().as_ref()],

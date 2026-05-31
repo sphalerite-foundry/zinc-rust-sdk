@@ -13,6 +13,8 @@ pub struct SelectWildcatWinnerInstructionInputs {
     pub signer: Pubkey,
     /// Round id whose Wildcat draw should be scanned.
     pub round_id: u64,
+    /// Whether to pass the per-round Wildcat sidecar PDA.
+    pub include_round_wildcat_entries: bool,
 }
 
 /// Inputs for the crank-only Wildcat payout transfer instruction.
@@ -32,12 +34,22 @@ impl InstructionsHelper {
     pub fn select_wildcat_winner_instruction(
         inputs: SelectWildcatWinnerInstructionInputs,
     ) -> Instruction {
-        let SelectWildcatWinnerInstructionInputs { signer, round_id } = inputs;
-        let accounts = vec![
+        let SelectWildcatWinnerInstructionInputs {
+            signer,
+            round_id,
+            include_round_wildcat_entries,
+        } = inputs;
+        let mut accounts = vec![
             AccountMeta::new(signer, true),
             AccountMeta::new_readonly(PdaHelper::get_config_address(), false),
             AccountMeta::new(PdaHelper::get_round_address(round_id), false),
         ];
+        if include_round_wildcat_entries {
+            accounts.push(AccountMeta::new(
+                PdaHelper::get_round_wildcat_entries_address(round_id),
+                false,
+            ));
+        }
         Instruction {
             program_id: ZINC_ID,
             accounts,

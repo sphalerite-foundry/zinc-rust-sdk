@@ -28,6 +28,8 @@ pub struct SettleWinningStakesBatchCallback {
     pub instructions_sysvar: solana_address::Address,
     /// Round being advanced through batched settlement.
     pub round: solana_address::Address,
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    pub round_wildcat_entries: Option<solana_address::Address>,
     /// Config containing the Bonanza hit divisor used at final settlement.
     pub config: solana_address::Address,
     /// Treasury Bonanza state that may snapshot the live pot into this round on the final callback.
@@ -48,7 +50,7 @@ impl SettleWinningStakesBatchCallback {
         args: SettleWinningStakesBatchCallbackInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.arcium_program,
             false,
@@ -74,6 +76,17 @@ impl SettleWinningStakesBatchCallback {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.round, false));
+        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
+            accounts.push(solana_instruction::AccountMeta::new(
+                round_wildcat_entries,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
             false,
@@ -139,8 +152,9 @@ impl SettleWinningStakesBatchCallbackInstructionArgs {
 ///   4. `[]` cluster_account
 ///   5. `[optional]` instructions_sysvar (default to `Sysvar1nstructions1111111111111111111111111`)
 ///   6. `[writable]` round
-///   7. `[]` config
-///   8. `[writable]` treasury
+///   7. `[writable, optional]` round_wildcat_entries
+///   8. `[]` config
+///   9. `[writable]` treasury
 #[derive(Clone, Debug, Default)]
 pub struct SettleWinningStakesBatchCallbackBuilder {
     arcium_program: Option<solana_address::Address>,
@@ -150,6 +164,7 @@ pub struct SettleWinningStakesBatchCallbackBuilder {
     cluster_account: Option<solana_address::Address>,
     instructions_sysvar: Option<solana_address::Address>,
     round: Option<solana_address::Address>,
+    round_wildcat_entries: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
     output: Option<SignedComputationOutputsSettleWinningStakesBatchOutput>,
@@ -207,6 +222,16 @@ impl SettleWinningStakesBatchCallbackBuilder {
         self.round = Some(round);
         self
     }
+    /// `[optional account]`
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    #[inline(always)]
+    pub fn round_wildcat_entries(
+        &mut self,
+        round_wildcat_entries: Option<solana_address::Address>,
+    ) -> &mut Self {
+        self.round_wildcat_entries = round_wildcat_entries;
+        self
+    }
     /// Config containing the Bonanza hit divisor used at final settlement.
     #[inline(always)]
     pub fn config(&mut self, config: solana_address::Address) -> &mut Self {
@@ -258,6 +283,7 @@ impl SettleWinningStakesBatchCallbackBuilder {
                 "Sysvar1nstructions1111111111111111111111111"
             )),
             round: self.round.expect("round is not set"),
+            round_wildcat_entries: self.round_wildcat_entries,
             config: self.config.expect("config is not set"),
             treasury: self.treasury.expect("treasury is not set"),
         };
@@ -284,6 +310,8 @@ pub struct SettleWinningStakesBatchCallbackCpiAccounts<'a, 'b> {
     pub instructions_sysvar: &'b solana_account_info::AccountInfo<'a>,
     /// Round being advanced through batched settlement.
     pub round: &'b solana_account_info::AccountInfo<'a>,
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    pub round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Config containing the Bonanza hit divisor used at final settlement.
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury Bonanza state that may snapshot the live pot into this round on the final callback.
@@ -308,6 +336,8 @@ pub struct SettleWinningStakesBatchCallbackCpi<'a, 'b> {
     pub instructions_sysvar: &'b solana_account_info::AccountInfo<'a>,
     /// Round being advanced through batched settlement.
     pub round: &'b solana_account_info::AccountInfo<'a>,
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    pub round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Config containing the Bonanza hit divisor used at final settlement.
     pub config: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury Bonanza state that may snapshot the live pot into this round on the final callback.
@@ -331,6 +361,7 @@ impl<'a, 'b> SettleWinningStakesBatchCallbackCpi<'a, 'b> {
             cluster_account: accounts.cluster_account,
             instructions_sysvar: accounts.instructions_sysvar,
             round: accounts.round,
+            round_wildcat_entries: accounts.round_wildcat_entries,
             config: accounts.config,
             treasury: accounts.treasury,
             __args: args,
@@ -359,7 +390,7 @@ impl<'a, 'b> SettleWinningStakesBatchCallbackCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(10 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.arcium_program.key,
             false,
@@ -385,6 +416,17 @@ impl<'a, 'b> SettleWinningStakesBatchCallbackCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
+        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
+            accounts.push(solana_instruction::AccountMeta::new(
+                *round_wildcat_entries.key,
+                false,
+            ));
+        } else {
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
+                crate::ZINC_ID,
+                false,
+            ));
+        }
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
@@ -411,7 +453,7 @@ impl<'a, 'b> SettleWinningStakesBatchCallbackCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(11 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.arcium_program.clone());
         account_infos.push(self.comp_def_account.clone());
@@ -420,6 +462,9 @@ impl<'a, 'b> SettleWinningStakesBatchCallbackCpi<'a, 'b> {
         account_infos.push(self.cluster_account.clone());
         account_infos.push(self.instructions_sysvar.clone());
         account_infos.push(self.round.clone());
+        if let Some(round_wildcat_entries) = self.round_wildcat_entries {
+            account_infos.push(round_wildcat_entries.clone());
+        }
         account_infos.push(self.config.clone());
         account_infos.push(self.treasury.clone());
         remaining_accounts
@@ -445,8 +490,9 @@ impl<'a, 'b> SettleWinningStakesBatchCallbackCpi<'a, 'b> {
 ///   4. `[]` cluster_account
 ///   5. `[]` instructions_sysvar
 ///   6. `[writable]` round
-///   7. `[]` config
-///   8. `[writable]` treasury
+///   7. `[writable, optional]` round_wildcat_entries
+///   8. `[]` config
+///   9. `[writable]` treasury
 #[derive(Clone, Debug)]
 pub struct SettleWinningStakesBatchCallbackCpiBuilder<'a, 'b> {
     instruction: Box<SettleWinningStakesBatchCallbackCpiBuilderInstruction<'a, 'b>>,
@@ -463,6 +509,7 @@ impl<'a, 'b> SettleWinningStakesBatchCallbackCpiBuilder<'a, 'b> {
             cluster_account: None,
             instructions_sysvar: None,
             round: None,
+            round_wildcat_entries: None,
             config: None,
             treasury: None,
             output: None,
@@ -525,6 +572,16 @@ impl<'a, 'b> SettleWinningStakesBatchCallbackCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn round(&mut self, round: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.round = Some(round);
+        self
+    }
+    /// `[optional account]`
+    /// Optional Wildcat sidecar used by sidecar-mode rounds.
+    #[inline(always)]
+    pub fn round_wildcat_entries(
+        &mut self,
+        round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
+    ) -> &mut Self {
+        self.instruction.round_wildcat_entries = round_wildcat_entries;
         self
     }
     /// Config containing the Bonanza hit divisor used at final settlement.
@@ -619,6 +676,8 @@ impl<'a, 'b> SettleWinningStakesBatchCallbackCpiBuilder<'a, 'b> {
 
             round: self.instruction.round.expect("round is not set"),
 
+            round_wildcat_entries: self.instruction.round_wildcat_entries,
+
             config: self.instruction.config.expect("config is not set"),
 
             treasury: self.instruction.treasury.expect("treasury is not set"),
@@ -641,6 +700,7 @@ struct SettleWinningStakesBatchCallbackCpiBuilderInstruction<'a, 'b> {
     cluster_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     instructions_sysvar: Option<&'b solana_account_info::AccountInfo<'a>>,
     round: Option<&'b solana_account_info::AccountInfo<'a>>,
+    round_wildcat_entries: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
     output: Option<SignedComputationOutputsSettleWinningStakesBatchOutput>,

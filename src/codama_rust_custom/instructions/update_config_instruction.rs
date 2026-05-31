@@ -22,6 +22,10 @@ pub struct UpdateConfigInstructionInputs {
     pub wildcat_round_frequency: Option<u64>,
     /// Optional direct-winner ZINC share reserved for the Wildcat winner, in ppm.
     pub wildcat_winner_zinc_share_ppm: Option<u64>,
+    /// Optional max Wildcat candidate ranges snapshotted into new sidecar PDAs.
+    pub wildcat_entry_capacity: Option<u32>,
+    /// Optional toggle for writing new Wildcat candidate ranges to sidecar PDAs.
+    pub wildcat_sidecar_enabled: Option<bool>,
     /// Optional Bonanza roll modulo divisor; `1` makes every winner-positive round eligible.
     pub bonanza_hit_divisor: Option<u64>,
     /// Optional ZINC fee skim for round winner claims, in basis points.
@@ -109,6 +113,8 @@ impl InstructionsHelper {
             deploy_affiliate_bonus_bricks_x10k,
             wildcat_round_frequency,
             wildcat_winner_zinc_share_ppm,
+            wildcat_entry_capacity,
+            wildcat_sidecar_enabled,
             bonanza_hit_divisor,
             round_claim_zinc_fee_bps,
             stockpile_entry_min_zinc_fee,
@@ -177,6 +183,8 @@ impl InstructionsHelper {
             deploy_affiliate_bonus_bricks_x10k,
             wildcat_round_frequency,
             wildcat_winner_zinc_share_ppm,
+            wildcat_entry_capacity,
+            wildcat_sidecar_enabled,
             bonanza_hit_divisor,
             round_claim_zinc_fee_bps,
             stockpile_entry_min_zinc_fee,

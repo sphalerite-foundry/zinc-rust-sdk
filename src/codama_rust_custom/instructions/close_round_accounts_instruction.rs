@@ -13,6 +13,8 @@ pub struct CloseRoundAccountsInstructionInputs {
     pub zinc_mint: Pubkey,
     /// Curve-admin vault that receives residual round ZINC dust.
     pub curve_admin_token_account: Pubkey,
+    /// Whether to pass and close the per-round Wildcat sidecar PDA.
+    pub include_round_wildcat_entries: bool,
 }
 
 impl InstructionsHelper {
@@ -25,6 +27,7 @@ impl InstructionsHelper {
             round_id,
             zinc_mint,
             curve_admin_token_account,
+            include_round_wildcat_entries,
         } = inputs;
         let treasury = PdaHelper::get_treasury_address();
         let round_zinc_payout_token_account =
@@ -34,6 +37,8 @@ impl InstructionsHelper {
             config: PdaHelper::get_config_address(),
             board: PdaHelper::get_board_address(),
             round: PdaHelper::get_round_address(round_id),
+            round_wildcat_entries: include_round_wildcat_entries
+                .then(|| PdaHelper::get_round_wildcat_entries_address(round_id)),
             round_secret: PdaHelper::get_round_secret_address(round_id),
             treasury,
             zinc_mint,
