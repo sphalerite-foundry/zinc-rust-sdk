@@ -13,28 +13,24 @@ pub const CLAIM_WILDCAT_DISCRIMINATOR: [u8; 8] = [181, 248, 215, 25, 160, 80, 48
 /// Accounts.
 #[derive(Debug)]
 pub struct ClaimWildcat {
-    /// Crank signer authorized to auto-claim the selected Wildcat payout.
+    /// Crank signer authorized to auto-credit the selected Wildcat payout.
     pub signer: solana_address::Address,
     /// Global config containing the crank authority and treasury address.
     pub config: solana_address::Address,
-    /// Round with a selected unpaid Wildcat winner.
+    /// Round with a selected uncredited Wildcat winner.
     pub round: solana_address::Address,
     /// Treasury PDA that stores the canonical ZINC mint.
     pub treasury: solana_address::Address,
     /// Protocol ZINC mint used for Wildcat payouts.
     pub zinc_mint: solana_address::Address,
-    /// Round-owned ZINC vault holding the selected Wildcat payout.
+    /// Round-owned ZINC vault holding the selected Wildcat credit.
     pub round_zinc_payout_token_account: solana_address::Address,
-
-    pub winner: solana_address::Address,
-    /// Winner's canonical associated token account for receiving Wildcat ZINC.
-    pub winner_zinc_token_account: solana_address::Address,
-    /// Associated Token Program used to create the winner ATA on demand.
-    pub associated_token_program: solana_address::Address,
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// Selected winner's profile that receives claimable Wildcat ZINC credit.
+    pub winner_player_profile: solana_address::Address,
+    /// Treasury-owned reward vault that funds later profile ZINC claims.
+    pub round_zinc_reward_token_account: solana_address::Address,
+    /// SPL Token Program that owns the ZINC mint and token vaults.
     pub token_program: solana_address::Address,
-    /// System Program used if the winner ATA needs to be created.
-    pub system_program: solana_address::Address,
 }
 
 impl ClaimWildcat {
@@ -47,17 +43,14 @@ impl ClaimWildcat {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.round, false));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.treasury,
-            false,
-        ));
+        accounts.push(solana_instruction::AccountMeta::new(self.treasury, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.zinc_mint,
             false,
@@ -66,24 +59,16 @@ impl ClaimWildcat {
             self.round_zinc_payout_token_account,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.winner,
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.winner_player_profile,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.winner_zinc_token_account,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.associated_token_program,
+            self.round_zinc_reward_token_account,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.token_program,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.system_program,
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
@@ -127,14 +112,12 @@ impl Default for ClaimWildcatInstructionData {
 ///   0. `[writable, signer]` signer
 ///   1. `[]` config
 ///   2. `[writable]` round
-///   3. `[]` treasury
+///   3. `[writable]` treasury
 ///   4. `[]` zinc_mint
 ///   5. `[writable]` round_zinc_payout_token_account
-///   6. `[]` winner
-///   7. `[writable]` winner_zinc_token_account
-///   8. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
-///   9. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   10. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   6. `[writable]` winner_player_profile
+///   7. `[writable]` round_zinc_reward_token_account
+///   8. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
 pub struct ClaimWildcatBuilder {
     signer: Option<solana_address::Address>,
@@ -143,11 +126,9 @@ pub struct ClaimWildcatBuilder {
     treasury: Option<solana_address::Address>,
     zinc_mint: Option<solana_address::Address>,
     round_zinc_payout_token_account: Option<solana_address::Address>,
-    winner: Option<solana_address::Address>,
-    winner_zinc_token_account: Option<solana_address::Address>,
-    associated_token_program: Option<solana_address::Address>,
+    winner_player_profile: Option<solana_address::Address>,
+    round_zinc_reward_token_account: Option<solana_address::Address>,
     token_program: Option<solana_address::Address>,
-    system_program: Option<solana_address::Address>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
@@ -155,7 +136,7 @@ impl ClaimWildcatBuilder {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Crank signer authorized to auto-claim the selected Wildcat payout.
+    /// Crank signer authorized to auto-credit the selected Wildcat payout.
     #[inline(always)]
     pub fn signer(&mut self, signer: solana_address::Address) -> &mut Self {
         self.signer = Some(signer);
@@ -167,7 +148,7 @@ impl ClaimWildcatBuilder {
         self.config = Some(config);
         self
     }
-    /// Round with a selected unpaid Wildcat winner.
+    /// Round with a selected uncredited Wildcat winner.
     #[inline(always)]
     pub fn round(&mut self, round: solana_address::Address) -> &mut Self {
         self.round = Some(round);
@@ -185,7 +166,7 @@ impl ClaimWildcatBuilder {
         self.zinc_mint = Some(zinc_mint);
         self
     }
-    /// Round-owned ZINC vault holding the selected Wildcat payout.
+    /// Round-owned ZINC vault holding the selected Wildcat credit.
     #[inline(always)]
     pub fn round_zinc_payout_token_account(
         &mut self,
@@ -194,42 +175,29 @@ impl ClaimWildcatBuilder {
         self.round_zinc_payout_token_account = Some(round_zinc_payout_token_account);
         self
     }
+    /// Selected winner's profile that receives claimable Wildcat ZINC credit.
     #[inline(always)]
-    pub fn winner(&mut self, winner: solana_address::Address) -> &mut Self {
-        self.winner = Some(winner);
+    pub fn winner_player_profile(
+        &mut self,
+        winner_player_profile: solana_address::Address,
+    ) -> &mut Self {
+        self.winner_player_profile = Some(winner_player_profile);
         self
     }
-    /// Winner's canonical associated token account for receiving Wildcat ZINC.
+    /// Treasury-owned reward vault that funds later profile ZINC claims.
     #[inline(always)]
-    pub fn winner_zinc_token_account(
+    pub fn round_zinc_reward_token_account(
         &mut self,
-        winner_zinc_token_account: solana_address::Address,
+        round_zinc_reward_token_account: solana_address::Address,
     ) -> &mut Self {
-        self.winner_zinc_token_account = Some(winner_zinc_token_account);
-        self
-    }
-    /// `[optional account, default to 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL']`
-    /// Associated Token Program used to create the winner ATA on demand.
-    #[inline(always)]
-    pub fn associated_token_program(
-        &mut self,
-        associated_token_program: solana_address::Address,
-    ) -> &mut Self {
-        self.associated_token_program = Some(associated_token_program);
+        self.round_zinc_reward_token_account = Some(round_zinc_reward_token_account);
         self
     }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// SPL Token Program that owns the ZINC mint and token vaults.
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_address::Address) -> &mut Self {
         self.token_program = Some(token_program);
-        self
-    }
-    /// `[optional account, default to '11111111111111111111111111111111']`
-    /// System Program used if the winner ATA needs to be created.
-    #[inline(always)]
-    pub fn system_program(&mut self, system_program: solana_address::Address) -> &mut Self {
-        self.system_program = Some(system_program);
         self
     }
     /// Add an additional account to the instruction.
@@ -258,19 +226,15 @@ impl ClaimWildcatBuilder {
             round_zinc_payout_token_account: self
                 .round_zinc_payout_token_account
                 .expect("round_zinc_payout_token_account is not set"),
-            winner: self.winner.expect("winner is not set"),
-            winner_zinc_token_account: self
-                .winner_zinc_token_account
-                .expect("winner_zinc_token_account is not set"),
-            associated_token_program: self.associated_token_program.unwrap_or(
-                solana_address::address!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
-            ),
+            winner_player_profile: self
+                .winner_player_profile
+                .expect("winner_player_profile is not set"),
+            round_zinc_reward_token_account: self
+                .round_zinc_reward_token_account
+                .expect("round_zinc_reward_token_account is not set"),
             token_program: self.token_program.unwrap_or(solana_address::address!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
-            system_program: self
-                .system_program
-                .unwrap_or(solana_address::address!("11111111111111111111111111111111")),
         };
 
         accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
@@ -279,56 +243,48 @@ impl ClaimWildcatBuilder {
 
 /// `claim_wildcat` CPI accounts.
 pub struct ClaimWildcatCpiAccounts<'a, 'b> {
-    /// Crank signer authorized to auto-claim the selected Wildcat payout.
+    /// Crank signer authorized to auto-credit the selected Wildcat payout.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
     /// Global config containing the crank authority and treasury address.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Round with a selected unpaid Wildcat winner.
+    /// Round with a selected uncredited Wildcat winner.
     pub round: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that stores the canonical ZINC mint.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Protocol ZINC mint used for Wildcat payouts.
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
-    /// Round-owned ZINC vault holding the selected Wildcat payout.
+    /// Round-owned ZINC vault holding the selected Wildcat credit.
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
-
-    pub winner: &'b solana_account_info::AccountInfo<'a>,
-    /// Winner's canonical associated token account for receiving Wildcat ZINC.
-    pub winner_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Associated Token Program used to create the winner ATA on demand.
-    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// Selected winner's profile that receives claimable Wildcat ZINC credit.
+    pub winner_player_profile: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned reward vault that funds later profile ZINC claims.
+    pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// SPL Token Program that owns the ZINC mint and token vaults.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// System Program used if the winner ATA needs to be created.
-    pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
 /// `claim_wildcat` CPI instruction.
 pub struct ClaimWildcatCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
-    /// Crank signer authorized to auto-claim the selected Wildcat payout.
+    /// Crank signer authorized to auto-credit the selected Wildcat payout.
     pub signer: &'b solana_account_info::AccountInfo<'a>,
     /// Global config containing the crank authority and treasury address.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Round with a selected unpaid Wildcat winner.
+    /// Round with a selected uncredited Wildcat winner.
     pub round: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury PDA that stores the canonical ZINC mint.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Protocol ZINC mint used for Wildcat payouts.
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
-    /// Round-owned ZINC vault holding the selected Wildcat payout.
+    /// Round-owned ZINC vault holding the selected Wildcat credit.
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
-
-    pub winner: &'b solana_account_info::AccountInfo<'a>,
-    /// Winner's canonical associated token account for receiving Wildcat ZINC.
-    pub winner_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Associated Token Program used to create the winner ATA on demand.
-    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// Selected winner's profile that receives claimable Wildcat ZINC credit.
+    pub winner_player_profile: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned reward vault that funds later profile ZINC claims.
+    pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// SPL Token Program that owns the ZINC mint and token vaults.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// System Program used if the winner ATA needs to be created.
-    pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
 impl<'a, 'b> ClaimWildcatCpi<'a, 'b> {
@@ -344,11 +300,9 @@ impl<'a, 'b> ClaimWildcatCpi<'a, 'b> {
             treasury: accounts.treasury,
             zinc_mint: accounts.zinc_mint,
             round_zinc_payout_token_account: accounts.round_zinc_payout_token_account,
-            winner: accounts.winner,
-            winner_zinc_token_account: accounts.winner_zinc_token_account,
-            associated_token_program: accounts.associated_token_program,
+            winner_player_profile: accounts.winner_player_profile,
+            round_zinc_reward_token_account: accounts.round_zinc_reward_token_account,
             token_program: accounts.token_program,
-            system_program: accounts.system_program,
         }
     }
     #[inline(always)]
@@ -374,14 +328,14 @@ impl<'a, 'b> ClaimWildcatCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
+        accounts.push(solana_instruction::AccountMeta::new(
             *self.treasury.key,
             false,
         ));
@@ -393,24 +347,16 @@ impl<'a, 'b> ClaimWildcatCpi<'a, 'b> {
             *self.round_zinc_payout_token_account.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.winner.key,
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.winner_player_profile.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.winner_zinc_token_account.key,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.associated_token_program.key,
+            *self.round_zinc_reward_token_account.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.token_program.key,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.system_program.key,
             false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
@@ -427,7 +373,7 @@ impl<'a, 'b> ClaimWildcatCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(12 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(10 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.config.clone());
@@ -435,11 +381,9 @@ impl<'a, 'b> ClaimWildcatCpi<'a, 'b> {
         account_infos.push(self.treasury.clone());
         account_infos.push(self.zinc_mint.clone());
         account_infos.push(self.round_zinc_payout_token_account.clone());
-        account_infos.push(self.winner.clone());
-        account_infos.push(self.winner_zinc_token_account.clone());
-        account_infos.push(self.associated_token_program.clone());
+        account_infos.push(self.winner_player_profile.clone());
+        account_infos.push(self.round_zinc_reward_token_account.clone());
         account_infos.push(self.token_program.clone());
-        account_infos.push(self.system_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -459,14 +403,12 @@ impl<'a, 'b> ClaimWildcatCpi<'a, 'b> {
 ///   0. `[writable, signer]` signer
 ///   1. `[]` config
 ///   2. `[writable]` round
-///   3. `[]` treasury
+///   3. `[writable]` treasury
 ///   4. `[]` zinc_mint
 ///   5. `[writable]` round_zinc_payout_token_account
-///   6. `[]` winner
-///   7. `[writable]` winner_zinc_token_account
-///   8. `[]` associated_token_program
-///   9. `[]` token_program
-///   10. `[]` system_program
+///   6. `[writable]` winner_player_profile
+///   7. `[writable]` round_zinc_reward_token_account
+///   8. `[]` token_program
 #[derive(Clone, Debug)]
 pub struct ClaimWildcatCpiBuilder<'a, 'b> {
     instruction: Box<ClaimWildcatCpiBuilderInstruction<'a, 'b>>,
@@ -482,16 +424,14 @@ impl<'a, 'b> ClaimWildcatCpiBuilder<'a, 'b> {
             treasury: None,
             zinc_mint: None,
             round_zinc_payout_token_account: None,
-            winner: None,
-            winner_zinc_token_account: None,
-            associated_token_program: None,
+            winner_player_profile: None,
+            round_zinc_reward_token_account: None,
             token_program: None,
-            system_program: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
     }
-    /// Crank signer authorized to auto-claim the selected Wildcat payout.
+    /// Crank signer authorized to auto-credit the selected Wildcat payout.
     #[inline(always)]
     pub fn signer(&mut self, signer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.signer = Some(signer);
@@ -503,7 +443,7 @@ impl<'a, 'b> ClaimWildcatCpiBuilder<'a, 'b> {
         self.instruction.config = Some(config);
         self
     }
-    /// Round with a selected unpaid Wildcat winner.
+    /// Round with a selected uncredited Wildcat winner.
     #[inline(always)]
     pub fn round(&mut self, round: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.round = Some(round);
@@ -521,7 +461,7 @@ impl<'a, 'b> ClaimWildcatCpiBuilder<'a, 'b> {
         self.instruction.zinc_mint = Some(zinc_mint);
         self
     }
-    /// Round-owned ZINC vault holding the selected Wildcat payout.
+    /// Round-owned ZINC vault holding the selected Wildcat credit.
     #[inline(always)]
     pub fn round_zinc_payout_token_account(
         &mut self,
@@ -530,45 +470,31 @@ impl<'a, 'b> ClaimWildcatCpiBuilder<'a, 'b> {
         self.instruction.round_zinc_payout_token_account = Some(round_zinc_payout_token_account);
         self
     }
+    /// Selected winner's profile that receives claimable Wildcat ZINC credit.
     #[inline(always)]
-    pub fn winner(&mut self, winner: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
-        self.instruction.winner = Some(winner);
-        self
-    }
-    /// Winner's canonical associated token account for receiving Wildcat ZINC.
-    #[inline(always)]
-    pub fn winner_zinc_token_account(
+    pub fn winner_player_profile(
         &mut self,
-        winner_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+        winner_player_profile: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.winner_zinc_token_account = Some(winner_zinc_token_account);
+        self.instruction.winner_player_profile = Some(winner_player_profile);
         self
     }
-    /// Associated Token Program used to create the winner ATA on demand.
+    /// Treasury-owned reward vault that funds later profile ZINC claims.
     #[inline(always)]
-    pub fn associated_token_program(
+    pub fn round_zinc_reward_token_account(
         &mut self,
-        associated_token_program: &'b solana_account_info::AccountInfo<'a>,
+        round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.associated_token_program = Some(associated_token_program);
+        self.instruction.round_zinc_reward_token_account = Some(round_zinc_reward_token_account);
         self
     }
-    /// SPL Token Program that owns the ZINC mint and token accounts.
+    /// SPL Token Program that owns the ZINC mint and token vaults.
     #[inline(always)]
     pub fn token_program(
         &mut self,
         token_program: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.token_program = Some(token_program);
-        self
-    }
-    /// System Program used if the winner ATA needs to be created.
-    #[inline(always)]
-    pub fn system_program(
-        &mut self,
-        system_program: &'b solana_account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.system_program = Some(system_program);
         self
     }
     /// Add an additional account to the instruction.
@@ -623,27 +549,20 @@ impl<'a, 'b> ClaimWildcatCpiBuilder<'a, 'b> {
                 .round_zinc_payout_token_account
                 .expect("round_zinc_payout_token_account is not set"),
 
-            winner: self.instruction.winner.expect("winner is not set"),
-
-            winner_zinc_token_account: self
+            winner_player_profile: self
                 .instruction
-                .winner_zinc_token_account
-                .expect("winner_zinc_token_account is not set"),
+                .winner_player_profile
+                .expect("winner_player_profile is not set"),
 
-            associated_token_program: self
+            round_zinc_reward_token_account: self
                 .instruction
-                .associated_token_program
-                .expect("associated_token_program is not set"),
+                .round_zinc_reward_token_account
+                .expect("round_zinc_reward_token_account is not set"),
 
             token_program: self
                 .instruction
                 .token_program
                 .expect("token_program is not set"),
-
-            system_program: self
-                .instruction
-                .system_program
-                .expect("system_program is not set"),
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -661,11 +580,9 @@ struct ClaimWildcatCpiBuilderInstruction<'a, 'b> {
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
     round_zinc_payout_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    winner: Option<&'b solana_account_info::AccountInfo<'a>>,
-    winner_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    winner_player_profile: Option<&'b solana_account_info::AccountInfo<'a>>,
+    round_zinc_reward_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

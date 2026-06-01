@@ -68,7 +68,7 @@ pub struct Round {
     pub wildcat_winner_player: Option<Address>,
     /// True once the selection crank has fully resolved this round's Wildcat draw.
     pub wildcat_selection_complete: bool,
-    /// True once the selected Wildcat payout has been paid or the draw needed no transfer.
+    /// True once the selected Wildcat payout has been credited or the draw needed no transfer.
     pub wildcat_claimed: bool,
     /// Accumulator mixed from every deploy's public and encrypted trace.
     pub blockhash_entropy_accumulator: [u8; 32],

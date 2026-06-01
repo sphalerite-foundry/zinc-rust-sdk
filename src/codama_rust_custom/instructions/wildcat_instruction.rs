@@ -17,11 +17,11 @@ pub struct SelectWildcatWinnerInstructionInputs {
     pub include_round_wildcat_entries: bool,
 }
 
-/// Inputs for the crank-only Wildcat payout transfer instruction.
+/// Inputs for the crank-only Wildcat profile-credit instruction.
 pub struct ClaimWildcatInstructionInputs {
-    /// Crank signer submitting the Wildcat claim transaction.
+    /// Crank signer submitting the Wildcat credit transaction.
     pub signer: Pubkey,
-    /// Round id whose selected Wildcat payout should be transferred.
+    /// Round id whose selected Wildcat payout should be credited.
     pub round_id: u64,
     /// Selected winner wallet stored by the round account.
     pub winner: Pubkey,
@@ -57,7 +57,7 @@ impl InstructionsHelper {
         }
     }
 
-    /// Builds the crank-only Wildcat payout transfer instruction.
+    /// Builds the crank-only Wildcat profile-credit instruction.
     pub fn claim_wildcat_instruction(inputs: ClaimWildcatInstructionInputs) -> Instruction {
         let ClaimWildcatInstructionInputs {
             signer,
@@ -68,20 +68,21 @@ impl InstructionsHelper {
         let treasury = PdaHelper::get_treasury_address();
         let round_zinc_payout_token_account =
             PdaHelper::get_round_zinc_payout_token_account_address(round_id, &treasury, &zinc_mint);
+        let winner_player_profile = PdaHelper::get_player_profile_address(&winner);
+        let round_zinc_reward_token_account =
+            PdaHelper::get_round_zinc_reward_token_account_address();
         Instruction {
             program_id: ZINC_ID,
             accounts: vec![
                 AccountMeta::new(signer, true),
                 AccountMeta::new_readonly(PdaHelper::get_config_address(), false),
                 AccountMeta::new(PdaHelper::get_round_address(round_id), false),
-                AccountMeta::new_readonly(treasury, false),
+                AccountMeta::new(treasury, false),
                 AccountMeta::new_readonly(zinc_mint, false),
                 AccountMeta::new(round_zinc_payout_token_account, false),
-                AccountMeta::new(winner, false),
-                AccountMeta::new(PdaHelper::get_classic_ata(&winner, &zinc_mint), false),
-                AccountMeta::new_readonly(PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID, false),
+                AccountMeta::new(winner_player_profile, false),
+                AccountMeta::new(round_zinc_reward_token_account, false),
                 AccountMeta::new_readonly(PdaHelper::TOKEN_PROGRAM_ID, false),
-                AccountMeta::new_readonly(PdaHelper::get_system_program_address(), false),
             ],
             data: CLAIM_WILDCAT_DISCRIMINATOR.to_vec(),
         }
