@@ -17,6 +17,10 @@ pub struct SelectWildcatWinnerInstructionInputs {
     pub include_round_wildcat_entries: bool,
 }
 
+#[cfg(test)]
+#[path = "wildcat_instruction_tests.rs"]
+mod tests;
+
 /// Inputs for the crank-only Wildcat profile-credit instruction.
 pub struct ClaimWildcatInstructionInputs {
     /// Crank signer submitting the Wildcat credit transaction.
@@ -44,12 +48,14 @@ impl InstructionsHelper {
             AccountMeta::new_readonly(PdaHelper::get_config_address(), false),
             AccountMeta::new(PdaHelper::get_round_address(round_id), false),
         ];
-        if include_round_wildcat_entries {
-            accounts.push(AccountMeta::new(
+        accounts.push(if include_round_wildcat_entries {
+            AccountMeta::new(
                 PdaHelper::get_round_wildcat_entries_address(round_id),
                 false,
-            ));
-        }
+            )
+        } else {
+            AccountMeta::new_readonly(ZINC_ID, false)
+        });
         Instruction {
             program_id: ZINC_ID,
             accounts,
