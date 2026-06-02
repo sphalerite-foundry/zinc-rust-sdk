@@ -328,9 +328,9 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
 name = "arcium-client"
-version = "0.10.3"
+version = "0.10.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "874dbe447bda9630362649f7a8221a851da0a00af1d776a7f7172eb0b8d3d451"
+checksum = "a1d4fadd7d5af4e4789f1a8a0425c549f788800b7078fce4b15f68cc1981b7f2"
 dependencies = [
  "anchor-lang",
  "bytemuck",

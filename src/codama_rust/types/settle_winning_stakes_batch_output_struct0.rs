@@ -12,4 +12,5 @@ use borsh::BorshSerialize;
 pub struct SettleWinningStakesBatchOutputStruct0 {
     pub field0: [u64; 4],
     pub field1: [u128; 4],
+    pub field2: [bool; 4],
 }
