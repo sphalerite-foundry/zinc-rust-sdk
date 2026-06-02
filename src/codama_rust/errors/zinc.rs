@@ -589,6 +589,9 @@ pub enum ZincError {
     /// 6192 - Recovery winning stake does not match the selected tile count
     #[error("Recovery winning stake does not match the selected tile count")]
     InvalidRecoveryWinningStake = 0x1830,
+    /// 6193 - Settlement fast division failed
+    #[error("Settlement fast division failed")]
+    SettlementFastDivisionFailed = 0x1831,
 }
 
 impl From<ZincError> for solana_program_error::ProgramError {
