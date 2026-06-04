@@ -36,13 +36,11 @@ pub struct PayoutStockpile {
 
     pub winner: solana_address::Address,
 
-    pub winner_zinc_token_account: solana_address::Address,
-    /// Associated Token Program used to create the winner ATA on demand.
-    pub associated_token_program: solana_address::Address,
+    pub winner_player_profile: solana_address::Address,
+
+    pub round_zinc_reward_token_account: solana_address::Address,
     /// SPL Token Program that owns the ZINC mint and token accounts.
     pub token_program: solana_address::Address,
-    /// System Program used if the winner ATA needs to be created.
-    pub system_program: solana_address::Address,
 }
 
 impl PayoutStockpile {
@@ -59,7 +57,7 @@ impl PayoutStockpile {
         args: PayoutStockpileInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(15 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -90,19 +88,15 @@ impl PayoutStockpile {
         ));
         accounts.push(solana_instruction::AccountMeta::new(self.winner, false));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.winner_zinc_token_account,
+            self.winner_player_profile,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.associated_token_program,
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.round_zinc_reward_token_account,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.token_program,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.system_program,
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
@@ -167,10 +161,9 @@ impl PayoutStockpileInstructionArgs {
 ///   8. `[]` zinc_mint
 ///   9. `[writable]` stockpile_token_account
 ///   10. `[writable]` winner
-///   11. `[writable]` winner_zinc_token_account
-///   12. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   11. `[writable]` winner_player_profile
+///   12. `[writable]` round_zinc_reward_token_account
 ///   13. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   14. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct PayoutStockpileBuilder {
     signer: Option<solana_address::Address>,
@@ -184,10 +177,9 @@ pub struct PayoutStockpileBuilder {
     zinc_mint: Option<solana_address::Address>,
     stockpile_token_account: Option<solana_address::Address>,
     winner: Option<solana_address::Address>,
-    winner_zinc_token_account: Option<solana_address::Address>,
-    associated_token_program: Option<solana_address::Address>,
+    winner_player_profile: Option<solana_address::Address>,
+    round_zinc_reward_token_account: Option<solana_address::Address>,
     token_program: Option<solana_address::Address>,
-    system_program: Option<solana_address::Address>,
     rank: Option<u8>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
@@ -267,21 +259,19 @@ impl PayoutStockpileBuilder {
         self
     }
     #[inline(always)]
-    pub fn winner_zinc_token_account(
+    pub fn winner_player_profile(
         &mut self,
-        winner_zinc_token_account: solana_address::Address,
+        winner_player_profile: solana_address::Address,
     ) -> &mut Self {
-        self.winner_zinc_token_account = Some(winner_zinc_token_account);
+        self.winner_player_profile = Some(winner_player_profile);
         self
     }
-    /// `[optional account, default to 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL']`
-    /// Associated Token Program used to create the winner ATA on demand.
     #[inline(always)]
-    pub fn associated_token_program(
+    pub fn round_zinc_reward_token_account(
         &mut self,
-        associated_token_program: solana_address::Address,
+        round_zinc_reward_token_account: solana_address::Address,
     ) -> &mut Self {
-        self.associated_token_program = Some(associated_token_program);
+        self.round_zinc_reward_token_account = Some(round_zinc_reward_token_account);
         self
     }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
@@ -289,13 +279,6 @@ impl PayoutStockpileBuilder {
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_address::Address) -> &mut Self {
         self.token_program = Some(token_program);
-        self
-    }
-    /// `[optional account, default to '11111111111111111111111111111111']`
-    /// System Program used if the winner ATA needs to be created.
-    #[inline(always)]
-    pub fn system_program(&mut self, system_program: solana_address::Address) -> &mut Self {
-        self.system_program = Some(system_program);
         self
     }
     #[inline(always)]
@@ -338,18 +321,15 @@ impl PayoutStockpileBuilder {
                 .stockpile_token_account
                 .expect("stockpile_token_account is not set"),
             winner: self.winner.expect("winner is not set"),
-            winner_zinc_token_account: self
-                .winner_zinc_token_account
-                .expect("winner_zinc_token_account is not set"),
-            associated_token_program: self.associated_token_program.unwrap_or(
-                solana_address::address!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
-            ),
+            winner_player_profile: self
+                .winner_player_profile
+                .expect("winner_player_profile is not set"),
+            round_zinc_reward_token_account: self
+                .round_zinc_reward_token_account
+                .expect("round_zinc_reward_token_account is not set"),
             token_program: self.token_program.unwrap_or(solana_address::address!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
-            system_program: self
-                .system_program
-                .unwrap_or(solana_address::address!("11111111111111111111111111111111")),
         };
         let args = PayoutStockpileInstructionArgs {
             rank: self.rank.clone().expect("rank is not set"),
@@ -384,13 +364,11 @@ pub struct PayoutStockpileCpiAccounts<'a, 'b> {
 
     pub winner: &'b solana_account_info::AccountInfo<'a>,
 
-    pub winner_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Associated Token Program used to create the winner ATA on demand.
-    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
+    pub winner_player_profile: &'b solana_account_info::AccountInfo<'a>,
+
+    pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// SPL Token Program that owns the ZINC mint and token accounts.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// System Program used if the winner ATA needs to be created.
-    pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
 /// `payout_stockpile` CPI instruction.
@@ -420,13 +398,11 @@ pub struct PayoutStockpileCpi<'a, 'b> {
 
     pub winner: &'b solana_account_info::AccountInfo<'a>,
 
-    pub winner_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Associated Token Program used to create the winner ATA on demand.
-    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
+    pub winner_player_profile: &'b solana_account_info::AccountInfo<'a>,
+
+    pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// SPL Token Program that owns the ZINC mint and token accounts.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// System Program used if the winner ATA needs to be created.
-    pub system_program: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
     pub __args: PayoutStockpileInstructionArgs,
 }
@@ -450,10 +426,9 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
             zinc_mint: accounts.zinc_mint,
             stockpile_token_account: accounts.stockpile_token_account,
             winner: accounts.winner,
-            winner_zinc_token_account: accounts.winner_zinc_token_account,
-            associated_token_program: accounts.associated_token_program,
+            winner_player_profile: accounts.winner_player_profile,
+            round_zinc_reward_token_account: accounts.round_zinc_reward_token_account,
             token_program: accounts.token_program,
-            system_program: accounts.system_program,
             __args: args,
         }
     }
@@ -480,7 +455,7 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(15 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -520,19 +495,15 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.winner_zinc_token_account.key,
+            *self.winner_player_profile.key,
             false,
         ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.associated_token_program.key,
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.round_zinc_reward_token_account.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.token_program.key,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.system_program.key,
             false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
@@ -551,7 +522,7 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(16 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(15 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.config.clone());
@@ -564,10 +535,9 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
         account_infos.push(self.zinc_mint.clone());
         account_infos.push(self.stockpile_token_account.clone());
         account_infos.push(self.winner.clone());
-        account_infos.push(self.winner_zinc_token_account.clone());
-        account_infos.push(self.associated_token_program.clone());
+        account_infos.push(self.winner_player_profile.clone());
+        account_infos.push(self.round_zinc_reward_token_account.clone());
         account_infos.push(self.token_program.clone());
-        account_infos.push(self.system_program.clone());
         remaining_accounts
             .iter()
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
@@ -595,10 +565,9 @@ impl<'a, 'b> PayoutStockpileCpi<'a, 'b> {
 ///   8. `[]` zinc_mint
 ///   9. `[writable]` stockpile_token_account
 ///   10. `[writable]` winner
-///   11. `[writable]` winner_zinc_token_account
-///   12. `[]` associated_token_program
+///   11. `[writable]` winner_player_profile
+///   12. `[writable]` round_zinc_reward_token_account
 ///   13. `[]` token_program
-///   14. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct PayoutStockpileCpiBuilder<'a, 'b> {
     instruction: Box<PayoutStockpileCpiBuilderInstruction<'a, 'b>>,
@@ -619,10 +588,9 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
             zinc_mint: None,
             stockpile_token_account: None,
             winner: None,
-            winner_zinc_token_account: None,
-            associated_token_program: None,
+            winner_player_profile: None,
+            round_zinc_reward_token_account: None,
             token_program: None,
-            system_program: None,
             rank: None,
             __remaining_accounts: Vec::new(),
         });
@@ -705,20 +673,19 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn winner_zinc_token_account(
+    pub fn winner_player_profile(
         &mut self,
-        winner_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+        winner_player_profile: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.winner_zinc_token_account = Some(winner_zinc_token_account);
+        self.instruction.winner_player_profile = Some(winner_player_profile);
         self
     }
-    /// Associated Token Program used to create the winner ATA on demand.
     #[inline(always)]
-    pub fn associated_token_program(
+    pub fn round_zinc_reward_token_account(
         &mut self,
-        associated_token_program: &'b solana_account_info::AccountInfo<'a>,
+        round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.associated_token_program = Some(associated_token_program);
+        self.instruction.round_zinc_reward_token_account = Some(round_zinc_reward_token_account);
         self
     }
     /// SPL Token Program that owns the ZINC mint and token accounts.
@@ -728,15 +695,6 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
         token_program: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.token_program = Some(token_program);
-        self
-    }
-    /// System Program used if the winner ATA needs to be created.
-    #[inline(always)]
-    pub fn system_program(
-        &mut self,
-        system_program: &'b solana_account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.system_program = Some(system_program);
         self
     }
     #[inline(always)]
@@ -818,25 +776,20 @@ impl<'a, 'b> PayoutStockpileCpiBuilder<'a, 'b> {
 
             winner: self.instruction.winner.expect("winner is not set"),
 
-            winner_zinc_token_account: self
+            winner_player_profile: self
                 .instruction
-                .winner_zinc_token_account
-                .expect("winner_zinc_token_account is not set"),
+                .winner_player_profile
+                .expect("winner_player_profile is not set"),
 
-            associated_token_program: self
+            round_zinc_reward_token_account: self
                 .instruction
-                .associated_token_program
-                .expect("associated_token_program is not set"),
+                .round_zinc_reward_token_account
+                .expect("round_zinc_reward_token_account is not set"),
 
             token_program: self
                 .instruction
                 .token_program
                 .expect("token_program is not set"),
-
-            system_program: self
-                .instruction
-                .system_program
-                .expect("system_program is not set"),
             __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
@@ -860,10 +813,9 @@ struct PayoutStockpileCpiBuilderInstruction<'a, 'b> {
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     winner: Option<&'b solana_account_info::AccountInfo<'a>>,
-    winner_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    winner_player_profile: Option<&'b solana_account_info::AccountInfo<'a>>,
+    round_zinc_reward_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     rank: Option<u8>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,

@@ -2,26 +2,9 @@ use crate::codama_rust::instructions::{PayoutStockpile, PayoutStockpileInstructi
 use crate::codama_rust_custom::instructions::InstructionsHelper;
 use crate::codama_rust_custom::pda::PdaHelper;
 use solana_instruction::Instruction;
-use solana_pubkey::pubkey;
 use solana_pubkey::Pubkey;
 
-const ASSOCIATED_TOKEN_PROGRAM_ID: solana_pubkey::Pubkey =
-    pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
-const TOKEN_PROGRAM_ID: solana_pubkey::Pubkey =
-    pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
-
-fn get_player_zinc_token_account(player: &Pubkey, zinc_mint: &Pubkey) -> Pubkey {
-    Pubkey::find_program_address(
-        &[
-            player.as_ref(),
-            TOKEN_PROGRAM_ID.as_ref(),
-            zinc_mint.as_ref(),
-        ],
-        &ASSOCIATED_TOKEN_PROGRAM_ID,
-    )
-    .0
-}
-
+/// Inputs for the crank-only Stockpile base payout instruction.
 pub struct PayoutStockpileInstructionInputs {
     /// Authorized crank signer.
     pub signer: Pubkey,
@@ -29,13 +12,14 @@ pub struct PayoutStockpileInstructionInputs {
     pub stockpile_id: u64,
     /// Ranked winner slot to pay.
     pub rank: u8,
-    /// Resolved stockpile winner that receives SOL and ZINC.
+    /// Resolved stockpile winner that receives SOL and profile-credited ZINC.
     pub winner: Pubkey,
-    /// Protocol ZINC mint used to derive the winner ATA.
+    /// Protocol ZINC mint persisted on the treasury account.
     pub zinc_mint: Pubkey,
 }
 
 impl InstructionsHelper {
+    /// Builds the crank-only Stockpile base payout instruction.
     pub fn payout_stockpile_instruction(inputs: PayoutStockpileInstructionInputs) -> Instruction {
         let PayoutStockpileInstructionInputs {
             signer,
@@ -56,12 +40,10 @@ impl InstructionsHelper {
             zinc_mint,
             stockpile_token_account: PdaHelper::get_stockpile_token_account_address(),
             winner,
-            winner_zinc_token_account: get_player_zinc_token_account(&winner, &zinc_mint),
-            associated_token_program: Pubkey::new_from_array(
-                ASSOCIATED_TOKEN_PROGRAM_ID.to_bytes(),
+            winner_player_profile: PdaHelper::get_player_profile_address(&winner),
+            round_zinc_reward_token_account: PdaHelper::get_round_zinc_reward_token_account_address(
             ),
-            token_program: Pubkey::new_from_array(TOKEN_PROGRAM_ID.to_bytes()),
-            system_program: PdaHelper::get_system_program_address(),
+            token_program: PdaHelper::TOKEN_PROGRAM_ID,
         }
         .instruction(PayoutStockpileInstructionArgs { rank })
     }

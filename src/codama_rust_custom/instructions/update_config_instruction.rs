@@ -91,7 +91,7 @@ pub struct UpdateConfigInstructionInputs {
     /// Optional number of ranked Stockpile winners to pay per cycle.
     pub stockpile_winner_count: Option<u8>,
     /// Optional ranked Stockpile winner share schedule in basis points.
-    pub stockpile_winner_share_bps: Option<[u64; 5]>,
+    pub stockpile_winner_share_bps: Option<[u64; 10]>,
     /// Optional server BabyJub public key X field element bytes for ZK mask attestations.
     pub zk_mask_server_babyjub_pubkey_x: Option<[u8; 32]>,
     /// Optional server BabyJub public key Y field element bytes for ZK mask attestations.

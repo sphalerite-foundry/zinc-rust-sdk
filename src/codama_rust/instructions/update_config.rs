@@ -120,7 +120,7 @@ pub struct UpdateConfigInstructionArgs {
     pub blockhash_reveal_delay_slots: Option<u64>,
     pub stockpile_bricks_per_zinc_x10k: Option<u64>,
     pub stockpile_winner_count: Option<u8>,
-    pub stockpile_winner_share_bps: Option<[u64; 5]>,
+    pub stockpile_winner_share_bps: Option<[u64; 10]>,
     pub zk_mask_server_babyjub_pubkey_x: Option<[u8; 32]>,
     pub zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
     pub zk_mask_server_key_version: Option<u64>,
@@ -187,7 +187,7 @@ pub struct UpdateConfigBuilder {
     blockhash_reveal_delay_slots: Option<u64>,
     stockpile_bricks_per_zinc_x10k: Option<u64>,
     stockpile_winner_count: Option<u8>,
-    stockpile_winner_share_bps: Option<[u64; 5]>,
+    stockpile_winner_share_bps: Option<[u64; 10]>,
     zk_mask_server_babyjub_pubkey_x: Option<[u8; 32]>,
     zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
     zk_mask_server_key_version: Option<u64>,
@@ -504,7 +504,7 @@ impl UpdateConfigBuilder {
     #[inline(always)]
     pub fn stockpile_winner_share_bps(
         &mut self,
-        stockpile_winner_share_bps: [u64; 5],
+        stockpile_winner_share_bps: [u64; 10],
     ) -> &mut Self {
         self.stockpile_winner_share_bps = Some(stockpile_winner_share_bps);
         self
@@ -1106,7 +1106,7 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn stockpile_winner_share_bps(
         &mut self,
-        stockpile_winner_share_bps: [u64; 5],
+        stockpile_winner_share_bps: [u64; 10],
     ) -> &mut Self {
         self.instruction.stockpile_winner_share_bps = Some(stockpile_winner_share_bps);
         self
@@ -1318,7 +1318,7 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     blockhash_reveal_delay_slots: Option<u64>,
     stockpile_bricks_per_zinc_x10k: Option<u64>,
     stockpile_winner_count: Option<u8>,
-    stockpile_winner_share_bps: Option<[u64; 5]>,
+    stockpile_winner_share_bps: Option<[u64; 10]>,
     zk_mask_server_babyjub_pubkey_x: Option<[u8; 32]>,
     zk_mask_server_babyjub_pubkey_y: Option<[u8; 32]>,
     zk_mask_server_key_version: Option<u64>,
