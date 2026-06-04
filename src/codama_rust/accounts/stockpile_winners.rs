@@ -27,13 +27,13 @@ pub struct StockpileWinners {
     /// Rank expected for `next_extra_index`.
     pub next_extra_rank: u8,
     /// Fixed ranked winner slots, bounded by `STOCKPILE_MAX_WINNERS`.
-    pub ranks: [StockpileWinnerRank; 5],
+    pub ranks: [StockpileWinnerRank; 10],
 }
 
 pub const STOCKPILE_WINNERS_DISCRIMINATOR: [u8; 8] = [62, 132, 115, 85, 255, 124, 47, 68];
 
 impl StockpileWinners {
-    pub const LEN: usize = 348;
+    pub const LEN: usize = 673;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {

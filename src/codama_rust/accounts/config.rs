@@ -94,7 +94,7 @@ pub struct Config {
     pub stockpile_bricks_per_zinc_x10k: u64,
     /// Configured active Stockpile winner ranks.
     pub stockpile_winner_count: u8,
-    /// Ranked Stockpile payout shares in basis points.
+    /// Legacy first five ranked Stockpile payout shares in basis points.
     pub stockpile_winner_share_bps: [u64; 5],
     /// Live settlement capability selected by the operator.
     pub settlement_capability: SettlementCapability,
@@ -114,6 +114,8 @@ pub struct Config {
     pub wildcat_sidecar_enabled: bool,
     /// First round id that must use sidecar storage when sidecar mode is enabled.
     pub wildcat_sidecar_activation_round_id: Option<u64>,
+    /// Appended ranked Stockpile payout shares for ranks six through ten.
+    pub stockpile_winner_share_bps_ext: [u64; 5],
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
