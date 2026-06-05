@@ -60,7 +60,8 @@ pub struct Round {
     pub is_wildcat_round: bool,
     /// Total hidden-bonus-brick weight from settled round winners eligible for Wildcat.
     pub total_wildcat_weight: u64,
-    /// Deterministic weighted ticket selected from `round.rand`, absent until selection starts.
+    /// Deterministic weighted ticket used for the final Wildcat selection.
+    /// On rerolled draws this is scoped to the candidate set excluding the first drawn winner.
     pub wildcat_ticket: Option<u64>,
     /// Selected winning miner PDA for Wildcat.
     pub wildcat_winner_miner: Option<Address>,
