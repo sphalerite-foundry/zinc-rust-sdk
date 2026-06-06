@@ -54,6 +54,8 @@ impl PdaHelper {
         pubkey!("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
     /// Wrapped SOL mint used as the buyback route input.
     pub const WSOL_MINT_ID: Pubkey = pubkey!("So11111111111111111111111111111111111111112");
+    /// Canonical SPL USDC mint used by buyback SOL/USDC conversions.
+    pub const USDC_MINT_ID: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
     pub const ARCIUM_PROGRAM_ID: Pubkey = pubkey!("Arcj82pX7HxYKLR92qvgZUAd7vGS1k4hQvAFcPATFdEQ");
     /// Metaplex Token Metadata Program that owns mint metadata PDAs.
     pub const METADATA_PROGRAM_ID: Pubkey = pubkey!("metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s");
@@ -240,6 +242,16 @@ impl PdaHelper {
         Self::get_classic_ata(&Self::get_treasury_address(), &Self::WSOL_MINT_ID)
     }
 
+    /// Derives the treasury-owned USDC ATA used by buyback SOL/USDC conversions.
+    pub fn get_treasury_usdc_token_account_address() -> Pubkey {
+        Self::get_classic_ata(&Self::get_treasury_address(), &Self::USDC_MINT_ID)
+    }
+
+    /// Derives the temporary WSOL account used while converting buyback USDC back to SOL.
+    pub fn get_buyback_usdc_to_sol_temporary_wsol_token_account_address() -> Pubkey {
+        Pubkey::find_program_address(&[b"treasury", b"buyback-usdc-sol-wsol-temp"], &ZINC_ID).0
+    }
+
     /// Derives the singleton stockpile SOL vault PDA.
     pub fn get_stockpile_sol_vault_address() -> Pubkey {
         Pubkey::find_program_address(&[b"stockpile-sol-vault"], &ZINC_ID).0
@@ -263,7 +275,7 @@ impl PdaHelper {
     ) -> MeteoraPoolAccounts {
         let (max_mint_seed, min_mint_seed) =
             Self::ordered_mint_seed_pair(&Self::WSOL_MINT_ID, zinc_mint);
-        let pool_authority = Self::derive_meteora_pda(&[b"pool_authority"]);
+        let pool_authority = Self::get_meteora_pool_authority_address();
         let pool = Self::derive_meteora_pda(&[
             b"pool",
             damm_config.as_ref(),
@@ -278,18 +290,25 @@ impl PdaHelper {
                 b"position_nft_account",
                 position_nft_mint.as_ref(),
             ]),
-            token_a_vault: Self::derive_meteora_pda(&[
-                b"token_vault",
-                zinc_mint.as_ref(),
-                pool.as_ref(),
-            ]),
-            token_b_vault: Self::derive_meteora_pda(&[
-                b"token_vault",
-                Self::WSOL_MINT_ID.as_ref(),
-                pool.as_ref(),
-            ]),
-            event_authority: Self::derive_meteora_pda(&[b"__event_authority"]),
+            token_a_vault: Self::get_meteora_token_vault_address(zinc_mint, &pool),
+            token_b_vault: Self::get_meteora_token_vault_address(&Self::WSOL_MINT_ID, &pool),
+            event_authority: Self::get_meteora_event_authority_address(),
         }
+    }
+
+    /// Derives the global Meteora DAMM v2 pool authority PDA.
+    pub fn get_meteora_pool_authority_address() -> Pubkey {
+        Self::derive_meteora_pda(&[b"pool_authority"])
+    }
+
+    /// Derives the Meteora DAMM v2 event CPI authority PDA.
+    pub fn get_meteora_event_authority_address() -> Pubkey {
+        Self::derive_meteora_pda(&[b"__event_authority"])
+    }
+
+    /// Derives one Meteora DAMM v2 token vault PDA for a mint/pool pair.
+    pub fn get_meteora_token_vault_address(mint: &Pubkey, pool: &Pubkey) -> Pubkey {
+        Self::derive_meteora_pda(&[b"token_vault", mint.as_ref(), pool.as_ref()])
     }
 
     /// Sorts two mint keys the same way Meteora derives static pool PDAs.
