@@ -58,10 +58,11 @@ pub struct Round {
     pub wildcat_zinc_payout_amount: u64,
     /// True when the revealed randomness selected this round for Wildcat.
     pub is_wildcat_round: bool,
-    /// Total hidden-bonus-brick weight from settled round winners eligible for Wildcat.
+    /// Total effective ticket weight from settled round winners eligible for Wildcat.
     pub total_wildcat_weight: u64,
-    /// Deterministic weighted ticket used for the final Wildcat selection.
+    /// Deterministic effective-weight ticket used for the final Wildcat selection.
     /// On rerolled draws this is scoped to the candidate set excluding the first drawn winner.
+    /// Active ticket weights are derived from raw deploy size and the live Wildcat weight config.
     pub wildcat_ticket: Option<u64>,
     /// Selected winning miner PDA for Wildcat.
     pub wildcat_winner_miner: Option<Address>,
@@ -75,7 +76,7 @@ pub struct Round {
     pub blockhash_entropy_accumulator: [u8; 32],
     /// Number of deploy entropy contributions mixed into the accumulator.
     pub blockhash_entropy_contribution_count: u64,
-    /// Weighted ticket ranges for settled winners eligible for Wildcat.
+    /// Legacy hidden-bonus-brick ranges for settled winners eligible for Wildcat.
     pub wildcat_entries: Vec<RoundWildcatEntryRange>,
 }
 

@@ -37,7 +37,7 @@ pub struct DeployRoundFromAutoSession {
     pub stockpile_sol_vault: solana_address::Address,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: solana_address::Address,
-    /// Active stockpile account, omitted when no cycle is currently joinable.
+
     pub stockpile: Option<solana_address::Address>,
 
     pub affiliate: Option<solana_address::Address>,
@@ -294,7 +294,6 @@ impl DeployRoundFromAutoSessionBuilder {
         self
     }
     /// `[optional account]`
-    /// Active stockpile account, omitted when no cycle is currently joinable.
     #[inline(always)]
     pub fn stockpile(&mut self, stockpile: Option<solana_address::Address>) -> &mut Self {
         self.stockpile = stockpile;
@@ -426,7 +425,7 @@ pub struct DeployRoundFromAutoSessionCpiAccounts<'a, 'b> {
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: &'b solana_account_info::AccountInfo<'a>,
-    /// Active stockpile account, omitted when no cycle is currently joinable.
+
     pub stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
 
     pub affiliate: Option<&'b solana_account_info::AccountInfo<'a>>,
@@ -462,7 +461,7 @@ pub struct DeployRoundFromAutoSessionCpi<'a, 'b> {
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: &'b solana_account_info::AccountInfo<'a>,
-    /// Active stockpile account, omitted when no cycle is currently joinable.
+
     pub stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
 
     pub affiliate: Option<&'b solana_account_info::AccountInfo<'a>>,
@@ -778,7 +777,6 @@ impl<'a, 'b> DeployRoundFromAutoSessionCpiBuilder<'a, 'b> {
         self
     }
     /// `[optional account]`
-    /// Active stockpile account, omitted when no cycle is currently joinable.
     #[inline(always)]
     pub fn stockpile(
         &mut self,

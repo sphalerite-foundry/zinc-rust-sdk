@@ -9,7 +9,7 @@ use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 use solana_address::Address;
 
-/// One inclusive-exclusive weighted ticket range for a Wildcat-eligible round winner.
+/// One inclusive-exclusive legacy hidden-bonus-brick range for a Wildcat-eligible round winner.
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct RoundWildcatEntryRange {
     /// Settled winner miner PDA that owns this Wildcat range.
@@ -18,8 +18,8 @@ pub struct RoundWildcatEntryRange {
     pub player: Address,
     /// Net deploy amount used to keep the bounded Wildcat candidate set deterministic.
     pub deploy_amount: u64,
-    /// First weighted ticket index owned by the winner, inclusive.
+    /// First legacy hidden-bonus-brick index owned by the winner, inclusive.
     pub start: u64,
-    /// First weighted ticket index after the winner's range, exclusive.
+    /// First legacy hidden-bonus-brick index after the winner's range, exclusive.
     pub end: u64,
 }

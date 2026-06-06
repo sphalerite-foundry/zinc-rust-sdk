@@ -16,6 +16,6 @@ pub struct RoundWildcatEntry {
     pub player: Address,
     /// Net deploy amount used to keep the bounded Wildcat candidate set deterministic.
     pub deploy_amount: u64,
-    /// Hidden-bonus-brick Wildcat ticket weight for this winner.
+    /// Legacy raw hidden-bonus-brick weight retained for revert/backcompat.
     pub weight: u64,
 }

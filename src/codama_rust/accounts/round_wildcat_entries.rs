@@ -21,7 +21,7 @@ pub struct RoundWildcatEntries {
     pub bump: u8,
     /// Max number of candidate ranges snapshotted when the round was created.
     pub entry_capacity: u32,
-    /// Total hidden-bonus-brick weight across retained entries.
+    /// Total raw deploy-size weight across retained entries; selection recomputes effective weight.
     pub total_weight: u64,
     /// Compact settled-winner entries eligible for Wildcat.
     pub entries: Vec<RoundWildcatEntry>,
