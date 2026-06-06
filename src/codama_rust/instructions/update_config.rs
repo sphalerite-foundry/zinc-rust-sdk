@@ -106,6 +106,8 @@ pub struct UpdateConfigInstructionArgs {
     pub wildcat_entry_capacity: Option<u32>,
     pub wildcat_sidecar_enabled: Option<bool>,
     pub wildcat_sidecar_activation_round_id: Option<u64>,
+    pub wildcat_rr_enabled: Option<bool>,
+    pub wildcat_weight_linear_bps: Option<u64>,
     pub bonanza_hit_divisor: Option<u64>,
     pub round_claim_zinc_fee_bps: Option<u64>,
     pub stockpile_entry_min_zinc_fee: Option<u64>,
@@ -173,6 +175,8 @@ pub struct UpdateConfigBuilder {
     wildcat_entry_capacity: Option<u32>,
     wildcat_sidecar_enabled: Option<bool>,
     wildcat_sidecar_activation_round_id: Option<u64>,
+    wildcat_rr_enabled: Option<bool>,
+    wildcat_weight_linear_bps: Option<u64>,
     bonanza_hit_divisor: Option<u64>,
     round_claim_zinc_fee_bps: Option<u64>,
     stockpile_entry_min_zinc_fee: Option<u64>,
@@ -406,6 +410,18 @@ impl UpdateConfigBuilder {
     }
     /// `[optional argument]`
     #[inline(always)]
+    pub fn wildcat_rr_enabled(&mut self, wildcat_rr_enabled: bool) -> &mut Self {
+        self.wildcat_rr_enabled = Some(wildcat_rr_enabled);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn wildcat_weight_linear_bps(&mut self, wildcat_weight_linear_bps: u64) -> &mut Self {
+        self.wildcat_weight_linear_bps = Some(wildcat_weight_linear_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
     pub fn bonanza_hit_divisor(&mut self, bonanza_hit_divisor: u64) -> &mut Self {
         self.bonanza_hit_divisor = Some(bonanza_hit_divisor);
         self
@@ -601,6 +617,8 @@ impl UpdateConfigBuilder {
             wildcat_entry_capacity: self.wildcat_entry_capacity.clone(),
             wildcat_sidecar_enabled: self.wildcat_sidecar_enabled.clone(),
             wildcat_sidecar_activation_round_id: self.wildcat_sidecar_activation_round_id.clone(),
+            wildcat_rr_enabled: self.wildcat_rr_enabled.clone(),
+            wildcat_weight_linear_bps: self.wildcat_weight_linear_bps.clone(),
             bonanza_hit_divisor: self.bonanza_hit_divisor.clone(),
             round_claim_zinc_fee_bps: self.round_claim_zinc_fee_bps.clone(),
             stockpile_entry_min_zinc_fee: self.stockpile_entry_min_zinc_fee.clone(),
@@ -773,6 +791,8 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             wildcat_entry_capacity: None,
             wildcat_sidecar_enabled: None,
             wildcat_sidecar_activation_round_id: None,
+            wildcat_rr_enabled: None,
+            wildcat_weight_linear_bps: None,
             bonanza_hit_divisor: None,
             round_claim_zinc_fee_bps: None,
             stockpile_entry_min_zinc_fee: None,
@@ -1008,6 +1028,18 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
     }
     /// `[optional argument]`
     #[inline(always)]
+    pub fn wildcat_rr_enabled(&mut self, wildcat_rr_enabled: bool) -> &mut Self {
+        self.instruction.wildcat_rr_enabled = Some(wildcat_rr_enabled);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn wildcat_weight_linear_bps(&mut self, wildcat_weight_linear_bps: u64) -> &mut Self {
+        self.instruction.wildcat_weight_linear_bps = Some(wildcat_weight_linear_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
     pub fn bonanza_hit_divisor(&mut self, bonanza_hit_divisor: u64) -> &mut Self {
         self.instruction.bonanza_hit_divisor = Some(bonanza_hit_divisor);
         self
@@ -1227,6 +1259,8 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
                 .instruction
                 .wildcat_sidecar_activation_round_id
                 .clone(),
+            wildcat_rr_enabled: self.instruction.wildcat_rr_enabled.clone(),
+            wildcat_weight_linear_bps: self.instruction.wildcat_weight_linear_bps.clone(),
             bonanza_hit_divisor: self.instruction.bonanza_hit_divisor.clone(),
             round_claim_zinc_fee_bps: self.instruction.round_claim_zinc_fee_bps.clone(),
             stockpile_entry_min_zinc_fee: self.instruction.stockpile_entry_min_zinc_fee.clone(),
@@ -1304,6 +1338,8 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     wildcat_entry_capacity: Option<u32>,
     wildcat_sidecar_enabled: Option<bool>,
     wildcat_sidecar_activation_round_id: Option<u64>,
+    wildcat_rr_enabled: Option<bool>,
+    wildcat_weight_linear_bps: Option<u64>,
     bonanza_hit_divisor: Option<u64>,
     round_claim_zinc_fee_bps: Option<u64>,
     stockpile_entry_min_zinc_fee: Option<u64>,

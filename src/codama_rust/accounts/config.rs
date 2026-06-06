@@ -116,6 +116,10 @@ pub struct Config {
     pub wildcat_sidecar_activation_round_id: Option<u64>,
     /// Appended ranked Stockpile payout shares for ranks six through ten.
     pub stockpile_winner_share_bps_ext: [u64; 5],
+    /// Whether Wildcat uses the legacy reroll that excludes the first draw and biggest entry.
+    pub wildcat_rr_enabled: bool,
+    /// Linear share of Wildcat ticket weighting in basis points; the remainder uses normalized sqrt.
+    pub wildcat_weight_linear_bps: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
