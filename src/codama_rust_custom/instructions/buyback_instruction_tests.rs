@@ -1,5 +1,6 @@
 use super::{
     BuybackInstructionInputs, ClaimBuybackPoolFeesInstructionInputs,
+    ConvertBuybackSolToUsdcInstructionInputs, ConvertBuybackUsdcToSolInstructionInputs,
     CreateBuybackPoolInstructionInputs, InstructionsHelper, LockBuybackLiquidityInstructionInputs,
     RemoveBuybackLiquidityInstructionInputs,
 };
@@ -53,6 +54,135 @@ fn buyback_instruction_uses_stored_pool_accounts() {
     assert_eq!(instruction.accounts[12].pubkey, token_b_vault);
     assert_eq!(instruction.accounts[13].pubkey, event_authority);
     assert!(!instruction.accounts[13].is_writable);
+}
+
+/// Verifies SOL-to-USDC conversion derives the caller-supplied WSOL/USDC pool account set.
+#[test]
+fn convert_buyback_sol_to_usdc_instruction_derives_pool_accounts() {
+    let signer = Pubkey::new_unique();
+    let pool = Pubkey::new_unique();
+
+    let instruction = InstructionsHelper::convert_buyback_sol_to_usdc_instruction(
+        ConvertBuybackSolToUsdcInstructionInputs {
+            signer,
+            amount_in: 1_000_000_000,
+            min_usdc_out: 25_000_000,
+            pool,
+            wsol_is_token_a: true,
+        },
+    );
+
+    assert_eq!(
+        &instruction.data[..8],
+        &[216, 16, 193, 21, 235, 103, 28, 153]
+    );
+    assert_eq!(
+        u64::from_le_bytes(instruction.data[8..16].try_into().unwrap()),
+        1_000_000_000
+    );
+    assert_eq!(
+        u64::from_le_bytes(instruction.data[16..24].try_into().unwrap()),
+        25_000_000
+    );
+    assert_eq!(instruction.accounts.len(), 18);
+    assert_eq!(instruction.accounts[0].pubkey, signer);
+    assert!(instruction.accounts[0].is_signer);
+    assert_eq!(instruction.accounts[4].pubkey, PdaHelper::WSOL_MINT_ID);
+    assert_eq!(instruction.accounts[5].pubkey, PdaHelper::USDC_MINT_ID);
+    assert_eq!(
+        instruction.accounts[6].pubkey,
+        PdaHelper::get_treasury_wsol_token_account_address()
+    );
+    assert_eq!(
+        instruction.accounts[7].pubkey,
+        PdaHelper::get_treasury_usdc_token_account_address()
+    );
+    assert_eq!(
+        instruction.accounts[8].pubkey,
+        PdaHelper::get_meteora_pool_authority_address()
+    );
+    assert_eq!(instruction.accounts[9].pubkey, pool);
+    assert_eq!(
+        instruction.accounts[10].pubkey,
+        PdaHelper::get_meteora_token_vault_address(&PdaHelper::WSOL_MINT_ID, &pool)
+    );
+    assert_eq!(
+        instruction.accounts[11].pubkey,
+        PdaHelper::get_meteora_token_vault_address(&PdaHelper::USDC_MINT_ID, &pool)
+    );
+    assert_eq!(
+        instruction.accounts[12].pubkey,
+        PdaHelper::get_meteora_event_authority_address()
+    );
+    assert_eq!(
+        instruction.accounts[13].pubkey,
+        PdaHelper::METEORA_DAMM_V2_PROGRAM_ID
+    );
+    assert_eq!(
+        instruction.accounts[15].pubkey,
+        PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+}
+
+/// Verifies USDC-to-SOL conversion derives the reverse WSOL/USDC pool account set.
+#[test]
+fn convert_buyback_usdc_to_sol_instruction_derives_pool_accounts() {
+    let signer = Pubkey::new_unique();
+    let pool = Pubkey::new_unique();
+
+    let instruction = InstructionsHelper::convert_buyback_usdc_to_sol_instruction(
+        ConvertBuybackUsdcToSolInstructionInputs {
+            signer,
+            amount_in: 25_000_000,
+            min_sol_out: 900_000_000,
+            pool,
+            wsol_is_token_a: false,
+        },
+    );
+
+    assert_eq!(&instruction.data[..8], &[49, 99, 28, 99, 127, 86, 245, 73]);
+    assert_eq!(
+        u64::from_le_bytes(instruction.data[8..16].try_into().unwrap()),
+        25_000_000
+    );
+    assert_eq!(
+        u64::from_le_bytes(instruction.data[16..24].try_into().unwrap()),
+        900_000_000
+    );
+    assert_eq!(instruction.accounts.len(), 17);
+    assert_eq!(instruction.accounts[0].pubkey, signer);
+    assert!(instruction.accounts[0].is_signer);
+    assert_eq!(instruction.accounts[4].pubkey, PdaHelper::WSOL_MINT_ID);
+    assert_eq!(instruction.accounts[5].pubkey, PdaHelper::USDC_MINT_ID);
+    assert_eq!(
+        instruction.accounts[6].pubkey,
+        PdaHelper::get_treasury_usdc_token_account_address()
+    );
+    assert_eq!(
+        instruction.accounts[7].pubkey,
+        PdaHelper::get_buyback_usdc_to_sol_temporary_wsol_token_account_address()
+    );
+    assert_eq!(
+        instruction.accounts[8].pubkey,
+        PdaHelper::get_meteora_pool_authority_address()
+    );
+    assert_eq!(instruction.accounts[9].pubkey, pool);
+    assert_eq!(
+        instruction.accounts[10].pubkey,
+        PdaHelper::get_meteora_token_vault_address(&PdaHelper::USDC_MINT_ID, &pool)
+    );
+    assert_eq!(
+        instruction.accounts[11].pubkey,
+        PdaHelper::get_meteora_token_vault_address(&PdaHelper::WSOL_MINT_ID, &pool)
+    );
+    assert_eq!(
+        instruction.accounts[12].pubkey,
+        PdaHelper::get_meteora_event_authority_address()
+    );
+    assert_eq!(
+        instruction.accounts[13].pubkey,
+        PdaHelper::METEORA_DAMM_V2_PROGRAM_ID
+    );
 }
 
 /// Verifies Meteora pool initialization instructions derive the canonical ZINC/WSOL account set.

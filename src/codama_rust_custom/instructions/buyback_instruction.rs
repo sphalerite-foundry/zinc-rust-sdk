@@ -1,5 +1,7 @@
 use crate::codama_rust::instructions::{
-    Buyback, BuybackInstructionArgs, CreateBuybackPool, CreateBuybackPoolInstructionArgs,
+    Buyback, BuybackInstructionArgs, ConvertBuybackSolToUsdc,
+    ConvertBuybackSolToUsdcInstructionArgs, ConvertBuybackUsdcToSol,
+    ConvertBuybackUsdcToSolInstructionArgs, CreateBuybackPool, CreateBuybackPoolInstructionArgs,
     LockBuybackLiquidity, LockBuybackLiquidityInstructionArgs, RemoveBuybackLiquidity,
     RemoveBuybackLiquidityInstructionArgs, WrapBuybackSol, WrapBuybackSolInstructionArgs,
 };
@@ -40,6 +42,34 @@ pub struct BuybackInstructionInputs {
     pub token_b_vault: Pubkey,
     /// Stored Meteora event authority PDA.
     pub event_authority: Pubkey,
+}
+
+/// Inputs needed to convert buyback SOL custody into treasury-owned USDC.
+pub struct ConvertBuybackSolToUsdcInstructionInputs {
+    /// Crank signer submitting the conversion transaction.
+    pub signer: Pubkey,
+    /// Exact SOL lamports to spend from buyback custody.
+    pub amount_in: u64,
+    /// Minimum USDC base units accepted after the Meteora swap.
+    pub min_usdc_out: u64,
+    /// Caller-supplied Meteora DAMM v2 WSOL/USDC pool account.
+    pub pool: Pubkey,
+    /// Whether WSOL is token A in the supplied pool.
+    pub wsol_is_token_a: bool,
+}
+
+/// Inputs needed to convert treasury-owned USDC back into buyback SOL custody.
+pub struct ConvertBuybackUsdcToSolInstructionInputs {
+    /// Crank signer submitting the conversion transaction.
+    pub signer: Pubkey,
+    /// Exact USDC base units to spend from treasury custody.
+    pub amount_in: u64,
+    /// Minimum SOL lamports accepted after the Meteora swap.
+    pub min_sol_out: u64,
+    /// Caller-supplied Meteora DAMM v2 WSOL/USDC pool account.
+    pub pool: Pubkey,
+    /// Whether WSOL is token A in the supplied pool.
+    pub wsol_is_token_a: bool,
 }
 
 /// Inputs needed to create and persist the protocol Meteora buyback pool.
@@ -196,6 +226,84 @@ impl InstructionsHelper {
         .instruction(BuybackInstructionArgs {
             amount_in,
             min_zinc_out,
+        })
+    }
+
+    /// Builds a conversion instruction from buyback SOL custody into treasury-owned USDC.
+    pub fn convert_buyback_sol_to_usdc_instruction(
+        inputs: ConvertBuybackSolToUsdcInstructionInputs,
+    ) -> Instruction {
+        let ConvertBuybackSolToUsdcInstructionInputs {
+            signer,
+            amount_in,
+            min_usdc_out,
+            pool,
+            wsol_is_token_a,
+        } = inputs;
+        let (token_a_mint, token_b_mint) = meteora_wsol_usdc_mints(wsol_is_token_a);
+
+        ConvertBuybackSolToUsdc {
+            signer,
+            config: PdaHelper::get_config_address(),
+            treasury: PdaHelper::get_treasury_address(),
+            buyback_sol_vault: PdaHelper::get_buyback_sol_vault_address(),
+            wsol_mint: PdaHelper::WSOL_MINT_ID,
+            usdc_mint: PdaHelper::USDC_MINT_ID,
+            treasury_wsol_token_account: PdaHelper::get_treasury_wsol_token_account_address(),
+            treasury_usdc_token_account: PdaHelper::get_treasury_usdc_token_account_address(),
+            pool_authority: PdaHelper::get_meteora_pool_authority_address(),
+            pool,
+            token_a_vault: PdaHelper::get_meteora_token_vault_address(&token_a_mint, &pool),
+            token_b_vault: PdaHelper::get_meteora_token_vault_address(&token_b_mint, &pool),
+            event_authority: PdaHelper::get_meteora_event_authority_address(),
+            meteora_program: PdaHelper::METEORA_DAMM_V2_PROGRAM_ID,
+            instructions_sysvar: PdaHelper::INSTRUCTIONS_SYSVAR_ID,
+            associated_token_program: PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID,
+            token_program: PdaHelper::TOKEN_PROGRAM_ID,
+            system_program: PdaHelper::get_system_program_address(),
+        }
+        .instruction(ConvertBuybackSolToUsdcInstructionArgs {
+            amount_in,
+            min_usdc_out,
+        })
+    }
+
+    /// Builds a conversion instruction from treasury-owned USDC back into buyback SOL custody.
+    pub fn convert_buyback_usdc_to_sol_instruction(
+        inputs: ConvertBuybackUsdcToSolInstructionInputs,
+    ) -> Instruction {
+        let ConvertBuybackUsdcToSolInstructionInputs {
+            signer,
+            amount_in,
+            min_sol_out,
+            pool,
+            wsol_is_token_a,
+        } = inputs;
+        let (token_a_mint, token_b_mint) = meteora_wsol_usdc_mints(wsol_is_token_a);
+
+        ConvertBuybackUsdcToSol {
+            signer,
+            config: PdaHelper::get_config_address(),
+            treasury: PdaHelper::get_treasury_address(),
+            buyback_sol_vault: PdaHelper::get_buyback_sol_vault_address(),
+            wsol_mint: PdaHelper::WSOL_MINT_ID,
+            usdc_mint: PdaHelper::USDC_MINT_ID,
+            treasury_usdc_token_account: PdaHelper::get_treasury_usdc_token_account_address(),
+            temporary_wsol_token_account:
+                PdaHelper::get_buyback_usdc_to_sol_temporary_wsol_token_account_address(),
+            pool_authority: PdaHelper::get_meteora_pool_authority_address(),
+            pool,
+            token_a_vault: PdaHelper::get_meteora_token_vault_address(&token_a_mint, &pool),
+            token_b_vault: PdaHelper::get_meteora_token_vault_address(&token_b_mint, &pool),
+            event_authority: PdaHelper::get_meteora_event_authority_address(),
+            meteora_program: PdaHelper::METEORA_DAMM_V2_PROGRAM_ID,
+            instructions_sysvar: PdaHelper::INSTRUCTIONS_SYSVAR_ID,
+            token_program: PdaHelper::TOKEN_PROGRAM_ID,
+            system_program: PdaHelper::get_system_program_address(),
+        }
+        .instruction(ConvertBuybackUsdcToSolInstructionArgs {
+            amount_in,
+            min_sol_out,
         })
     }
 
@@ -374,6 +482,14 @@ impl InstructionsHelper {
             token_a_amount_threshold,
             token_b_amount_threshold,
         })
+    }
+}
+
+fn meteora_wsol_usdc_mints(wsol_is_token_a: bool) -> (Pubkey, Pubkey) {
+    if wsol_is_token_a {
+        (PdaHelper::WSOL_MINT_ID, PdaHelper::USDC_MINT_ID)
+    } else {
+        (PdaHelper::USDC_MINT_ID, PdaHelper::WSOL_MINT_ID)
     }
 }
 
