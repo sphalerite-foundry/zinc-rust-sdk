@@ -54,12 +54,16 @@ pub struct Treasury {
     pub staking_rewards_vesting_last_slot: u64,
     /// Slot at which the current global staking vesting bucket fully vests if staking stays active.
     pub staking_rewards_vesting_end_slot: u64,
+    /// Bonanza SOL vault created during `init_config`.
+    pub bonanza_sol_vault: Address,
+    /// Liquidity ZINC vault created during `init_config`.
+    pub liquidity_zinc_token_account: Address,
 }
 
 pub const TREASURY_DISCRIMINATOR: [u8; 8] = [238, 239, 123, 238, 89, 1, 168, 253];
 
 impl Treasury {
-    pub const LEN: usize = 353;
+    pub const LEN: usize = 417;
 
     #[inline(always)]
     pub fn from_bytes(data: &[u8]) -> Result<Self, std::io::Error> {

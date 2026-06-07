@@ -29,6 +29,8 @@ pub struct DeployRound {
     pub treasury: solana_address::Address,
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
     pub stockpile_sol_vault: solana_address::Address,
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    pub bonanza_sol_vault: solana_address::Address,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: solana_address::Address,
 
@@ -52,7 +54,7 @@ impl DeployRound {
         args: DeployRoundInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new(self.round, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -68,6 +70,10 @@ impl DeployRound {
         accounts.push(solana_instruction::AccountMeta::new(self.treasury, false));
         accounts.push(solana_instruction::AccountMeta::new(
             self.stockpile_sol_vault,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.bonanza_sol_vault,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -172,11 +178,12 @@ impl DeployRoundInstructionArgs {
 ///   5. `[writable]` board
 ///   6. `[writable]` treasury
 ///   7. `[writable]` stockpile_sol_vault
-///   8. `[writable]` buyback_sol_vault
-///   9. `[optional]` stockpile
-///   10. `[optional]` affiliate
-///   11. `[writable, optional]` affiliate_profile
-///   12. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   8. `[writable]` bonanza_sol_vault
+///   9. `[writable]` buyback_sol_vault
+///   10. `[optional]` stockpile
+///   11. `[optional]` affiliate
+///   12. `[writable, optional]` affiliate_profile
+///   13. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct DeployRoundBuilder {
     signer: Option<solana_address::Address>,
@@ -187,6 +194,7 @@ pub struct DeployRoundBuilder {
     board: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
     stockpile_sol_vault: Option<solana_address::Address>,
+    bonanza_sol_vault: Option<solana_address::Address>,
     buyback_sol_vault: Option<solana_address::Address>,
     stockpile: Option<solana_address::Address>,
     affiliate: Option<solana_address::Address>,
@@ -248,6 +256,12 @@ impl DeployRoundBuilder {
         stockpile_sol_vault: solana_address::Address,
     ) -> &mut Self {
         self.stockpile_sol_vault = Some(stockpile_sol_vault);
+        self
+    }
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    #[inline(always)]
+    pub fn bonanza_sol_vault(&mut self, bonanza_sol_vault: solana_address::Address) -> &mut Self {
+        self.bonanza_sol_vault = Some(bonanza_sol_vault);
         self
     }
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
@@ -337,6 +351,9 @@ impl DeployRoundBuilder {
             stockpile_sol_vault: self
                 .stockpile_sol_vault
                 .expect("stockpile_sol_vault is not set"),
+            bonanza_sol_vault: self
+                .bonanza_sol_vault
+                .expect("bonanza_sol_vault is not set"),
             buyback_sol_vault: self
                 .buyback_sol_vault
                 .expect("buyback_sol_vault is not set"),
@@ -382,6 +399,8 @@ pub struct DeployRoundCpiAccounts<'a, 'b> {
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    pub bonanza_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: &'b solana_account_info::AccountInfo<'a>,
 
@@ -414,6 +433,8 @@ pub struct DeployRoundCpi<'a, 'b> {
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    pub bonanza_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: &'b solana_account_info::AccountInfo<'a>,
 
@@ -444,6 +465,7 @@ impl<'a, 'b> DeployRoundCpi<'a, 'b> {
             board: accounts.board,
             treasury: accounts.treasury,
             stockpile_sol_vault: accounts.stockpile_sol_vault,
+            bonanza_sol_vault: accounts.bonanza_sol_vault,
             buyback_sol_vault: accounts.buyback_sol_vault,
             stockpile: accounts.stockpile,
             affiliate: accounts.affiliate,
@@ -475,7 +497,7 @@ impl<'a, 'b> DeployRoundCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new(*self.round.key, false));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -494,6 +516,10 @@ impl<'a, 'b> DeployRoundCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.stockpile_sol_vault.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.bonanza_sol_vault.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -553,7 +579,7 @@ impl<'a, 'b> DeployRoundCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(14 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(15 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.round.clone());
@@ -563,6 +589,7 @@ impl<'a, 'b> DeployRoundCpi<'a, 'b> {
         account_infos.push(self.board.clone());
         account_infos.push(self.treasury.clone());
         account_infos.push(self.stockpile_sol_vault.clone());
+        account_infos.push(self.bonanza_sol_vault.clone());
         account_infos.push(self.buyback_sol_vault.clone());
         if let Some(stockpile) = self.stockpile {
             account_infos.push(stockpile.clone());
@@ -598,11 +625,12 @@ impl<'a, 'b> DeployRoundCpi<'a, 'b> {
 ///   5. `[writable]` board
 ///   6. `[writable]` treasury
 ///   7. `[writable]` stockpile_sol_vault
-///   8. `[writable]` buyback_sol_vault
-///   9. `[optional]` stockpile
-///   10. `[optional]` affiliate
-///   11. `[writable, optional]` affiliate_profile
-///   12. `[]` system_program
+///   8. `[writable]` bonanza_sol_vault
+///   9. `[writable]` buyback_sol_vault
+///   10. `[optional]` stockpile
+///   11. `[optional]` affiliate
+///   12. `[writable, optional]` affiliate_profile
+///   13. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct DeployRoundCpiBuilder<'a, 'b> {
     instruction: Box<DeployRoundCpiBuilderInstruction<'a, 'b>>,
@@ -620,6 +648,7 @@ impl<'a, 'b> DeployRoundCpiBuilder<'a, 'b> {
             board: None,
             treasury: None,
             stockpile_sol_vault: None,
+            bonanza_sol_vault: None,
             buyback_sol_vault: None,
             stockpile: None,
             affiliate: None,
@@ -681,6 +710,15 @@ impl<'a, 'b> DeployRoundCpiBuilder<'a, 'b> {
         stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.stockpile_sol_vault = Some(stockpile_sol_vault);
+        self
+    }
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    #[inline(always)]
+    pub fn bonanza_sol_vault(
+        &mut self,
+        bonanza_sol_vault: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.bonanza_sol_vault = Some(bonanza_sol_vault);
         self
     }
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
@@ -835,6 +873,11 @@ impl<'a, 'b> DeployRoundCpiBuilder<'a, 'b> {
                 .stockpile_sol_vault
                 .expect("stockpile_sol_vault is not set"),
 
+            bonanza_sol_vault: self
+                .instruction
+                .bonanza_sol_vault
+                .expect("bonanza_sol_vault is not set"),
+
             buyback_sol_vault: self
                 .instruction
                 .buyback_sol_vault
@@ -870,6 +913,7 @@ struct DeployRoundCpiBuilderInstruction<'a, 'b> {
     board: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_sol_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
+    bonanza_sol_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
     buyback_sol_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,
     affiliate: Option<&'b solana_account_info::AccountInfo<'a>>,

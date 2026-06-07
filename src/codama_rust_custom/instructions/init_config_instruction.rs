@@ -47,11 +47,13 @@ impl InstructionsHelper {
         .0;
         let bonanza_token_account = PdaHelper::get_bonanza_token_account_address();
         let stockpile_token_account = PdaHelper::get_stockpile_token_account_address();
+        let liquidity_zinc_token_account = PdaHelper::get_liquidity_zinc_token_account_address();
         let round_zinc_reward_token_account =
             PdaHelper::get_round_zinc_reward_token_account_address();
         let staking_token_account = PdaHelper::get_staking_token_account_address();
         let staking_reward_token_account = PdaHelper::get_staking_reward_token_account_address();
         let stockpile_sol_vault = PdaHelper::get_stockpile_sol_vault_address();
+        let bonanza_sol_vault = PdaHelper::get_bonanza_sol_vault_address();
         let buyback_sol_vault = PdaHelper::get_buyback_sol_vault_address();
         let stockpile_extras = PdaHelper::get_stockpile_extras_address();
         InitConfig {
@@ -64,10 +66,12 @@ impl InstructionsHelper {
             curve_admin_token_account,
             bonanza_token_account,
             stockpile_token_account,
+            liquidity_zinc_token_account,
             round_zinc_reward_token_account,
             staking_token_account,
             staking_reward_token_account,
             stockpile_sol_vault,
+            bonanza_sol_vault,
             buyback_sol_vault,
             stockpile_extras,
             associated_token_program,

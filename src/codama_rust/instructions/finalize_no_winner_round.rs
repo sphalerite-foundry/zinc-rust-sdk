@@ -31,6 +31,8 @@ pub struct FinalizeNoWinnerRound {
     pub round_zinc_payout_token_account: solana_address::Address,
     /// Treasury-owned Bonanza vault that receives the configured redirect share.
     pub bonanza_token_account: solana_address::Address,
+    /// Treasury-owned liquidity vault that receives the configured Bonanza split.
+    pub liquidity_zinc_token_account: solana_address::Address,
     /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
     pub stockpile_token_account: solana_address::Address,
     /// SPL Token program used for the direct-winner redirect transfer.
@@ -47,7 +49,7 @@ impl FinalizeNoWinnerRound {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -69,6 +71,10 @@ impl FinalizeNoWinnerRound {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             self.bonanza_token_account,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.liquidity_zinc_token_account,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -128,8 +134,9 @@ impl Default for FinalizeNoWinnerRoundInstructionData {
 ///   6. `[writable]` zinc_mint
 ///   7. `[writable]` round_zinc_payout_token_account
 ///   8. `[writable]` bonanza_token_account
-///   9. `[writable]` stockpile_token_account
-///   10. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   9. `[writable]` liquidity_zinc_token_account
+///   10. `[writable]` stockpile_token_account
+///   11. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
 pub struct FinalizeNoWinnerRoundBuilder {
     signer: Option<solana_address::Address>,
@@ -141,6 +148,7 @@ pub struct FinalizeNoWinnerRoundBuilder {
     zinc_mint: Option<solana_address::Address>,
     round_zinc_payout_token_account: Option<solana_address::Address>,
     bonanza_token_account: Option<solana_address::Address>,
+    liquidity_zinc_token_account: Option<solana_address::Address>,
     stockpile_token_account: Option<solana_address::Address>,
     token_program: Option<solana_address::Address>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
@@ -213,6 +221,15 @@ impl FinalizeNoWinnerRoundBuilder {
         self.bonanza_token_account = Some(bonanza_token_account);
         self
     }
+    /// Treasury-owned liquidity vault that receives the configured Bonanza split.
+    #[inline(always)]
+    pub fn liquidity_zinc_token_account(
+        &mut self,
+        liquidity_zinc_token_account: solana_address::Address,
+    ) -> &mut Self {
+        self.liquidity_zinc_token_account = Some(liquidity_zinc_token_account);
+        self
+    }
     /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
     #[inline(always)]
     pub fn stockpile_token_account(
@@ -262,6 +279,9 @@ impl FinalizeNoWinnerRoundBuilder {
             bonanza_token_account: self
                 .bonanza_token_account
                 .expect("bonanza_token_account is not set"),
+            liquidity_zinc_token_account: self
+                .liquidity_zinc_token_account
+                .expect("liquidity_zinc_token_account is not set"),
             stockpile_token_account: self
                 .stockpile_token_account
                 .expect("stockpile_token_account is not set"),
@@ -294,6 +314,8 @@ pub struct FinalizeNoWinnerRoundCpiAccounts<'a, 'b> {
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury-owned Bonanza vault that receives the configured redirect share.
     pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned liquidity vault that receives the configured Bonanza split.
+    pub liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
     pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// SPL Token program used for the direct-winner redirect transfer.
@@ -322,6 +344,8 @@ pub struct FinalizeNoWinnerRoundCpi<'a, 'b> {
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury-owned Bonanza vault that receives the configured redirect share.
     pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned liquidity vault that receives the configured Bonanza split.
+    pub liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
     pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// SPL Token program used for the direct-winner redirect transfer.
@@ -344,6 +368,7 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpi<'a, 'b> {
             zinc_mint: accounts.zinc_mint,
             round_zinc_payout_token_account: accounts.round_zinc_payout_token_account,
             bonanza_token_account: accounts.bonanza_token_account,
+            liquidity_zinc_token_account: accounts.liquidity_zinc_token_account,
             stockpile_token_account: accounts.stockpile_token_account,
             token_program: accounts.token_program,
         }
@@ -371,7 +396,7 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(11 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(12 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -403,6 +428,10 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
+            *self.liquidity_zinc_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
             *self.stockpile_token_account.key,
             false,
         ));
@@ -426,7 +455,7 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(12 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(13 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.config.clone());
@@ -437,6 +466,7 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpi<'a, 'b> {
         account_infos.push(self.zinc_mint.clone());
         account_infos.push(self.round_zinc_payout_token_account.clone());
         account_infos.push(self.bonanza_token_account.clone());
+        account_infos.push(self.liquidity_zinc_token_account.clone());
         account_infos.push(self.stockpile_token_account.clone());
         account_infos.push(self.token_program.clone());
         remaining_accounts
@@ -464,8 +494,9 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpi<'a, 'b> {
 ///   6. `[writable]` zinc_mint
 ///   7. `[writable]` round_zinc_payout_token_account
 ///   8. `[writable]` bonanza_token_account
-///   9. `[writable]` stockpile_token_account
-///   10. `[]` token_program
+///   9. `[writable]` liquidity_zinc_token_account
+///   10. `[writable]` stockpile_token_account
+///   11. `[]` token_program
 #[derive(Clone, Debug)]
 pub struct FinalizeNoWinnerRoundCpiBuilder<'a, 'b> {
     instruction: Box<FinalizeNoWinnerRoundCpiBuilderInstruction<'a, 'b>>,
@@ -484,6 +515,7 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpiBuilder<'a, 'b> {
             zinc_mint: None,
             round_zinc_payout_token_account: None,
             bonanza_token_account: None,
+            liquidity_zinc_token_account: None,
             stockpile_token_account: None,
             token_program: None,
             __remaining_accounts: Vec::new(),
@@ -551,6 +583,15 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpiBuilder<'a, 'b> {
         bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.bonanza_token_account = Some(bonanza_token_account);
+        self
+    }
+    /// Treasury-owned liquidity vault that receives the configured Bonanza split.
+    #[inline(always)]
+    pub fn liquidity_zinc_token_account(
+        &mut self,
+        liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.liquidity_zinc_token_account = Some(liquidity_zinc_token_account);
         self
     }
     /// Treasury-owned stockpile ZINC vault that receives the configured redirect share.
@@ -635,6 +676,11 @@ impl<'a, 'b> FinalizeNoWinnerRoundCpiBuilder<'a, 'b> {
                 .bonanza_token_account
                 .expect("bonanza_token_account is not set"),
 
+            liquidity_zinc_token_account: self
+                .instruction
+                .liquidity_zinc_token_account
+                .expect("liquidity_zinc_token_account is not set"),
+
             stockpile_token_account: self
                 .instruction
                 .stockpile_token_account
@@ -664,6 +710,7 @@ struct FinalizeNoWinnerRoundCpiBuilderInstruction<'a, 'b> {
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
     round_zinc_payout_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     bonanza_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    liquidity_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.

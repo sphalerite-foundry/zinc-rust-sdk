@@ -29,6 +29,8 @@ pub struct CloseRound {
     pub curve_admin_token_account: solana_address::Address,
     /// Treasury-owned Bonanza token account that receives rolling Bonanza accrual.
     pub bonanza_token_account: solana_address::Address,
+    /// Treasury-owned liquidity token account that receives LP ZINC inventory.
+    pub liquidity_zinc_token_account: solana_address::Address,
     /// Round-owned ZINC vault that holds this round's direct-winner payout inventory.
     pub round_zinc_payout_token_account: solana_address::Address,
     /// Dedicated stockpile token account that receives stockpile ZINC accrual.
@@ -51,7 +53,7 @@ impl CloseRound {
         &self,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.signer, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -67,6 +69,10 @@ impl CloseRound {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             self.bonanza_token_account,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.liquidity_zinc_token_account,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -141,11 +147,12 @@ impl Default for CloseRoundInstructionData {
 ///   5. `[writable]` zinc_mint
 ///   6. `[writable]` curve_admin_token_account
 ///   7. `[writable]` bonanza_token_account
-///   8. `[writable]` round_zinc_payout_token_account
-///   9. `[writable]` stockpile_token_account
-///   10. `[optional]` stockpile
-///   11. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   12. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   8. `[writable]` liquidity_zinc_token_account
+///   9. `[writable]` round_zinc_payout_token_account
+///   10. `[writable]` stockpile_token_account
+///   11. `[optional]` stockpile
+///   12. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   13. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct CloseRoundBuilder {
     signer: Option<solana_address::Address>,
@@ -156,6 +163,7 @@ pub struct CloseRoundBuilder {
     zinc_mint: Option<solana_address::Address>,
     curve_admin_token_account: Option<solana_address::Address>,
     bonanza_token_account: Option<solana_address::Address>,
+    liquidity_zinc_token_account: Option<solana_address::Address>,
     round_zinc_payout_token_account: Option<solana_address::Address>,
     stockpile_token_account: Option<solana_address::Address>,
     stockpile: Option<solana_address::Address>,
@@ -220,6 +228,15 @@ impl CloseRoundBuilder {
         bonanza_token_account: solana_address::Address,
     ) -> &mut Self {
         self.bonanza_token_account = Some(bonanza_token_account);
+        self
+    }
+    /// Treasury-owned liquidity token account that receives LP ZINC inventory.
+    #[inline(always)]
+    pub fn liquidity_zinc_token_account(
+        &mut self,
+        liquidity_zinc_token_account: solana_address::Address,
+    ) -> &mut Self {
+        self.liquidity_zinc_token_account = Some(liquidity_zinc_token_account);
         self
     }
     /// Round-owned ZINC vault that holds this round's direct-winner payout inventory.
@@ -291,6 +308,9 @@ impl CloseRoundBuilder {
             bonanza_token_account: self
                 .bonanza_token_account
                 .expect("bonanza_token_account is not set"),
+            liquidity_zinc_token_account: self
+                .liquidity_zinc_token_account
+                .expect("liquidity_zinc_token_account is not set"),
             round_zinc_payout_token_account: self
                 .round_zinc_payout_token_account
                 .expect("round_zinc_payout_token_account is not set"),
@@ -328,6 +348,8 @@ pub struct CloseRoundCpiAccounts<'a, 'b> {
     pub curve_admin_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury-owned Bonanza token account that receives rolling Bonanza accrual.
     pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned liquidity token account that receives LP ZINC inventory.
+    pub liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Round-owned ZINC vault that holds this round's direct-winner payout inventory.
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated stockpile token account that receives stockpile ZINC accrual.
@@ -360,6 +382,8 @@ pub struct CloseRoundCpi<'a, 'b> {
     pub curve_admin_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Treasury-owned Bonanza token account that receives rolling Bonanza accrual.
     pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Treasury-owned liquidity token account that receives LP ZINC inventory.
+    pub liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Round-owned ZINC vault that holds this round's direct-winner payout inventory.
     pub round_zinc_payout_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated stockpile token account that receives stockpile ZINC accrual.
@@ -387,6 +411,7 @@ impl<'a, 'b> CloseRoundCpi<'a, 'b> {
             zinc_mint: accounts.zinc_mint,
             curve_admin_token_account: accounts.curve_admin_token_account,
             bonanza_token_account: accounts.bonanza_token_account,
+            liquidity_zinc_token_account: accounts.liquidity_zinc_token_account,
             round_zinc_payout_token_account: accounts.round_zinc_payout_token_account,
             stockpile_token_account: accounts.stockpile_token_account,
             stockpile: accounts.stockpile,
@@ -417,7 +442,7 @@ impl<'a, 'b> CloseRoundCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(13 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(14 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.signer.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -439,6 +464,10 @@ impl<'a, 'b> CloseRoundCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.bonanza_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.liquidity_zinc_token_account.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -482,7 +511,7 @@ impl<'a, 'b> CloseRoundCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(14 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(15 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.signer.clone());
         account_infos.push(self.config.clone());
@@ -492,6 +521,7 @@ impl<'a, 'b> CloseRoundCpi<'a, 'b> {
         account_infos.push(self.zinc_mint.clone());
         account_infos.push(self.curve_admin_token_account.clone());
         account_infos.push(self.bonanza_token_account.clone());
+        account_infos.push(self.liquidity_zinc_token_account.clone());
         account_infos.push(self.round_zinc_payout_token_account.clone());
         account_infos.push(self.stockpile_token_account.clone());
         if let Some(stockpile) = self.stockpile {
@@ -523,11 +553,12 @@ impl<'a, 'b> CloseRoundCpi<'a, 'b> {
 ///   5. `[writable]` zinc_mint
 ///   6. `[writable]` curve_admin_token_account
 ///   7. `[writable]` bonanza_token_account
-///   8. `[writable]` round_zinc_payout_token_account
-///   9. `[writable]` stockpile_token_account
-///   10. `[optional]` stockpile
-///   11. `[]` token_program
-///   12. `[]` system_program
+///   8. `[writable]` liquidity_zinc_token_account
+///   9. `[writable]` round_zinc_payout_token_account
+///   10. `[writable]` stockpile_token_account
+///   11. `[optional]` stockpile
+///   12. `[]` token_program
+///   13. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct CloseRoundCpiBuilder<'a, 'b> {
     instruction: Box<CloseRoundCpiBuilderInstruction<'a, 'b>>,
@@ -545,6 +576,7 @@ impl<'a, 'b> CloseRoundCpiBuilder<'a, 'b> {
             zinc_mint: None,
             curve_admin_token_account: None,
             bonanza_token_account: None,
+            liquidity_zinc_token_account: None,
             round_zinc_payout_token_account: None,
             stockpile_token_account: None,
             stockpile: None,
@@ -606,6 +638,15 @@ impl<'a, 'b> CloseRoundCpiBuilder<'a, 'b> {
         bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.bonanza_token_account = Some(bonanza_token_account);
+        self
+    }
+    /// Treasury-owned liquidity token account that receives LP ZINC inventory.
+    #[inline(always)]
+    pub fn liquidity_zinc_token_account(
+        &mut self,
+        liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.liquidity_zinc_token_account = Some(liquidity_zinc_token_account);
         self
     }
     /// Round-owned ZINC vault that holds this round's direct-winner payout inventory.
@@ -713,6 +754,11 @@ impl<'a, 'b> CloseRoundCpiBuilder<'a, 'b> {
                 .bonanza_token_account
                 .expect("bonanza_token_account is not set"),
 
+            liquidity_zinc_token_account: self
+                .instruction
+                .liquidity_zinc_token_account
+                .expect("liquidity_zinc_token_account is not set"),
+
             round_zinc_payout_token_account: self
                 .instruction
                 .round_zinc_payout_token_account
@@ -753,6 +799,7 @@ struct CloseRoundCpiBuilderInstruction<'a, 'b> {
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
     curve_admin_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     bonanza_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    liquidity_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     round_zinc_payout_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile: Option<&'b solana_account_info::AccountInfo<'a>>,

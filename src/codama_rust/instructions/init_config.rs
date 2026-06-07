@@ -31,6 +31,8 @@ pub struct InitConfig {
     pub bonanza_token_account: solana_address::Address,
     /// Dedicated stockpile vault that holds stockpile ZINC separately from Bonanza accrual.
     pub stockpile_token_account: solana_address::Address,
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
+    pub liquidity_zinc_token_account: solana_address::Address,
     /// Dedicated staking vault that escrows staked ZINC balances.
     pub staking_token_account: solana_address::Address,
     /// Dedicated reward vault that funds staker-yield claims.
@@ -39,6 +41,8 @@ pub struct InitConfig {
     pub round_zinc_reward_token_account: solana_address::Address,
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
     pub stockpile_sol_vault: solana_address::Address,
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    pub bonanza_sol_vault: solana_address::Address,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: solana_address::Address,
     /// Singleton account that tracks pending stockpile extras for the current cycle.
@@ -66,7 +70,7 @@ impl InitConfig {
         args: InitConfigInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(20 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(22 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.admin, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.crank, false,
@@ -91,6 +95,10 @@ impl InitConfig {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
+            self.liquidity_zinc_token_account,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
             self.staking_token_account,
             false,
         ));
@@ -104,6 +112,10 @@ impl InitConfig {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             self.stockpile_sol_vault,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            self.bonanza_sol_vault,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -193,17 +205,19 @@ impl InitConfigInstructionArgs {
 ///   6. `[writable]` curve_admin_token_account
 ///   7. `[writable]` bonanza_token_account
 ///   8. `[writable]` stockpile_token_account
-///   9. `[writable]` staking_token_account
-///   10. `[writable]` staking_reward_token_account
-///   11. `[writable]` round_zinc_reward_token_account
-///   12. `[writable]` stockpile_sol_vault
-///   13. `[writable]` buyback_sol_vault
-///   14. `[writable]` stockpile_extras
-///   15. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
-///   16. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   17. `[optional]` metadata_program (default to `metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`)
-///   18. `[optional]` rent (default to `SysvarRent111111111111111111111111111111111`)
-///   19. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   9. `[writable]` liquidity_zinc_token_account
+///   10. `[writable]` staking_token_account
+///   11. `[writable]` staking_reward_token_account
+///   12. `[writable]` round_zinc_reward_token_account
+///   13. `[writable]` stockpile_sol_vault
+///   14. `[writable]` bonanza_sol_vault
+///   15. `[writable]` buyback_sol_vault
+///   16. `[writable]` stockpile_extras
+///   17. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
+///   18. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   19. `[optional]` metadata_program (default to `metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`)
+///   20. `[optional]` rent (default to `SysvarRent111111111111111111111111111111111`)
+///   21. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct InitConfigBuilder {
     admin: Option<solana_address::Address>,
@@ -215,10 +229,12 @@ pub struct InitConfigBuilder {
     curve_admin_token_account: Option<solana_address::Address>,
     bonanza_token_account: Option<solana_address::Address>,
     stockpile_token_account: Option<solana_address::Address>,
+    liquidity_zinc_token_account: Option<solana_address::Address>,
     staking_token_account: Option<solana_address::Address>,
     staking_reward_token_account: Option<solana_address::Address>,
     round_zinc_reward_token_account: Option<solana_address::Address>,
     stockpile_sol_vault: Option<solana_address::Address>,
+    bonanza_sol_vault: Option<solana_address::Address>,
     buyback_sol_vault: Option<solana_address::Address>,
     stockpile_extras: Option<solana_address::Address>,
     associated_token_program: Option<solana_address::Address>,
@@ -292,6 +308,15 @@ impl InitConfigBuilder {
         self.stockpile_token_account = Some(stockpile_token_account);
         self
     }
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
+    #[inline(always)]
+    pub fn liquidity_zinc_token_account(
+        &mut self,
+        liquidity_zinc_token_account: solana_address::Address,
+    ) -> &mut Self {
+        self.liquidity_zinc_token_account = Some(liquidity_zinc_token_account);
+        self
+    }
     /// Dedicated staking vault that escrows staked ZINC balances.
     #[inline(always)]
     pub fn staking_token_account(
@@ -326,6 +351,12 @@ impl InitConfigBuilder {
         stockpile_sol_vault: solana_address::Address,
     ) -> &mut Self {
         self.stockpile_sol_vault = Some(stockpile_sol_vault);
+        self
+    }
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    #[inline(always)]
+    pub fn bonanza_sol_vault(&mut self, bonanza_sol_vault: solana_address::Address) -> &mut Self {
+        self.bonanza_sol_vault = Some(bonanza_sol_vault);
         self
     }
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
@@ -416,6 +447,9 @@ impl InitConfigBuilder {
             stockpile_token_account: self
                 .stockpile_token_account
                 .expect("stockpile_token_account is not set"),
+            liquidity_zinc_token_account: self
+                .liquidity_zinc_token_account
+                .expect("liquidity_zinc_token_account is not set"),
             staking_token_account: self
                 .staking_token_account
                 .expect("staking_token_account is not set"),
@@ -428,6 +462,9 @@ impl InitConfigBuilder {
             stockpile_sol_vault: self
                 .stockpile_sol_vault
                 .expect("stockpile_sol_vault is not set"),
+            bonanza_sol_vault: self
+                .bonanza_sol_vault
+                .expect("bonanza_sol_vault is not set"),
             buyback_sol_vault: self
                 .buyback_sol_vault
                 .expect("buyback_sol_vault is not set"),
@@ -475,6 +512,8 @@ pub struct InitConfigCpiAccounts<'a, 'b> {
     pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated stockpile vault that holds stockpile ZINC separately from Bonanza accrual.
     pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
+    pub liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated staking vault that escrows staked ZINC balances.
     pub staking_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated reward vault that funds staker-yield claims.
@@ -483,6 +522,8 @@ pub struct InitConfigCpiAccounts<'a, 'b> {
     pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    pub bonanza_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Singleton account that tracks pending stockpile extras for the current cycle.
@@ -521,6 +562,8 @@ pub struct InitConfigCpi<'a, 'b> {
     pub bonanza_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated stockpile vault that holds stockpile ZINC separately from Bonanza accrual.
     pub stockpile_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
+    pub liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated staking vault that escrows staked ZINC balances.
     pub staking_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Dedicated reward vault that funds staker-yield claims.
@@ -529,6 +572,8 @@ pub struct InitConfigCpi<'a, 'b> {
     pub round_zinc_reward_token_account: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates stockpile SOL across cycles.
     pub stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    pub bonanza_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
     pub buyback_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     /// Singleton account that tracks pending stockpile extras for the current cycle.
@@ -564,10 +609,12 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
             curve_admin_token_account: accounts.curve_admin_token_account,
             bonanza_token_account: accounts.bonanza_token_account,
             stockpile_token_account: accounts.stockpile_token_account,
+            liquidity_zinc_token_account: accounts.liquidity_zinc_token_account,
             staking_token_account: accounts.staking_token_account,
             staking_reward_token_account: accounts.staking_reward_token_account,
             round_zinc_reward_token_account: accounts.round_zinc_reward_token_account,
             stockpile_sol_vault: accounts.stockpile_sol_vault,
+            bonanza_sol_vault: accounts.bonanza_sol_vault,
             buyback_sol_vault: accounts.buyback_sol_vault,
             stockpile_extras: accounts.stockpile_extras,
             associated_token_program: accounts.associated_token_program,
@@ -601,7 +648,7 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(20 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(22 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.admin.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.crank.key,
@@ -636,6 +683,10 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
+            *self.liquidity_zinc_token_account.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
             *self.staking_token_account.key,
             false,
         ));
@@ -649,6 +700,10 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
         ));
         accounts.push(solana_instruction::AccountMeta::new(
             *self.stockpile_sol_vault.key,
+            false,
+        ));
+        accounts.push(solana_instruction::AccountMeta::new(
+            *self.bonanza_sol_vault.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
@@ -695,7 +750,7 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(21 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(23 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.admin.clone());
         account_infos.push(self.crank.clone());
@@ -706,10 +761,12 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
         account_infos.push(self.curve_admin_token_account.clone());
         account_infos.push(self.bonanza_token_account.clone());
         account_infos.push(self.stockpile_token_account.clone());
+        account_infos.push(self.liquidity_zinc_token_account.clone());
         account_infos.push(self.staking_token_account.clone());
         account_infos.push(self.staking_reward_token_account.clone());
         account_infos.push(self.round_zinc_reward_token_account.clone());
         account_infos.push(self.stockpile_sol_vault.clone());
+        account_infos.push(self.bonanza_sol_vault.clone());
         account_infos.push(self.buyback_sol_vault.clone());
         account_infos.push(self.stockpile_extras.clone());
         account_infos.push(self.associated_token_program.clone());
@@ -742,17 +799,19 @@ impl<'a, 'b> InitConfigCpi<'a, 'b> {
 ///   6. `[writable]` curve_admin_token_account
 ///   7. `[writable]` bonanza_token_account
 ///   8. `[writable]` stockpile_token_account
-///   9. `[writable]` staking_token_account
-///   10. `[writable]` staking_reward_token_account
-///   11. `[writable]` round_zinc_reward_token_account
-///   12. `[writable]` stockpile_sol_vault
-///   13. `[writable]` buyback_sol_vault
-///   14. `[writable]` stockpile_extras
-///   15. `[]` associated_token_program
-///   16. `[]` token_program
-///   17. `[]` metadata_program
-///   18. `[]` rent
-///   19. `[]` system_program
+///   9. `[writable]` liquidity_zinc_token_account
+///   10. `[writable]` staking_token_account
+///   11. `[writable]` staking_reward_token_account
+///   12. `[writable]` round_zinc_reward_token_account
+///   13. `[writable]` stockpile_sol_vault
+///   14. `[writable]` bonanza_sol_vault
+///   15. `[writable]` buyback_sol_vault
+///   16. `[writable]` stockpile_extras
+///   17. `[]` associated_token_program
+///   18. `[]` token_program
+///   19. `[]` metadata_program
+///   20. `[]` rent
+///   21. `[]` system_program
 #[derive(Clone, Debug)]
 pub struct InitConfigCpiBuilder<'a, 'b> {
     instruction: Box<InitConfigCpiBuilderInstruction<'a, 'b>>,
@@ -771,10 +830,12 @@ impl<'a, 'b> InitConfigCpiBuilder<'a, 'b> {
             curve_admin_token_account: None,
             bonanza_token_account: None,
             stockpile_token_account: None,
+            liquidity_zinc_token_account: None,
             staking_token_account: None,
             staking_reward_token_account: None,
             round_zinc_reward_token_account: None,
             stockpile_sol_vault: None,
+            bonanza_sol_vault: None,
             buyback_sol_vault: None,
             stockpile_extras: None,
             associated_token_program: None,
@@ -848,6 +909,15 @@ impl<'a, 'b> InitConfigCpiBuilder<'a, 'b> {
         self.instruction.stockpile_token_account = Some(stockpile_token_account);
         self
     }
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
+    #[inline(always)]
+    pub fn liquidity_zinc_token_account(
+        &mut self,
+        liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.liquidity_zinc_token_account = Some(liquidity_zinc_token_account);
+        self
+    }
     /// Dedicated staking vault that escrows staked ZINC balances.
     #[inline(always)]
     pub fn staking_token_account(
@@ -882,6 +952,15 @@ impl<'a, 'b> InitConfigCpiBuilder<'a, 'b> {
         stockpile_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.stockpile_sol_vault = Some(stockpile_sol_vault);
+        self
+    }
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    #[inline(always)]
+    pub fn bonanza_sol_vault(
+        &mut self,
+        bonanza_sol_vault: &'b solana_account_info::AccountInfo<'a>,
+    ) -> &mut Self {
+        self.instruction.bonanza_sol_vault = Some(bonanza_sol_vault);
         self
     }
     /// Program-owned lamport vault that accumulates buyback SOL across deploys.
@@ -1019,6 +1098,11 @@ impl<'a, 'b> InitConfigCpiBuilder<'a, 'b> {
                 .stockpile_token_account
                 .expect("stockpile_token_account is not set"),
 
+            liquidity_zinc_token_account: self
+                .instruction
+                .liquidity_zinc_token_account
+                .expect("liquidity_zinc_token_account is not set"),
+
             staking_token_account: self
                 .instruction
                 .staking_token_account
@@ -1038,6 +1122,11 @@ impl<'a, 'b> InitConfigCpiBuilder<'a, 'b> {
                 .instruction
                 .stockpile_sol_vault
                 .expect("stockpile_sol_vault is not set"),
+
+            bonanza_sol_vault: self
+                .instruction
+                .bonanza_sol_vault
+                .expect("bonanza_sol_vault is not set"),
 
             buyback_sol_vault: self
                 .instruction
@@ -1091,10 +1180,12 @@ struct InitConfigCpiBuilderInstruction<'a, 'b> {
     curve_admin_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     bonanza_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    liquidity_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     staking_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     staking_reward_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     round_zinc_reward_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_sol_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
+    bonanza_sol_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
     buyback_sol_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
     stockpile_extras: Option<&'b solana_account_info::AccountInfo<'a>>,
     associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,

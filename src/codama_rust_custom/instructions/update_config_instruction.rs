@@ -14,6 +14,8 @@ pub struct UpdateConfigInstructionInputs {
     pub deploy_admin_fee_bps: Option<u64>,
     /// Optional gross deploy-time SOL stockpile fee in basis points.
     pub deploy_stockpile_fee_bps: Option<u64>,
+    /// Optional gross deploy-time SOL Bonanza fee in basis points.
+    pub deploy_bonanza_fee_bps: Option<u64>,
     /// Optional gross deploy-time SOL affiliate fee in basis points.
     pub deploy_affiliate_fee_bps: Option<u64>,
     /// Optional flat deploy-time stockpile-bricks bonus for referred players, in `x10k` units.
@@ -68,6 +70,8 @@ pub struct UpdateConfigInstructionInputs {
     pub winner_zinc_share_bps: Option<u64>,
     /// Optional share of post-skim ZINC allocated to stockpile ZINC.
     pub stockpile_zinc_share_bps: Option<u64>,
+    /// Optional share of Bonanza-directed ZINC routed to liquidity custody.
+    pub bonanza_zinc_liquidity_share_bps: Option<u64>,
     /// Optional no-winner direct-winner ZINC redirect share allocated to Bonanza.
     pub no_winner_direct_winner_zinc_bonanza_share_bps: Option<u64>,
     /// Optional no-winner direct-winner ZINC redirect share allocated to stockpile.
@@ -115,6 +119,7 @@ impl InstructionsHelper {
             deploy_total_fee_bps,
             deploy_admin_fee_bps,
             deploy_stockpile_fee_bps,
+            deploy_bonanza_fee_bps,
             deploy_affiliate_fee_bps,
             deploy_affiliate_bonus_bricks_x10k,
             wildcat_round_frequency,
@@ -142,6 +147,7 @@ impl InstructionsHelper {
             curve_admin_fee_bps,
             winner_zinc_share_bps,
             stockpile_zinc_share_bps,
+            bonanza_zinc_liquidity_share_bps,
             no_winner_direct_winner_zinc_bonanza_share_bps,
             no_winner_direct_winner_zinc_stockpile_share_bps,
             min_deploy_lamports,
@@ -176,10 +182,12 @@ impl InstructionsHelper {
             stockpile_min_entry_bricks_x10k,
             deploy_admin_fee_bps,
             deploy_stockpile_fee_bps,
+            deploy_bonanza_fee_bps,
             deploy_affiliate_fee_bps,
             curve_admin_fee_bps,
             winner_zinc_share_bps,
             stockpile_zinc_share_bps,
+            bonanza_zinc_liquidity_share_bps,
             no_winner_direct_winner_zinc_bonanza_share_bps,
             no_winner_direct_winner_zinc_stockpile_share_bps,
             min_deploy_lamports,
