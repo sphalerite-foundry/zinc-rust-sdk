@@ -86,11 +86,13 @@ pub struct UpdateConfigInstructionArgs {
     pub stockpile_min_entry_bricks_x10k: Option<u64>,
     pub deploy_admin_fee_bps: Option<u64>,
     pub deploy_stockpile_fee_bps: Option<u64>,
+    pub deploy_bonanza_fee_bps: Option<u64>,
     pub deploy_affiliate_fee_bps: Option<u64>,
     pub affiliate_withdrawals_enabled: Option<bool>,
     pub curve_admin_fee_bps: Option<u64>,
     pub winner_zinc_share_bps: Option<u64>,
     pub stockpile_zinc_share_bps: Option<u64>,
+    pub bonanza_zinc_liquidity_share_bps: Option<u64>,
     pub no_winner_direct_winner_zinc_bonanza_share_bps: Option<u64>,
     pub no_winner_direct_winner_zinc_stockpile_share_bps: Option<u64>,
     pub min_deploy_lamports: Option<u64>,
@@ -155,11 +157,13 @@ pub struct UpdateConfigBuilder {
     stockpile_min_entry_bricks_x10k: Option<u64>,
     deploy_admin_fee_bps: Option<u64>,
     deploy_stockpile_fee_bps: Option<u64>,
+    deploy_bonanza_fee_bps: Option<u64>,
     deploy_affiliate_fee_bps: Option<u64>,
     affiliate_withdrawals_enabled: Option<bool>,
     curve_admin_fee_bps: Option<u64>,
     winner_zinc_share_bps: Option<u64>,
     stockpile_zinc_share_bps: Option<u64>,
+    bonanza_zinc_liquidity_share_bps: Option<u64>,
     no_winner_direct_winner_zinc_bonanza_share_bps: Option<u64>,
     no_winner_direct_winner_zinc_stockpile_share_bps: Option<u64>,
     min_deploy_lamports: Option<u64>,
@@ -267,6 +271,12 @@ impl UpdateConfigBuilder {
     }
     /// `[optional argument]`
     #[inline(always)]
+    pub fn deploy_bonanza_fee_bps(&mut self, deploy_bonanza_fee_bps: u64) -> &mut Self {
+        self.deploy_bonanza_fee_bps = Some(deploy_bonanza_fee_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
     pub fn deploy_affiliate_fee_bps(&mut self, deploy_affiliate_fee_bps: u64) -> &mut Self {
         self.deploy_affiliate_fee_bps = Some(deploy_affiliate_fee_bps);
         self
@@ -296,6 +306,15 @@ impl UpdateConfigBuilder {
     #[inline(always)]
     pub fn stockpile_zinc_share_bps(&mut self, stockpile_zinc_share_bps: u64) -> &mut Self {
         self.stockpile_zinc_share_bps = Some(stockpile_zinc_share_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn bonanza_zinc_liquidity_share_bps(
+        &mut self,
+        bonanza_zinc_liquidity_share_bps: u64,
+    ) -> &mut Self {
+        self.bonanza_zinc_liquidity_share_bps = Some(bonanza_zinc_liquidity_share_bps);
         self
     }
     /// `[optional argument]`
@@ -591,11 +610,13 @@ impl UpdateConfigBuilder {
             stockpile_min_entry_bricks_x10k: self.stockpile_min_entry_bricks_x10k.clone(),
             deploy_admin_fee_bps: self.deploy_admin_fee_bps.clone(),
             deploy_stockpile_fee_bps: self.deploy_stockpile_fee_bps.clone(),
+            deploy_bonanza_fee_bps: self.deploy_bonanza_fee_bps.clone(),
             deploy_affiliate_fee_bps: self.deploy_affiliate_fee_bps.clone(),
             affiliate_withdrawals_enabled: self.affiliate_withdrawals_enabled.clone(),
             curve_admin_fee_bps: self.curve_admin_fee_bps.clone(),
             winner_zinc_share_bps: self.winner_zinc_share_bps.clone(),
             stockpile_zinc_share_bps: self.stockpile_zinc_share_bps.clone(),
+            bonanza_zinc_liquidity_share_bps: self.bonanza_zinc_liquidity_share_bps.clone(),
             no_winner_direct_winner_zinc_bonanza_share_bps: self
                 .no_winner_direct_winner_zinc_bonanza_share_bps
                 .clone(),
@@ -771,11 +792,13 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
             stockpile_min_entry_bricks_x10k: None,
             deploy_admin_fee_bps: None,
             deploy_stockpile_fee_bps: None,
+            deploy_bonanza_fee_bps: None,
             deploy_affiliate_fee_bps: None,
             affiliate_withdrawals_enabled: None,
             curve_admin_fee_bps: None,
             winner_zinc_share_bps: None,
             stockpile_zinc_share_bps: None,
+            bonanza_zinc_liquidity_share_bps: None,
             no_winner_direct_winner_zinc_bonanza_share_bps: None,
             no_winner_direct_winner_zinc_stockpile_share_bps: None,
             min_deploy_lamports: None,
@@ -880,6 +903,12 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
     }
     /// `[optional argument]`
     #[inline(always)]
+    pub fn deploy_bonanza_fee_bps(&mut self, deploy_bonanza_fee_bps: u64) -> &mut Self {
+        self.instruction.deploy_bonanza_fee_bps = Some(deploy_bonanza_fee_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
     pub fn deploy_affiliate_fee_bps(&mut self, deploy_affiliate_fee_bps: u64) -> &mut Self {
         self.instruction.deploy_affiliate_fee_bps = Some(deploy_affiliate_fee_bps);
         self
@@ -909,6 +938,15 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn stockpile_zinc_share_bps(&mut self, stockpile_zinc_share_bps: u64) -> &mut Self {
         self.instruction.stockpile_zinc_share_bps = Some(stockpile_zinc_share_bps);
+        self
+    }
+    /// `[optional argument]`
+    #[inline(always)]
+    pub fn bonanza_zinc_liquidity_share_bps(
+        &mut self,
+        bonanza_zinc_liquidity_share_bps: u64,
+    ) -> &mut Self {
+        self.instruction.bonanza_zinc_liquidity_share_bps = Some(bonanza_zinc_liquidity_share_bps);
         self
     }
     /// `[optional argument]`
@@ -1224,11 +1262,16 @@ impl<'a, 'b> UpdateConfigCpiBuilder<'a, 'b> {
                 .clone(),
             deploy_admin_fee_bps: self.instruction.deploy_admin_fee_bps.clone(),
             deploy_stockpile_fee_bps: self.instruction.deploy_stockpile_fee_bps.clone(),
+            deploy_bonanza_fee_bps: self.instruction.deploy_bonanza_fee_bps.clone(),
             deploy_affiliate_fee_bps: self.instruction.deploy_affiliate_fee_bps.clone(),
             affiliate_withdrawals_enabled: self.instruction.affiliate_withdrawals_enabled.clone(),
             curve_admin_fee_bps: self.instruction.curve_admin_fee_bps.clone(),
             winner_zinc_share_bps: self.instruction.winner_zinc_share_bps.clone(),
             stockpile_zinc_share_bps: self.instruction.stockpile_zinc_share_bps.clone(),
+            bonanza_zinc_liquidity_share_bps: self
+                .instruction
+                .bonanza_zinc_liquidity_share_bps
+                .clone(),
             no_winner_direct_winner_zinc_bonanza_share_bps: self
                 .instruction
                 .no_winner_direct_winner_zinc_bonanza_share_bps
@@ -1318,11 +1361,13 @@ struct UpdateConfigCpiBuilderInstruction<'a, 'b> {
     stockpile_min_entry_bricks_x10k: Option<u64>,
     deploy_admin_fee_bps: Option<u64>,
     deploy_stockpile_fee_bps: Option<u64>,
+    deploy_bonanza_fee_bps: Option<u64>,
     deploy_affiliate_fee_bps: Option<u64>,
     affiliate_withdrawals_enabled: Option<bool>,
     curve_admin_fee_bps: Option<u64>,
     winner_zinc_share_bps: Option<u64>,
     stockpile_zinc_share_bps: Option<u64>,
+    bonanza_zinc_liquidity_share_bps: Option<u64>,
     no_winner_direct_winner_zinc_bonanza_share_bps: Option<u64>,
     no_winner_direct_winner_zinc_stockpile_share_bps: Option<u64>,
     min_deploy_lamports: Option<u64>,

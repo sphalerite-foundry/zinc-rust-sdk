@@ -49,6 +49,7 @@ impl InstructionsHelper {
             board: PdaHelper::get_board_address(),
             treasury: PdaHelper::get_treasury_address(),
             stockpile_sol_vault: PdaHelper::get_stockpile_sol_vault_address(),
+            bonanza_sol_vault: PdaHelper::get_bonanza_sol_vault_address(),
             buyback_sol_vault: PdaHelper::get_buyback_sol_vault_address(),
             stockpile: stockpile_id
                 .map(|stockpile_id| PdaHelper::get_stockpile_address(stockpile_id)),

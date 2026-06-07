@@ -37,5 +37,6 @@ pub mod update_config_instruction;
 pub mod update_zinc_mint_metadata_instruction;
 pub mod wait_for_first_deploy_instruction;
 pub mod wildcat_instruction;
+pub mod withdraw_treasury_fees_instruction;
 
 pub struct InstructionsHelper;

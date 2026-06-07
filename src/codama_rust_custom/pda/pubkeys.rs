@@ -161,6 +161,11 @@ impl PdaHelper {
         Pubkey::find_program_address(&[b"treasury", b"bonanza-token-account"], &ZINC_ID).0
     }
 
+    /// Derives the treasury-owned liquidity ZINC vault PDA created during config bootstrap.
+    pub fn get_liquidity_zinc_token_account_address() -> Pubkey {
+        Pubkey::find_program_address(&[b"treasury", b"liquidity-zinc-token-account"], &ZINC_ID).0
+    }
+
     /// Derives the treasury-owned singleton vault for credited round ZINC rewards.
     pub fn get_round_zinc_reward_token_account_address() -> Pubkey {
         Pubkey::find_program_address(&[b"treasury", b"round-zinc-reward-token-account"], &ZINC_ID).0
@@ -255,6 +260,11 @@ impl PdaHelper {
     /// Derives the singleton stockpile SOL vault PDA.
     pub fn get_stockpile_sol_vault_address() -> Pubkey {
         Pubkey::find_program_address(&[b"stockpile-sol-vault"], &ZINC_ID).0
+    }
+
+    /// Derives the singleton Bonanza SOL vault PDA.
+    pub fn get_bonanza_sol_vault_address() -> Pubkey {
+        Pubkey::find_program_address(&[b"bonanza-sol-vault"], &ZINC_ID).0
     }
 
     /// Derives the singleton buyback SOL vault PDA.

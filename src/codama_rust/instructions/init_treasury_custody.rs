@@ -8,46 +8,40 @@
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
-pub const WITHDRAW_TREASURY_FEES_DISCRIMINATOR: [u8; 8] = [43, 110, 110, 113, 177, 16, 201, 250];
+pub const INIT_TREASURY_CUSTODY_DISCRIMINATOR: [u8; 8] = [46, 2, 251, 113, 240, 92, 176, 41];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct WithdrawTreasuryFees {
-    /// Admin signer that receives the swept SOL and ZINC.
+pub struct InitTreasuryCustody {
+    /// Admin signer that pays for any missing custody accounts.
     pub admin: solana_address::Address,
     /// Global config that authorizes the admin and treasury relationship.
     pub config: solana_address::Address,
-    /// Treasury PDA that holds protocol-fee SOL and the curve-admin ZINC vault authority.
+    /// Treasury PDA whose custody fields are initialized or verified.
     pub treasury: solana_address::Address,
-    /// Protocol ZINC mint used by the curve-admin fee vault.
+    /// Protocol ZINC mint used by the liquidity vault.
     pub zinc_mint: solana_address::Address,
-    /// Treasury-owned ATA that holds the curve-admin ZINC skim.
-    pub curve_admin_token_account: solana_address::Address,
-    /// Admin ATA that receives the swept curve-admin ZINC balance.
-    pub admin_token_account: solana_address::Address,
-    /// Associated Token Program used to validate canonical ATA addresses.
-    pub associated_token_program: solana_address::Address,
-    /// SPL Token Program that owns the source and destination token accounts.
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
+    pub liquidity_zinc_token_account: solana_address::Address,
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    pub bonanza_sol_vault: solana_address::Address,
+    /// SPL Token Program that owns the liquidity vault.
     pub token_program: solana_address::Address,
-    /// System Program retained for stable client account shape.
+    /// System Program used to create missing custody accounts.
     pub system_program: solana_address::Address,
 }
 
-impl WithdrawTreasuryFees {
-    pub fn instruction(
-        &self,
-        args: WithdrawTreasuryFeesInstructionArgs,
-    ) -> solana_instruction::Instruction {
-        self.instruction_with_remaining_accounts(args, &[])
+impl InitTreasuryCustody {
+    pub fn instruction(&self) -> solana_instruction::Instruction {
+        self.instruction_with_remaining_accounts(&[])
     }
     #[allow(clippy::arithmetic_side_effects)]
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: WithdrawTreasuryFeesInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
-        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(self.admin, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.config,
@@ -59,15 +53,11 @@ impl WithdrawTreasuryFees {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.curve_admin_token_account,
+            self.liquidity_zinc_token_account,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            self.admin_token_account,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            self.associated_token_program,
+            self.bonanza_sol_vault,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -79,11 +69,9 @@ impl WithdrawTreasuryFees {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = WithdrawTreasuryFeesInstructionData::new()
+        let data = InitTreasuryCustodyInstructionData::new()
             .try_to_vec()
             .unwrap();
-        let mut args = args.try_to_vec().unwrap();
-        data.append(&mut args);
 
         solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
@@ -94,14 +82,14 @@ impl WithdrawTreasuryFees {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct WithdrawTreasuryFeesInstructionData {
+pub struct InitTreasuryCustodyInstructionData {
     discriminator: [u8; 8],
 }
 
-impl WithdrawTreasuryFeesInstructionData {
+impl InitTreasuryCustodyInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [43, 110, 110, 113, 177, 16, 201, 250],
+            discriminator: [46, 2, 251, 113, 240, 92, 176, 41],
         }
     }
 
@@ -110,25 +98,13 @@ impl WithdrawTreasuryFeesInstructionData {
     }
 }
 
-impl Default for WithdrawTreasuryFeesInstructionData {
+impl Default for InitTreasuryCustodyInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct WithdrawTreasuryFeesInstructionArgs {
-    pub sol_lamports: u64,
-    pub zinc_amount: u64,
-}
-
-impl WithdrawTreasuryFeesInstructionArgs {
-    pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> {
-        borsh::to_vec(self)
-    }
-}
-
-/// Instruction builder for `WithdrawTreasuryFees`.
+/// Instruction builder for `InitTreasuryCustody`.
 ///
 /// ### Accounts:
 ///
@@ -136,32 +112,28 @@ impl WithdrawTreasuryFeesInstructionArgs {
 ///   1. `[]` config
 ///   2. `[writable]` treasury
 ///   3. `[]` zinc_mint
-///   4. `[writable]` curve_admin_token_account
-///   5. `[writable]` admin_token_account
-///   6. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
-///   7. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
-///   8. `[optional]` system_program (default to `11111111111111111111111111111111`)
+///   4. `[writable]` liquidity_zinc_token_account
+///   5. `[writable]` bonanza_sol_vault
+///   6. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
+///   7. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
-pub struct WithdrawTreasuryFeesBuilder {
+pub struct InitTreasuryCustodyBuilder {
     admin: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
     zinc_mint: Option<solana_address::Address>,
-    curve_admin_token_account: Option<solana_address::Address>,
-    admin_token_account: Option<solana_address::Address>,
-    associated_token_program: Option<solana_address::Address>,
+    liquidity_zinc_token_account: Option<solana_address::Address>,
+    bonanza_sol_vault: Option<solana_address::Address>,
     token_program: Option<solana_address::Address>,
     system_program: Option<solana_address::Address>,
-    sol_lamports: Option<u64>,
-    zinc_amount: Option<u64>,
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl WithdrawTreasuryFeesBuilder {
+impl InitTreasuryCustodyBuilder {
     pub fn new() -> Self {
         Self::default()
     }
-    /// Admin signer that receives the swept SOL and ZINC.
+    /// Admin signer that pays for any missing custody accounts.
     #[inline(always)]
     pub fn admin(&mut self, admin: solana_address::Address) -> &mut Self {
         self.admin = Some(admin);
@@ -173,68 +145,45 @@ impl WithdrawTreasuryFeesBuilder {
         self.config = Some(config);
         self
     }
-    /// Treasury PDA that holds protocol-fee SOL and the curve-admin ZINC vault authority.
+    /// Treasury PDA whose custody fields are initialized or verified.
     #[inline(always)]
     pub fn treasury(&mut self, treasury: solana_address::Address) -> &mut Self {
         self.treasury = Some(treasury);
         self
     }
-    /// Protocol ZINC mint used by the curve-admin fee vault.
+    /// Protocol ZINC mint used by the liquidity vault.
     #[inline(always)]
     pub fn zinc_mint(&mut self, zinc_mint: solana_address::Address) -> &mut Self {
         self.zinc_mint = Some(zinc_mint);
         self
     }
-    /// Treasury-owned ATA that holds the curve-admin ZINC skim.
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
     #[inline(always)]
-    pub fn curve_admin_token_account(
+    pub fn liquidity_zinc_token_account(
         &mut self,
-        curve_admin_token_account: solana_address::Address,
+        liquidity_zinc_token_account: solana_address::Address,
     ) -> &mut Self {
-        self.curve_admin_token_account = Some(curve_admin_token_account);
+        self.liquidity_zinc_token_account = Some(liquidity_zinc_token_account);
         self
     }
-    /// Admin ATA that receives the swept curve-admin ZINC balance.
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
     #[inline(always)]
-    pub fn admin_token_account(
-        &mut self,
-        admin_token_account: solana_address::Address,
-    ) -> &mut Self {
-        self.admin_token_account = Some(admin_token_account);
-        self
-    }
-    /// `[optional account, default to 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL']`
-    /// Associated Token Program used to validate canonical ATA addresses.
-    #[inline(always)]
-    pub fn associated_token_program(
-        &mut self,
-        associated_token_program: solana_address::Address,
-    ) -> &mut Self {
-        self.associated_token_program = Some(associated_token_program);
+    pub fn bonanza_sol_vault(&mut self, bonanza_sol_vault: solana_address::Address) -> &mut Self {
+        self.bonanza_sol_vault = Some(bonanza_sol_vault);
         self
     }
     /// `[optional account, default to 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA']`
-    /// SPL Token Program that owns the source and destination token accounts.
+    /// SPL Token Program that owns the liquidity vault.
     #[inline(always)]
     pub fn token_program(&mut self, token_program: solana_address::Address) -> &mut Self {
         self.token_program = Some(token_program);
         self
     }
     /// `[optional account, default to '11111111111111111111111111111111']`
-    /// System Program retained for stable client account shape.
+    /// System Program used to create missing custody accounts.
     #[inline(always)]
     pub fn system_program(&mut self, system_program: solana_address::Address) -> &mut Self {
         self.system_program = Some(system_program);
-        self
-    }
-    #[inline(always)]
-    pub fn sol_lamports(&mut self, sol_lamports: u64) -> &mut Self {
-        self.sol_lamports = Some(sol_lamports);
-        self
-    }
-    #[inline(always)]
-    pub fn zinc_amount(&mut self, zinc_amount: u64) -> &mut Self {
-        self.zinc_amount = Some(zinc_amount);
         self
     }
     /// Add an additional account to the instruction.
@@ -254,20 +203,17 @@ impl WithdrawTreasuryFeesBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = WithdrawTreasuryFees {
+        let accounts = InitTreasuryCustody {
             admin: self.admin.expect("admin is not set"),
             config: self.config.expect("config is not set"),
             treasury: self.treasury.expect("treasury is not set"),
             zinc_mint: self.zinc_mint.expect("zinc_mint is not set"),
-            curve_admin_token_account: self
-                .curve_admin_token_account
-                .expect("curve_admin_token_account is not set"),
-            admin_token_account: self
-                .admin_token_account
-                .expect("admin_token_account is not set"),
-            associated_token_program: self.associated_token_program.unwrap_or(
-                solana_address::address!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"),
-            ),
+            liquidity_zinc_token_account: self
+                .liquidity_zinc_token_account
+                .expect("liquidity_zinc_token_account is not set"),
+            bonanza_sol_vault: self
+                .bonanza_sol_vault
+                .expect("bonanza_sol_vault is not set"),
             token_program: self.token_program.unwrap_or(solana_address::address!(
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
@@ -275,68 +221,57 @@ impl WithdrawTreasuryFeesBuilder {
                 .system_program
                 .unwrap_or(solana_address::address!("11111111111111111111111111111111")),
         };
-        let args = WithdrawTreasuryFeesInstructionArgs {
-            sol_lamports: self.sol_lamports.clone().expect("sol_lamports is not set"),
-            zinc_amount: self.zinc_amount.clone().expect("zinc_amount is not set"),
-        };
 
-        accounts.instruction_with_remaining_accounts(args, &self.__remaining_accounts)
+        accounts.instruction_with_remaining_accounts(&self.__remaining_accounts)
     }
 }
 
-/// `withdraw_treasury_fees` CPI accounts.
-pub struct WithdrawTreasuryFeesCpiAccounts<'a, 'b> {
-    /// Admin signer that receives the swept SOL and ZINC.
+/// `init_treasury_custody` CPI accounts.
+pub struct InitTreasuryCustodyCpiAccounts<'a, 'b> {
+    /// Admin signer that pays for any missing custody accounts.
     pub admin: &'b solana_account_info::AccountInfo<'a>,
     /// Global config that authorizes the admin and treasury relationship.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury PDA that holds protocol-fee SOL and the curve-admin ZINC vault authority.
+    /// Treasury PDA whose custody fields are initialized or verified.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
-    /// Protocol ZINC mint used by the curve-admin fee vault.
+    /// Protocol ZINC mint used by the liquidity vault.
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury-owned ATA that holds the curve-admin ZINC skim.
-    pub curve_admin_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Admin ATA that receives the swept curve-admin ZINC balance.
-    pub admin_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Associated Token Program used to validate canonical ATA addresses.
-    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// SPL Token Program that owns the source and destination token accounts.
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
+    pub liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    pub bonanza_sol_vault: &'b solana_account_info::AccountInfo<'a>,
+    /// SPL Token Program that owns the liquidity vault.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// System Program retained for stable client account shape.
+    /// System Program used to create missing custody accounts.
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `withdraw_treasury_fees` CPI instruction.
-pub struct WithdrawTreasuryFeesCpi<'a, 'b> {
+/// `init_treasury_custody` CPI instruction.
+pub struct InitTreasuryCustodyCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
-    /// Admin signer that receives the swept SOL and ZINC.
+    /// Admin signer that pays for any missing custody accounts.
     pub admin: &'b solana_account_info::AccountInfo<'a>,
     /// Global config that authorizes the admin and treasury relationship.
     pub config: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury PDA that holds protocol-fee SOL and the curve-admin ZINC vault authority.
+    /// Treasury PDA whose custody fields are initialized or verified.
     pub treasury: &'b solana_account_info::AccountInfo<'a>,
-    /// Protocol ZINC mint used by the curve-admin fee vault.
+    /// Protocol ZINC mint used by the liquidity vault.
     pub zinc_mint: &'b solana_account_info::AccountInfo<'a>,
-    /// Treasury-owned ATA that holds the curve-admin ZINC skim.
-    pub curve_admin_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Admin ATA that receives the swept curve-admin ZINC balance.
-    pub admin_token_account: &'b solana_account_info::AccountInfo<'a>,
-    /// Associated Token Program used to validate canonical ATA addresses.
-    pub associated_token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// SPL Token Program that owns the source and destination token accounts.
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
+    pub liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
+    pub bonanza_sol_vault: &'b solana_account_info::AccountInfo<'a>,
+    /// SPL Token Program that owns the liquidity vault.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
-    /// System Program retained for stable client account shape.
+    /// System Program used to create missing custody accounts.
     pub system_program: &'b solana_account_info::AccountInfo<'a>,
-    /// The arguments for the instruction.
-    pub __args: WithdrawTreasuryFeesInstructionArgs,
 }
 
-impl<'a, 'b> WithdrawTreasuryFeesCpi<'a, 'b> {
+impl<'a, 'b> InitTreasuryCustodyCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: WithdrawTreasuryFeesCpiAccounts<'a, 'b>,
-        args: WithdrawTreasuryFeesInstructionArgs,
+        accounts: InitTreasuryCustodyCpiAccounts<'a, 'b>,
     ) -> Self {
         Self {
             __program: program,
@@ -344,12 +279,10 @@ impl<'a, 'b> WithdrawTreasuryFeesCpi<'a, 'b> {
             config: accounts.config,
             treasury: accounts.treasury,
             zinc_mint: accounts.zinc_mint,
-            curve_admin_token_account: accounts.curve_admin_token_account,
-            admin_token_account: accounts.admin_token_account,
-            associated_token_program: accounts.associated_token_program,
+            liquidity_zinc_token_account: accounts.liquidity_zinc_token_account,
+            bonanza_sol_vault: accounts.bonanza_sol_vault,
             token_program: accounts.token_program,
             system_program: accounts.system_program,
-            __args: args,
         }
     }
     #[inline(always)]
@@ -375,7 +308,7 @@ impl<'a, 'b> WithdrawTreasuryFeesCpi<'a, 'b> {
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> solana_program_error::ProgramResult {
-        let mut accounts = Vec::with_capacity(9 + remaining_accounts.len());
+        let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(*self.admin.key, true));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.config.key,
@@ -390,15 +323,11 @@ impl<'a, 'b> WithdrawTreasuryFeesCpi<'a, 'b> {
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.curve_admin_token_account.key,
+            *self.liquidity_zinc_token_account.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new(
-            *self.admin_token_account.key,
-            false,
-        ));
-        accounts.push(solana_instruction::AccountMeta::new_readonly(
-            *self.associated_token_program.key,
+            *self.bonanza_sol_vault.key,
             false,
         ));
         accounts.push(solana_instruction::AccountMeta::new_readonly(
@@ -416,26 +345,23 @@ impl<'a, 'b> WithdrawTreasuryFeesCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = WithdrawTreasuryFeesInstructionData::new()
+        let data = InitTreasuryCustodyInstructionData::new()
             .try_to_vec()
             .unwrap();
-        let mut args = self.__args.try_to_vec().unwrap();
-        data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::ZINC_ID,
             accounts,
             data,
         };
-        let mut account_infos = Vec::with_capacity(10 + remaining_accounts.len());
+        let mut account_infos = Vec::with_capacity(9 + remaining_accounts.len());
         account_infos.push(self.__program.clone());
         account_infos.push(self.admin.clone());
         account_infos.push(self.config.clone());
         account_infos.push(self.treasury.clone());
         account_infos.push(self.zinc_mint.clone());
-        account_infos.push(self.curve_admin_token_account.clone());
-        account_infos.push(self.admin_token_account.clone());
-        account_infos.push(self.associated_token_program.clone());
+        account_infos.push(self.liquidity_zinc_token_account.clone());
+        account_infos.push(self.bonanza_sol_vault.clone());
         account_infos.push(self.token_program.clone());
         account_infos.push(self.system_program.clone());
         remaining_accounts
@@ -450,7 +376,7 @@ impl<'a, 'b> WithdrawTreasuryFeesCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `WithdrawTreasuryFees` via CPI.
+/// Instruction builder for `InitTreasuryCustody` via CPI.
 ///
 /// ### Accounts:
 ///
@@ -458,36 +384,32 @@ impl<'a, 'b> WithdrawTreasuryFeesCpi<'a, 'b> {
 ///   1. `[]` config
 ///   2. `[writable]` treasury
 ///   3. `[]` zinc_mint
-///   4. `[writable]` curve_admin_token_account
-///   5. `[writable]` admin_token_account
-///   6. `[]` associated_token_program
-///   7. `[]` token_program
-///   8. `[]` system_program
+///   4. `[writable]` liquidity_zinc_token_account
+///   5. `[writable]` bonanza_sol_vault
+///   6. `[]` token_program
+///   7. `[]` system_program
 #[derive(Clone, Debug)]
-pub struct WithdrawTreasuryFeesCpiBuilder<'a, 'b> {
-    instruction: Box<WithdrawTreasuryFeesCpiBuilderInstruction<'a, 'b>>,
+pub struct InitTreasuryCustodyCpiBuilder<'a, 'b> {
+    instruction: Box<InitTreasuryCustodyCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> WithdrawTreasuryFeesCpiBuilder<'a, 'b> {
+impl<'a, 'b> InitTreasuryCustodyCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(WithdrawTreasuryFeesCpiBuilderInstruction {
+        let instruction = Box::new(InitTreasuryCustodyCpiBuilderInstruction {
             __program: program,
             admin: None,
             config: None,
             treasury: None,
             zinc_mint: None,
-            curve_admin_token_account: None,
-            admin_token_account: None,
-            associated_token_program: None,
+            liquidity_zinc_token_account: None,
+            bonanza_sol_vault: None,
             token_program: None,
             system_program: None,
-            sol_lamports: None,
-            zinc_amount: None,
             __remaining_accounts: Vec::new(),
         });
         Self { instruction }
     }
-    /// Admin signer that receives the swept SOL and ZINC.
+    /// Admin signer that pays for any missing custody accounts.
     #[inline(always)]
     pub fn admin(&mut self, admin: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.admin = Some(admin);
@@ -499,46 +421,37 @@ impl<'a, 'b> WithdrawTreasuryFeesCpiBuilder<'a, 'b> {
         self.instruction.config = Some(config);
         self
     }
-    /// Treasury PDA that holds protocol-fee SOL and the curve-admin ZINC vault authority.
+    /// Treasury PDA whose custody fields are initialized or verified.
     #[inline(always)]
     pub fn treasury(&mut self, treasury: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.treasury = Some(treasury);
         self
     }
-    /// Protocol ZINC mint used by the curve-admin fee vault.
+    /// Protocol ZINC mint used by the liquidity vault.
     #[inline(always)]
     pub fn zinc_mint(&mut self, zinc_mint: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.zinc_mint = Some(zinc_mint);
         self
     }
-    /// Treasury-owned ATA that holds the curve-admin ZINC skim.
+    /// Dedicated liquidity vault that holds protocol-owned ZINC outside admin withdrawals.
     #[inline(always)]
-    pub fn curve_admin_token_account(
+    pub fn liquidity_zinc_token_account(
         &mut self,
-        curve_admin_token_account: &'b solana_account_info::AccountInfo<'a>,
+        liquidity_zinc_token_account: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.curve_admin_token_account = Some(curve_admin_token_account);
+        self.instruction.liquidity_zinc_token_account = Some(liquidity_zinc_token_account);
         self
     }
-    /// Admin ATA that receives the swept curve-admin ZINC balance.
+    /// Program-owned lamport vault that accumulates Bonanza SOL across deploys.
     #[inline(always)]
-    pub fn admin_token_account(
+    pub fn bonanza_sol_vault(
         &mut self,
-        admin_token_account: &'b solana_account_info::AccountInfo<'a>,
+        bonanza_sol_vault: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
-        self.instruction.admin_token_account = Some(admin_token_account);
+        self.instruction.bonanza_sol_vault = Some(bonanza_sol_vault);
         self
     }
-    /// Associated Token Program used to validate canonical ATA addresses.
-    #[inline(always)]
-    pub fn associated_token_program(
-        &mut self,
-        associated_token_program: &'b solana_account_info::AccountInfo<'a>,
-    ) -> &mut Self {
-        self.instruction.associated_token_program = Some(associated_token_program);
-        self
-    }
-    /// SPL Token Program that owns the source and destination token accounts.
+    /// SPL Token Program that owns the liquidity vault.
     #[inline(always)]
     pub fn token_program(
         &mut self,
@@ -547,23 +460,13 @@ impl<'a, 'b> WithdrawTreasuryFeesCpiBuilder<'a, 'b> {
         self.instruction.token_program = Some(token_program);
         self
     }
-    /// System Program retained for stable client account shape.
+    /// System Program used to create missing custody accounts.
     #[inline(always)]
     pub fn system_program(
         &mut self,
         system_program: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.system_program = Some(system_program);
-        self
-    }
-    #[inline(always)]
-    pub fn sol_lamports(&mut self, sol_lamports: u64) -> &mut Self {
-        self.instruction.sol_lamports = Some(sol_lamports);
-        self
-    }
-    #[inline(always)]
-    pub fn zinc_amount(&mut self, zinc_amount: u64) -> &mut Self {
-        self.instruction.zinc_amount = Some(zinc_amount);
         self
     }
     /// Add an additional account to the instruction.
@@ -600,19 +503,7 @@ impl<'a, 'b> WithdrawTreasuryFeesCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let args = WithdrawTreasuryFeesInstructionArgs {
-            sol_lamports: self
-                .instruction
-                .sol_lamports
-                .clone()
-                .expect("sol_lamports is not set"),
-            zinc_amount: self
-                .instruction
-                .zinc_amount
-                .clone()
-                .expect("zinc_amount is not set"),
-        };
-        let instruction = WithdrawTreasuryFeesCpi {
+        let instruction = InitTreasuryCustodyCpi {
             __program: self.instruction.__program,
 
             admin: self.instruction.admin.expect("admin is not set"),
@@ -623,20 +514,15 @@ impl<'a, 'b> WithdrawTreasuryFeesCpiBuilder<'a, 'b> {
 
             zinc_mint: self.instruction.zinc_mint.expect("zinc_mint is not set"),
 
-            curve_admin_token_account: self
+            liquidity_zinc_token_account: self
                 .instruction
-                .curve_admin_token_account
-                .expect("curve_admin_token_account is not set"),
+                .liquidity_zinc_token_account
+                .expect("liquidity_zinc_token_account is not set"),
 
-            admin_token_account: self
+            bonanza_sol_vault: self
                 .instruction
-                .admin_token_account
-                .expect("admin_token_account is not set"),
-
-            associated_token_program: self
-                .instruction
-                .associated_token_program
-                .expect("associated_token_program is not set"),
+                .bonanza_sol_vault
+                .expect("bonanza_sol_vault is not set"),
 
             token_program: self
                 .instruction
@@ -647,7 +533,6 @@ impl<'a, 'b> WithdrawTreasuryFeesCpiBuilder<'a, 'b> {
                 .instruction
                 .system_program
                 .expect("system_program is not set"),
-            __args: args,
         };
         instruction.invoke_signed_with_remaining_accounts(
             signers_seeds,
@@ -657,19 +542,16 @@ impl<'a, 'b> WithdrawTreasuryFeesCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct WithdrawTreasuryFeesCpiBuilderInstruction<'a, 'b> {
+struct InitTreasuryCustodyCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     admin: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
     treasury: Option<&'b solana_account_info::AccountInfo<'a>>,
     zinc_mint: Option<&'b solana_account_info::AccountInfo<'a>>,
-    curve_admin_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    admin_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
-    associated_token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    liquidity_zinc_token_account: Option<&'b solana_account_info::AccountInfo<'a>>,
+    bonanza_sol_vault: Option<&'b solana_account_info::AccountInfo<'a>>,
     token_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
-    sol_lamports: Option<u64>,
-    zinc_amount: Option<u64>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
     __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

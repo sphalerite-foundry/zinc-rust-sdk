@@ -25,6 +25,10 @@ pub struct CloseRoundInstructionInputs {
     pub stockpile_token_account: Pubkey,
 }
 
+#[cfg(test)]
+#[path = "close_round_instruction_tests.rs"]
+mod tests;
+
 impl InstructionsHelper {
     /// Builds the close-round instruction with the treasury Bonanza mint accounts filled in.
     pub fn close_round_instruction(inputs: CloseRoundInstructionInputs) -> Instruction {
@@ -50,6 +54,7 @@ impl InstructionsHelper {
             zinc_mint,
             curve_admin_token_account,
             bonanza_token_account,
+            liquidity_zinc_token_account: PdaHelper::get_liquidity_zinc_token_account_address(),
             round_zinc_payout_token_account,
             stockpile_token_account,
             stockpile: stockpile_id.map(PdaHelper::get_stockpile_address),

@@ -120,6 +120,10 @@ pub struct Config {
     pub wildcat_rr_enabled: bool,
     /// Linear share of Wildcat ticket weighting in basis points; the remainder uses normalized sqrt.
     pub wildcat_weight_linear_bps: u64,
+    /// Gross deploy-time SOL Bonanza fee in basis points.
+    pub deploy_bonanza_fee_bps: u64,
+    /// Share of Bonanza-directed ZINC routed to dedicated liquidity custody.
+    pub bonanza_zinc_liquidity_share_bps: u64,
 }
 
 pub const CONFIG_DISCRIMINATOR: [u8; 8] = [155, 12, 170, 224, 30, 250, 204, 130];
