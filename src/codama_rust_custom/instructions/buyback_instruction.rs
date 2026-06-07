@@ -1,6 +1,7 @@
 use crate::codama_rust::instructions::{
     Buyback, BuybackInstructionArgs, ConvertBuybackSolToUsdc,
-    ConvertBuybackSolToUsdcInstructionArgs, ConvertBuybackUsdcToSol,
+    ConvertBuybackSolToUsdcInstructionArgs, ConvertBuybackSolToUsdcRaydiumAmmV4,
+    ConvertBuybackSolToUsdcRaydiumAmmV4InstructionArgs, ConvertBuybackUsdcToSol,
     ConvertBuybackUsdcToSolInstructionArgs, CreateBuybackPool, CreateBuybackPoolInstructionArgs,
     LockBuybackLiquidity, LockBuybackLiquidityInstructionArgs, RemoveBuybackLiquidity,
     RemoveBuybackLiquidityInstructionArgs, WrapBuybackSol, WrapBuybackSolInstructionArgs,
@@ -56,6 +57,24 @@ pub struct ConvertBuybackSolToUsdcInstructionInputs {
     pub pool: Pubkey,
     /// Whether WSOL is token A in the supplied pool.
     pub wsol_is_token_a: bool,
+}
+
+/// Inputs needed to convert buyback SOL custody into treasury-owned USDC through Raydium AMM v4.
+pub struct ConvertBuybackSolToUsdcRaydiumAmmV4InstructionInputs {
+    /// Crank signer submitting the conversion transaction.
+    pub signer: Pubkey,
+    /// Exact SOL lamports to spend from buyback custody.
+    pub amount_in: u64,
+    /// Minimum USDC base units accepted after the Raydium swap.
+    pub min_usdc_out: u64,
+    /// Caller-supplied Raydium AMM v4 pool account.
+    pub amm: Pubkey,
+    /// Raydium AMM authority PDA derived from the pool nonce.
+    pub amm_authority: Pubkey,
+    /// Raydium pool coin-side vault.
+    pub coin_vault: Pubkey,
+    /// Raydium pool pc-side vault.
+    pub pc_vault: Pubkey,
 }
 
 /// Inputs needed to convert treasury-owned USDC back into buyback SOL custody.
@@ -263,6 +282,44 @@ impl InstructionsHelper {
             system_program: PdaHelper::get_system_program_address(),
         }
         .instruction(ConvertBuybackSolToUsdcInstructionArgs {
+            amount_in,
+            min_usdc_out,
+        })
+    }
+
+    /// Builds a conversion instruction from buyback SOL custody into treasury-owned USDC through Raydium AMM v4.
+    pub fn convert_buyback_sol_to_usdc_raydium_amm_v4_instruction(
+        inputs: ConvertBuybackSolToUsdcRaydiumAmmV4InstructionInputs,
+    ) -> Instruction {
+        let ConvertBuybackSolToUsdcRaydiumAmmV4InstructionInputs {
+            signer,
+            amount_in,
+            min_usdc_out,
+            amm,
+            amm_authority,
+            coin_vault,
+            pc_vault,
+        } = inputs;
+
+        ConvertBuybackSolToUsdcRaydiumAmmV4 {
+            signer,
+            config: PdaHelper::get_config_address(),
+            treasury: PdaHelper::get_treasury_address(),
+            buyback_sol_vault: PdaHelper::get_buyback_sol_vault_address(),
+            wsol_mint: PdaHelper::WSOL_MINT_ID,
+            usdc_mint: PdaHelper::USDC_MINT_ID,
+            treasury_wsol_token_account: PdaHelper::get_treasury_wsol_token_account_address(),
+            treasury_usdc_token_account: PdaHelper::get_treasury_usdc_token_account_address(),
+            amm,
+            amm_authority,
+            coin_vault,
+            pc_vault,
+            raydium_program: PdaHelper::RAYDIUM_AMM_V4_PROGRAM_ID,
+            associated_token_program: PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID,
+            token_program: PdaHelper::TOKEN_PROGRAM_ID,
+            system_program: PdaHelper::get_system_program_address(),
+        }
+        .instruction(ConvertBuybackSolToUsdcRaydiumAmmV4InstructionArgs {
             amount_in,
             min_usdc_out,
         })

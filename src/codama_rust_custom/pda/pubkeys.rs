@@ -41,6 +41,9 @@ impl PdaHelper {
     /// Meteora DAMM v2 constant product AMM program used by protocol buybacks.
     pub const METEORA_DAMM_V2_PROGRAM_ID: Pubkey =
         pubkey!("cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG");
+    /// Raydium AMM v4 constant product AMM program used by SOL/USDC conversion.
+    pub const RAYDIUM_AMM_V4_PROGRAM_ID: Pubkey =
+        pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
     /// Meteora DAMM v2 static config used by the canonical ZINC/WSOL buyback pool.
     pub const METEORA_STATIC_CONFIG_0002: Pubkey =
         pubkey!("FzvMYBQ29z2J21QPsABpJYYxQBEKGsxA6w6J2HYceFj8");
