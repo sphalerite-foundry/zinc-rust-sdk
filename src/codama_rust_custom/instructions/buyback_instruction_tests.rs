@@ -1,7 +1,8 @@
 use super::{
     BuybackInstructionInputs, ClaimBuybackPoolFeesInstructionInputs,
-    ConvertBuybackSolToUsdcInstructionInputs, ConvertBuybackUsdcToSolInstructionInputs,
-    CreateBuybackPoolInstructionInputs, InstructionsHelper, LockBuybackLiquidityInstructionInputs,
+    ConvertBuybackSolToUsdcInstructionInputs, ConvertBuybackSolToUsdcRaydiumAmmV4InstructionInputs,
+    ConvertBuybackUsdcToSolInstructionInputs, CreateBuybackPoolInstructionInputs,
+    InstructionsHelper, LockBuybackLiquidityInstructionInputs,
     RemoveBuybackLiquidityInstructionInputs,
 };
 use crate::codama_rust_custom::pda::PdaHelper;
@@ -120,6 +121,66 @@ fn convert_buyback_sol_to_usdc_instruction_derives_pool_accounts() {
     );
     assert_eq!(
         instruction.accounts[15].pubkey,
+        PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+}
+
+/// Verifies Raydium SOL-to-USDC conversion uses the caller-resolved AMM v4 account set.
+#[test]
+fn convert_buyback_sol_to_usdc_raydium_amm_v4_instruction_uses_resolved_pool_accounts() {
+    let signer = Pubkey::new_unique();
+    let amm = Pubkey::new_unique();
+    let amm_authority = Pubkey::new_unique();
+    let coin_vault = Pubkey::new_unique();
+    let pc_vault = Pubkey::new_unique();
+
+    let instruction = InstructionsHelper::convert_buyback_sol_to_usdc_raydium_amm_v4_instruction(
+        ConvertBuybackSolToUsdcRaydiumAmmV4InstructionInputs {
+            signer,
+            amount_in: 1_000_000_000,
+            min_usdc_out: 25_000_000,
+            amm,
+            amm_authority,
+            coin_vault,
+            pc_vault,
+        },
+    );
+
+    assert_eq!(
+        &instruction.data[..8],
+        &[137, 138, 47, 203, 127, 46, 192, 180]
+    );
+    assert_eq!(
+        u64::from_le_bytes(instruction.data[8..16].try_into().unwrap()),
+        1_000_000_000
+    );
+    assert_eq!(
+        u64::from_le_bytes(instruction.data[16..24].try_into().unwrap()),
+        25_000_000
+    );
+    assert_eq!(instruction.accounts.len(), 16);
+    assert_eq!(instruction.accounts[0].pubkey, signer);
+    assert!(instruction.accounts[0].is_signer);
+    assert_eq!(instruction.accounts[4].pubkey, PdaHelper::WSOL_MINT_ID);
+    assert_eq!(instruction.accounts[5].pubkey, PdaHelper::USDC_MINT_ID);
+    assert_eq!(
+        instruction.accounts[6].pubkey,
+        PdaHelper::get_treasury_wsol_token_account_address()
+    );
+    assert_eq!(
+        instruction.accounts[7].pubkey,
+        PdaHelper::get_treasury_usdc_token_account_address()
+    );
+    assert_eq!(instruction.accounts[8].pubkey, amm);
+    assert_eq!(instruction.accounts[9].pubkey, amm_authority);
+    assert_eq!(instruction.accounts[10].pubkey, coin_vault);
+    assert_eq!(instruction.accounts[11].pubkey, pc_vault);
+    assert_eq!(
+        instruction.accounts[12].pubkey,
+        PdaHelper::RAYDIUM_AMM_V4_PROGRAM_ID
+    );
+    assert_eq!(
+        instruction.accounts[13].pubkey,
         PdaHelper::ASSOCIATED_TOKEN_PROGRAM_ID
     );
 }
