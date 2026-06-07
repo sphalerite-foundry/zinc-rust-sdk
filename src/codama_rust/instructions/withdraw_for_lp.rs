@@ -8,11 +8,11 @@
 use borsh::BorshDeserialize;
 use borsh::BorshSerialize;
 
-pub const WITHDRAW_LIQUIDITY_ZINC_DISCRIMINATOR: [u8; 8] = [234, 24, 253, 94, 245, 169, 146, 193];
+pub const WITHDRAW_FOR_LP_DISCRIMINATOR: [u8; 8] = [36, 246, 66, 252, 141, 10, 153, 202];
 
 /// Accounts.
 #[derive(Debug)]
-pub struct WithdrawLiquidityZinc {
+pub struct WithdrawForLp {
     /// Admin signer that receives the requested liquidity ZINC.
     pub admin: solana_address::Address,
     /// Global config that authorizes the admin and treasury relationship.
@@ -31,10 +31,10 @@ pub struct WithdrawLiquidityZinc {
     pub token_program: solana_address::Address,
 }
 
-impl WithdrawLiquidityZinc {
+impl WithdrawForLp {
     pub fn instruction(
         &self,
-        args: WithdrawLiquidityZincInstructionArgs,
+        args: WithdrawForLpInstructionArgs,
     ) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
@@ -42,7 +42,7 @@ impl WithdrawLiquidityZinc {
     #[allow(clippy::vec_init_then_push)]
     pub fn instruction_with_remaining_accounts(
         &self,
-        args: WithdrawLiquidityZincInstructionArgs,
+        args: WithdrawForLpInstructionArgs,
         remaining_accounts: &[solana_instruction::AccountMeta],
     ) -> solana_instruction::Instruction {
         let mut accounts = Vec::with_capacity(8 + remaining_accounts.len());
@@ -76,9 +76,7 @@ impl WithdrawLiquidityZinc {
             false,
         ));
         accounts.extend_from_slice(remaining_accounts);
-        let mut data = WithdrawLiquidityZincInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = WithdrawForLpInstructionData::new().try_to_vec().unwrap();
         let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -91,14 +89,14 @@ impl WithdrawLiquidityZinc {
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct WithdrawLiquidityZincInstructionData {
+pub struct WithdrawForLpInstructionData {
     discriminator: [u8; 8],
 }
 
-impl WithdrawLiquidityZincInstructionData {
+impl WithdrawForLpInstructionData {
     pub fn new() -> Self {
         Self {
-            discriminator: [234, 24, 253, 94, 245, 169, 146, 193],
+            discriminator: [36, 246, 66, 252, 141, 10, 153, 202],
         }
     }
 
@@ -107,24 +105,24 @@ impl WithdrawLiquidityZincInstructionData {
     }
 }
 
-impl Default for WithdrawLiquidityZincInstructionData {
+impl Default for WithdrawForLpInstructionData {
     fn default() -> Self {
         Self::new()
     }
 }
 
 #[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-pub struct WithdrawLiquidityZincInstructionArgs {
+pub struct WithdrawForLpInstructionArgs {
     pub zinc_amount: u64,
 }
 
-impl WithdrawLiquidityZincInstructionArgs {
+impl WithdrawForLpInstructionArgs {
     pub(crate) fn try_to_vec(&self) -> Result<Vec<u8>, std::io::Error> {
         borsh::to_vec(self)
     }
 }
 
-/// Instruction builder for `WithdrawLiquidityZinc`.
+/// Instruction builder for `WithdrawForLp`.
 ///
 /// ### Accounts:
 ///
@@ -137,7 +135,7 @@ impl WithdrawLiquidityZincInstructionArgs {
 ///   6. `[optional]` associated_token_program (default to `ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL`)
 ///   7. `[optional]` token_program (default to `TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA`)
 #[derive(Clone, Debug, Default)]
-pub struct WithdrawLiquidityZincBuilder {
+pub struct WithdrawForLpBuilder {
     admin: Option<solana_address::Address>,
     config: Option<solana_address::Address>,
     treasury: Option<solana_address::Address>,
@@ -150,7 +148,7 @@ pub struct WithdrawLiquidityZincBuilder {
     __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
-impl WithdrawLiquidityZincBuilder {
+impl WithdrawForLpBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -235,7 +233,7 @@ impl WithdrawLiquidityZincBuilder {
     }
     #[allow(clippy::clone_on_copy)]
     pub fn instruction(&self) -> solana_instruction::Instruction {
-        let accounts = WithdrawLiquidityZinc {
+        let accounts = WithdrawForLp {
             admin: self.admin.expect("admin is not set"),
             config: self.config.expect("config is not set"),
             treasury: self.treasury.expect("treasury is not set"),
@@ -253,7 +251,7 @@ impl WithdrawLiquidityZincBuilder {
                 "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
             )),
         };
-        let args = WithdrawLiquidityZincInstructionArgs {
+        let args = WithdrawForLpInstructionArgs {
             zinc_amount: self.zinc_amount.clone().expect("zinc_amount is not set"),
         };
 
@@ -261,8 +259,8 @@ impl WithdrawLiquidityZincBuilder {
     }
 }
 
-/// `withdraw_liquidity_zinc` CPI accounts.
-pub struct WithdrawLiquidityZincCpiAccounts<'a, 'b> {
+/// `withdraw_for_lp` CPI accounts.
+pub struct WithdrawForLpCpiAccounts<'a, 'b> {
     /// Admin signer that receives the requested liquidity ZINC.
     pub admin: &'b solana_account_info::AccountInfo<'a>,
     /// Global config that authorizes the admin and treasury relationship.
@@ -281,8 +279,8 @@ pub struct WithdrawLiquidityZincCpiAccounts<'a, 'b> {
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
-/// `withdraw_liquidity_zinc` CPI instruction.
-pub struct WithdrawLiquidityZincCpi<'a, 'b> {
+/// `withdraw_for_lp` CPI instruction.
+pub struct WithdrawForLpCpi<'a, 'b> {
     /// The program to invoke.
     pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// Admin signer that receives the requested liquidity ZINC.
@@ -302,14 +300,14 @@ pub struct WithdrawLiquidityZincCpi<'a, 'b> {
     /// SPL Token Program that owns the source and destination token accounts.
     pub token_program: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
-    pub __args: WithdrawLiquidityZincInstructionArgs,
+    pub __args: WithdrawForLpInstructionArgs,
 }
 
-impl<'a, 'b> WithdrawLiquidityZincCpi<'a, 'b> {
+impl<'a, 'b> WithdrawForLpCpi<'a, 'b> {
     pub fn new(
         program: &'b solana_account_info::AccountInfo<'a>,
-        accounts: WithdrawLiquidityZincCpiAccounts<'a, 'b>,
-        args: WithdrawLiquidityZincInstructionArgs,
+        accounts: WithdrawForLpCpiAccounts<'a, 'b>,
+        args: WithdrawForLpInstructionArgs,
     ) -> Self {
         Self {
             __program: program,
@@ -384,9 +382,7 @@ impl<'a, 'b> WithdrawLiquidityZincCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data = WithdrawLiquidityZincInstructionData::new()
-            .try_to_vec()
-            .unwrap();
+        let mut data = WithdrawForLpInstructionData::new().try_to_vec().unwrap();
         let mut args = self.__args.try_to_vec().unwrap();
         data.append(&mut args);
 
@@ -417,7 +413,7 @@ impl<'a, 'b> WithdrawLiquidityZincCpi<'a, 'b> {
     }
 }
 
-/// Instruction builder for `WithdrawLiquidityZinc` via CPI.
+/// Instruction builder for `WithdrawForLp` via CPI.
 ///
 /// ### Accounts:
 ///
@@ -430,13 +426,13 @@ impl<'a, 'b> WithdrawLiquidityZincCpi<'a, 'b> {
 ///   6. `[]` associated_token_program
 ///   7. `[]` token_program
 #[derive(Clone, Debug)]
-pub struct WithdrawLiquidityZincCpiBuilder<'a, 'b> {
-    instruction: Box<WithdrawLiquidityZincCpiBuilderInstruction<'a, 'b>>,
+pub struct WithdrawForLpCpiBuilder<'a, 'b> {
+    instruction: Box<WithdrawForLpCpiBuilderInstruction<'a, 'b>>,
 }
 
-impl<'a, 'b> WithdrawLiquidityZincCpiBuilder<'a, 'b> {
+impl<'a, 'b> WithdrawForLpCpiBuilder<'a, 'b> {
     pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
-        let instruction = Box::new(WithdrawLiquidityZincCpiBuilderInstruction {
+        let instruction = Box::new(WithdrawForLpCpiBuilderInstruction {
             __program: program,
             admin: None,
             config: None,
@@ -550,14 +546,14 @@ impl<'a, 'b> WithdrawLiquidityZincCpiBuilder<'a, 'b> {
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
     pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
-        let args = WithdrawLiquidityZincInstructionArgs {
+        let args = WithdrawForLpInstructionArgs {
             zinc_amount: self
                 .instruction
                 .zinc_amount
                 .clone()
                 .expect("zinc_amount is not set"),
         };
-        let instruction = WithdrawLiquidityZincCpi {
+        let instruction = WithdrawForLpCpi {
             __program: self.instruction.__program,
 
             admin: self.instruction.admin.expect("admin is not set"),
@@ -597,7 +593,7 @@ impl<'a, 'b> WithdrawLiquidityZincCpiBuilder<'a, 'b> {
 }
 
 #[derive(Clone, Debug)]
-struct WithdrawLiquidityZincCpiBuilderInstruction<'a, 'b> {
+struct WithdrawForLpCpiBuilderInstruction<'a, 'b> {
     __program: &'b solana_account_info::AccountInfo<'a>,
     admin: Option<&'b solana_account_info::AccountInfo<'a>>,
     config: Option<&'b solana_account_info::AccountInfo<'a>>,
