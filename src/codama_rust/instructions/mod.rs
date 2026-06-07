@@ -76,7 +76,7 @@ pub(crate) mod r#update_auto_miner_session;
 pub(crate) mod r#update_config;
 pub(crate) mod r#update_zinc_mint_metadata;
 pub(crate) mod r#wait_for_first_deploy;
-pub(crate) mod r#withdraw_liquidity_zinc;
+pub(crate) mod r#withdraw_for_lp;
 pub(crate) mod r#withdraw_treasury_fees;
 pub(crate) mod r#wrap_buyback_sol;
 
@@ -151,6 +151,6 @@ pub use self::r#update_auto_miner_session::*;
 pub use self::r#update_config::*;
 pub use self::r#update_zinc_mint_metadata::*;
 pub use self::r#wait_for_first_deploy::*;
-pub use self::r#withdraw_liquidity_zinc::*;
+pub use self::r#withdraw_for_lp::*;
 pub use self::r#withdraw_treasury_fees::*;
 pub use self::r#wrap_buyback_sol::*;
